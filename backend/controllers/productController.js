@@ -3,7 +3,7 @@ import Product from "../models/productModel.js";
 
 const addProduct = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand } = req.fields;
+    const { name, description, price, category, quantity, brand ,deliverablePincodes } = req.fields;
 
     // Validation
     switch (true) {

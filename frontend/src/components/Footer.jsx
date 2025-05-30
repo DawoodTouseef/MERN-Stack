@@ -106,7 +106,7 @@ const Footer = () => {
                 Contact Us
               </Link>
               <Link
-                href="/admin/register"
+                href="/vendor/login"
                 underline="none"
                 color="#d1d5db"
                 className="hover:text-primary transition-colors font-medium"

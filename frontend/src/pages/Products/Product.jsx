@@ -12,11 +12,10 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useState } from "react";
-import { useFetchCategoriesQuery } from "../../redux/api/categoryApiSlice";
+
 
 const Product = ({ product }) => {
   const [hovered, setHovered] = useState(false);
-  const { data: categories } = useFetchCategoriesQuery();
   return (
     <Fade in timeout={600}>
       <Card
@@ -153,7 +152,7 @@ const Product = ({ product }) => {
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1, flexWrap: "wrap" }}>
               <Chip
-                label={product.brand}
+                label={product.brand?.name || "Unknown Brand"}
                 size="small"
                 sx={{
                   bgcolor: "#e1bee7",
@@ -165,7 +164,7 @@ const Product = ({ product }) => {
               />
 
               <Chip
-                label={categories?.find((cat) => cat._id === product.category)?.name || "Uncategorized"} 
+                label={product.category?.name || "Uncategorized"} 
                 size="small"
                 sx={{
                   bgcolor: "#ffe082",

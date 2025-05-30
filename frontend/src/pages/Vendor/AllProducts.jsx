@@ -17,15 +17,8 @@ import { useSelector } from "react-redux";
 
 const AllProducts = () => {
   const { data: products = [], isLoading, isError } = useAllProductsQuery();
-  const { userInfo } = useSelector((state) => state.auth);
-  const [myProducts, setMyProducts] = useState([]);
 
-  useEffect(() => {
-    if (products && userInfo?._id) {
-      setMyProducts(products.filter((product) => product.user === userInfo._id));
-    }
-  }, [products, userInfo]);
-
+  
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
@@ -64,7 +57,7 @@ const AllProducts = () => {
             My Products
           </Typography>
           <Chip
-            label={`Total: ${myProducts.length}`}
+            label={`Total: ${products.length}`}
             color="secondary"
             sx={{ ml: 2, fontWeight: 600, fontSize: "1rem" }}
           />
@@ -94,7 +87,7 @@ const AllProducts = () => {
           Create Product
         </Button>
       </Box>
-      {myProducts.length === 0 ? (
+      {products.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 8 }}>
           <Typography variant="h6" color="text.secondary">
             You have not added any products yet.
@@ -102,7 +95,7 @@ const AllProducts = () => {
         </Box>
       ) : (
         <Grid container spacing={4}>
-          {myProducts.map((product) => (
+          {products.map((product) => (
             <Grid item xs={12} md={6} key={product._id}>
               <Paper
                 elevation={6}

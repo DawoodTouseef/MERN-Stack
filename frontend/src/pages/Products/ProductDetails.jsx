@@ -305,7 +305,7 @@ const ProductDetails = () => {
                     />
                   </Stack>
                   <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                    Brand: <b>{product.brand}</b>
+                    Brand: <b>{product.brand?.name}</b>
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
                     <strong>About this item:</strong>

@@ -10,13 +10,19 @@ import {
 
 import { authenticate, authorizeAdmin } from "../middlewares/authMiddleware.js";
 
+// Create category
 router.route("/").post(authenticate, authorizeAdmin, createCategory);
-router.route("/:categoryId").put(authenticate, authorizeAdmin, updateCategory);
+
+// Update and delete category by ID
 router
   .route("/:categoryId")
+  .put(authenticate, authorizeAdmin, updateCategory)
   .delete(authenticate, authorizeAdmin, removeCategory);
 
+// Get all categories
 router.route("/categories").get(listCategory);
-router.route("/:id").get(readCategory);
+
+// Get a single category by ID
+router.route("/single/:id").get(readCategory);
 
 export default router;

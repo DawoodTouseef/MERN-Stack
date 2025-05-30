@@ -16,11 +16,17 @@ import {
   Avatar,
   useTheme,
   Divider,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { FaUsers } from "react-icons/fa";
 import { AiOutlineShoppingCart, AiOutlineDollarCircle } from "react-icons/ai";
 import { MdOutlineBarChart } from "react-icons/md";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const StatCard = ({ icon, label, value, color }) => (
   <Paper
@@ -40,7 +46,6 @@ const StatCard = ({ icon, label, value, color }) => (
         boxShadow: 12,
       },
     }}
-    className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
   >
     <Avatar
       sx={{
@@ -64,11 +69,14 @@ const StatCard = ({ icon, label, value, color }) => (
 
 const AdminDashboard = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { data: sales, isLoading } = useGetTotalSalesQuery();
   const { data: customers, isLoading: loadingCustomers } = useGetUsersQuery();
   const { data: orders, isLoading: loadingOrders } = useGetTotalOrdersQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
   const { userInfo } = useSelector((state) => state.auth);
+
+  const [chartType, setChartType] = useState("bar");
 
   const [state, setState] = useState({
     options: {
@@ -77,7 +85,11 @@ const AdminDashboard = () => {
       colors: [theme.palette.secondary.main],
       dataLabels: { enabled: true },
       stroke: { curve: "smooth" },
-      title: { text: "Sales Trend", align: "left", style: { color: theme.palette.primary.main } },
+      title: {
+        text: "Sales Trend",
+        align: "left",
+        style: { color: theme.palette.primary.main },
+      },
       grid: { borderColor: "#ccc" },
       markers: { size: 1 },
       xaxis: {
@@ -103,6 +115,10 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
+    if (!userInfo?.isAdmin) navigate("/unauthorized");
+  }, [userInfo, navigate]);
+
+  useEffect(() => {
     if (salesDetail) {
       const formattedSalesDate = salesDetail.map((item) => ({
         x: item._id,
@@ -123,14 +139,11 @@ const AdminDashboard = () => {
         ],
       }));
     }
-    // eslint-disable-next-line
   }, [salesDetail]);
 
-  // Calculate customers count based on user role
   let customersCount = 0;
   if (userInfo?.isAdmin && customers) {
-    // Admin sees all customers
-    customersCount = customers.filter((u) => u.isAdmin === false).length;
+    customersCount = customers.filter((u) => u.isAdmin === false ).length;
   }
 
   return (
@@ -153,56 +166,55 @@ const AdminDashboard = () => {
           textAlign: "center",
         }}
       >
-        Admin Dashboard
+        Vendor Dashboard
       </Typography>
-      <Grid container spacing={4} justifyContent="center" sx={{ mb: 4 }}>
-        <Grid item>
-          <StatCard
-            icon={<AiOutlineDollarCircle size={32} />}
-            label="Total Sales"
-            value={
-              isLoading ? (
-                <Loader size={24} />
-              ) : (
-                `$${sales?.totalSales?.toFixed(2) || 0}`
-              )
-            }
-            color={theme.palette.secondary.main}
-          />
-        </Grid>
-        <Grid item>
-          <StatCard
-            icon={<FaUsers size={28} />}
-            label="Customers"
-            value={
-              loadingCustomers ? <Loader size={24} /> : customersCount
-            }
-            color={theme.palette.info.main}
-          />
-        </Grid>
-        <Grid item>
-          <StatCard
-            icon={<AiOutlineShoppingCart size={32} />}
-            label="All Orders"
-            value={
-              loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0
-            }
-            color={theme.palette.success.main}
-          />
-        </Grid>
-        <Grid item>
-          <StatCard
-            icon={<MdOutlineBarChart size={32} />}
-            label="Avg. Order Value"
-            value={
-              isLoading || loadingOrders
-                ? <Loader size={24} />
-                : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
-            }
-            color={theme.palette.warning.main}
-          />
-        </Grid>
-      </Grid>
+
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={3}
+        justifyContent="center"
+        alignItems="center"
+        sx={{ mb: 4 }}
+      >
+        <StatCard
+          icon={<AiOutlineDollarCircle size={32} />}
+          label="Total Sales"
+          value={
+            isLoading ? (
+              <Loader size={24} />
+            ) : (
+              `$${sales?.totalSales?.toFixed(2) || 0}`
+            )
+          }
+          color={theme.palette.secondary.main}
+        />
+        <StatCard
+          icon={<FaUsers size={28} />}
+          label="Customers"
+          value={
+            loadingCustomers ? <Loader size={24} /> : customersCount
+          }
+          color={theme.palette.info.main}
+        />
+        <StatCard
+          icon={<AiOutlineShoppingCart size={32} />}
+          label="All Orders"
+          value={
+            loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0
+          }
+          color={theme.palette.success.main}
+        />
+        <StatCard
+          icon={<MdOutlineBarChart size={32} />}
+          label="Avg. Order Value"
+          value={
+            isLoading || loadingOrders
+              ? <Loader size={24} />
+              : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
+          }
+          color={theme.palette.warning.main}
+        />
+      </Stack>
 
       <Paper
         elevation={6}
@@ -213,34 +225,47 @@ const AdminDashboard = () => {
           background: "linear-gradient(120deg, #e3eeff 60%, #f3e7e9 100%)",
         }}
       >
-        <Typography
-          variant="h5"
-          fontWeight={700}
-          color="primary.main"
-          sx={{ mb: 3, letterSpacing: 1 }}
-        >
-          Sales Trend
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            color="primary.main"
+            sx={{ mb: 3, letterSpacing: 1 }}
+          >
+            Sales Trend
+          </Typography>
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel id="chart-type-label">Chart</InputLabel>
+            <Select
+              labelId="chart-type-label"
+              value={chartType}
+              label="Chart"
+              onChange={(e) => setChartType(e.target.value)}
+            >
+              <MenuItem value="line">Line</MenuItem>
+              <MenuItem value="bar">Bar</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
         <Divider sx={{ mb: 3 }} />
         <Box sx={{ width: "100%", minHeight: 350 }}>
-          <Chart
-            options={state.options}
-            series={state.series}
-            type="bar"
-            width="100%"
-            height={350}
-          />
+          {salesDetail ? (
+            <Chart
+              options={state.options}
+              series={state.series}
+              type={chartType}
+              width="100%"
+              height={350}
+            />
+          ) : (
+            <Typography color="text.secondary" textAlign="center">
+              No sales data available.
+            </Typography>
+          )}
         </Box>
       </Paper>
 
-      <Paper
-        elevation={6}
-        sx={{
-          p: 4,
-          borderRadius: 4,
-          background: "#fff",
-        }}
-      >
+      <Paper elevation={6} sx={{ p: 4, borderRadius: 4, background: "#fff" }}>
         <Typography
           variant="h5"
           fontWeight={700}

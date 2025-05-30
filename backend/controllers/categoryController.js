@@ -1,77 +1,96 @@
 import Category from "../models/categoryModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
+import slugify from "slugify";
 
+// @desc    Create a new category
+// @route   POST /api/categories
+// @access  Private/Admin
 const createCategory = asyncHandler(async (req, res) => {
-  try {
-    const { name,user } = req.body;
+  const { name, description, image, parent, isActive } = req.body;
 
-    if (!name) {
-      return res.json({ error: "Name is required" });
-    }
-
-    const existingCategory = await Category.findOne({ name });
-
-    if (existingCategory) {
-      return res.json({ error: "Already exists" });
-    }
-
-    const category = await new Category({ name,user:user }).save();
-    res.json(category);
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json(error);
+  if (!name) {
+    return res.status(400).json({ error: "Category name is required" });
   }
+
+  const slug = slugify(name, { lower: true });
+
+  const existing = await Category.findOne({ slug });
+  if (existing) {
+    return res.status(400).json({ error: "Category already exists" });
+  }
+
+  const category = new Category({
+    name,
+    slug,
+    description,
+    image,
+    parent: parent || null,
+    isActive: isActive !== undefined ? isActive : true,
+    user: req.user._id,
+  });
+
+  const saved = await category.save();
+  res.status(201).json(saved);
 });
 
+// @desc    Update a category
+// @route   PUT /api/categories/:categoryId
+// @access  Private/Admin
 const updateCategory = asyncHandler(async (req, res) => {
-  try {
-    const { name } = req.body;
-    const { categoryId } = req.params;
+  const { name, description, image, parent, isActive } = req.body;
+  const { categoryId } = req.params;
 
-    const category = await Category.findOne({ _id: categoryId });
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    return res.status(404).json({ error: "Category not found" });
+  }
 
-    if (!category) {
-      return res.status(404).json({ error: "Category not found" });
-    }
-
+  if (name) {
     category.name = name;
-
-    const updatedCategory = await category.save();
-    res.json(updatedCategory);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    category.slug = slugify(name, { lower: true });
   }
+  if (description !== undefined) category.description = description;
+  if (image !== undefined) category.image = image;
+  if (parent !== undefined) category.parent = parent;
+  if (isActive !== undefined) category.isActive = isActive;
+
+  const updated = await category.save();
+  res.json(updated);
 });
 
+// @desc    Delete a category
+// @route   DELETE /api/categories/:categoryId
+// @access  Private/Admin
 const removeCategory = asyncHandler(async (req, res) => {
-  try {
-    const removed = await Category.findByIdAndRemove(req.params.categoryId);
-    res.json(removed);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+  const { categoryId } = req.params;
+
+  const deleted = await Category.findByIdAndDelete(categoryId);
+  if (!deleted) {
+    return res.status(404).json({ error: "Category not found" });
   }
+
+  res.json({ message: "Category deleted successfully" });
 });
 
+// @desc    Get all categories
+// @route   GET /api/categories
+// @access  Public
 const listCategory = asyncHandler(async (req, res) => {
-  try {
-    const all = await Category.find({});
-    res.json(all);
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json(error.message);
-  }
+  const categories = await Category.find({})
+    .populate("parent", "name")
+    .sort({ createdAt: -1 });
+  res.json(categories);
 });
 
+// @desc    Get a single category by ID
+// @route   GET /api/categories/:id
+// @access  Public
 const readCategory = asyncHandler(async (req, res) => {
-  try {
-    const category = await Category.findOne({ _id: req.params.id });
-    res.json(category);
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json(error.message);
+  const category = await Category.findById(req.params.id).populate("parent", "name");
+  if (!category) {
+    return res.status(404).json({ error: "Category not found" });
   }
+  res.json(category);
 });
 
 export {

@@ -31,13 +31,13 @@ import {
 import { useParams } from "react-router-dom";
 import { FaFilter, FaSyncAlt, FaTags, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import DocumentTitle from "react-document-title";
+
 const Shop = () => {
   const { id: categoriesId } = useParams() || {};
   const dispatch = useDispatch();
   const { categories, products, checked, radio } = useSelector(
     (state) => state.shop
   );
-
   const categoriesQuery = useFetchCategoriesQuery();
   const [priceFilter, setPriceFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -71,7 +71,7 @@ const Shop = () => {
 
   const handleBrandClick = (brand) => {
     const productsByBrand = filteredProductsQuery.data?.filter(
-      (product) => product.brand === brand
+      (product) => product.brand?.name === brand
     );
     dispatch(setProducts(productsByBrand));
   };
@@ -87,7 +87,7 @@ const Shop = () => {
     ...Array.from(
       new Set(
         filteredProductsQuery.data
-          ?.map((product) => product.brand)
+          ?.map((product) => product.brand?.name)
           .filter((brand) => brand !== undefined)
       )
     ),
@@ -360,7 +360,8 @@ const Shop = () => {
               products
                 .filter((p) => !categoriesId || p.category === categoriesId)
                 .map((p) => (
-                  <Fade in key={p._id}>
+                <>
+                <Fade in key={p._id}>
                     <Paper
                                       key={p._id}
                                       elevation={6}
@@ -401,6 +402,8 @@ const Shop = () => {
                       )}
                     </Paper>
                   </Fade>
+                
+                </>
                 ))
             )}
           </Box>

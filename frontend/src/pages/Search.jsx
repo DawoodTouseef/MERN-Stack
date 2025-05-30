@@ -75,7 +75,7 @@ const Search = () => {
         products.filter(
           (p) =>
             p.name?.toLowerCase().includes(lower) ||
-            p.brand?.toLowerCase().includes(lower) ||
+            p.brand?.name?.toLowerCase().includes(lower) ||
             p.description?.toLowerCase().includes(lower)
         )
       );
@@ -84,7 +84,7 @@ const Search = () => {
 
   const handleBrandClick = (brand) => {
     const productsByBrand = filteredProductsQuery.data?.filter(
-      (product) => product.brand === brand
+      (product) => product.brand?.name === brand
     );
     dispatch(setProducts(productsByBrand));
   };
@@ -100,7 +100,7 @@ const Search = () => {
     ...Array.from(
       new Set(
         filteredProductsQuery.data
-          ?.map((product) => product.brand)
+          ?.map((product) => product.brand?.name)
           .filter((brand) => brand !== undefined)
       )
     ),

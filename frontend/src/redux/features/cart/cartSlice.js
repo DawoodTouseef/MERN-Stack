@@ -10,17 +10,23 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-      const { user, rating, numReviews, reviews, ...item } = action.payload;
-      const existItem = state.cartItems.find((x) => x._id === item._id);
+      // Accept single product or array of products
+      const items = Array.isArray(action.payload) ? action.payload : [action.payload];
 
-      if (existItem) {
-        state.cartItems = state.cartItems.map((x) =>
-          x._id === existItem._id ? item : x
-        );
-      } else {
-        state.cartItems = [...state.cartItems, item];
-      }
-      return updateCart(state, item);
+      items.forEach((payloadItem) => {
+        const { user, rating, numReviews, reviews, ...item } = payloadItem;
+        const existItem = state.cartItems.find((x) => x._id === item._id);
+
+        if (existItem) {
+          state.cartItems = state.cartItems.map((x) =>
+            x._id === existItem._id ? item : x
+          );
+        } else {
+          state.cartItems = [...state.cartItems, item];
+        }
+      });
+
+      return updateCart(state);
     },
 
     removeFromCart: (state, action) => {

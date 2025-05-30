@@ -5,7 +5,7 @@ import Message from "../components/Message";
 import Header from "../components/Header";
 import Product from "./Products/Product";
 import { useSelector } from "react-redux";
-import AdminDashboard from "./Admin/AdminDashboard";
+import AdminDashboard from "./Vendor/vendorDashboard";
 import {
   Box,
   Typography,
@@ -25,6 +25,7 @@ import DocumentTitle from "react-document-title";
 const Home = () => {
   const { keyword } = useParams();
   const { data, isLoading, isError, error } = useGetProductsQuery({ keyword });
+  
   const { userInfo } = useSelector((state) => state.auth);
   const { data: categories } = useFetchCategoriesQuery();
   const [showProducts, setShowProducts] = useState(false);
@@ -109,6 +110,7 @@ const Home = () => {
 
               <Grid container spacing={3} justifyContent="center">
                 {data?.products?.map((product, idx) => (
+                  <>
                   <Grow
                     in={showProducts}
                     timeout={500 + idx * 120}
@@ -132,6 +134,7 @@ const Home = () => {
                       </Paper>
                     </Grid>
                   </Grow>
+                  </>
                 ))}
               </Grid>
 
@@ -152,9 +155,10 @@ const Home = () => {
                           }}
                         >
                           {data?.products?.filter(
-                            (product) => product.category === category._id
+                            (product) => product.category._id === category._id
                           ).length === 0 ? (
-                            <></>
+                            <>
+                            </>
                           ):(
                             <>
                             <Typography
@@ -195,16 +199,17 @@ const Home = () => {
                           )}
                         </Box>
                       </Slide>
-                      <Grid container spacing={3} justifyContent="center">
                         {data?.products
-                          ?.filter((product) => product.category === category._id)
+                          ?.filter((product) => product.category._id === category._id)
                           .map((product, idx) => (
+                            <>
+                            <Grid container spacing={3} justifyContent="center" key={product._id}>
                             <Grow
                               in={showProducts}
                               timeout={500 + idx * 120}
                               key={product._id}
                             >
-                              <Grid item xs={12} sm={6} md={4} lg={3}>
+                              <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
                                 <Paper
                                   elevation={5}
                                   sx={{
@@ -222,8 +227,10 @@ const Home = () => {
                                 </Paper>
                               </Grid>
                             </Grow>
+                            </Grid>
+                            </>
                           ))}
-                      </Grid>
+                      
                     </Box>
                   ))}
                 </>

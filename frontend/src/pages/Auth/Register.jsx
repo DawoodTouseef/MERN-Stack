@@ -15,6 +15,8 @@ import {
   IconButton,
   InputAdornment,
   Divider,
+  FormControlLabel,
+  Checkbox
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
@@ -24,6 +26,9 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -48,7 +53,14 @@ const Register = () => {
       toast.error("Passwords do not match");
     } else {
       try {
-        const res = await register({ username, email, password }).unwrap();
+        const res = await register({
+  username,
+  email,
+  password,
+  phone,
+  newsletterSubscribed,
+}).unwrap();
+
         dispatch(setCredentials({ ...res }));
         navigate(redirect);
         toast.success("User successfully registered");
@@ -211,6 +223,34 @@ const Register = () => {
                   ),
                 }}
               />
+              <TextField
+  label="Phone Number"
+  type="tel"
+  fullWidth
+  margin="normal"
+  value={phone}
+  onChange={(e) => setPhone(e.target.value)}
+  sx={{
+    input: { color: "#fff" },
+    label: { color: "#fff" },
+    mb: 2,
+    bgcolor: "#18181b",
+    borderRadius: 2,
+  }}
+  InputLabelProps={{ style: { color: "#fff" } }}
+/>
+
+<FormControlLabel
+  control={
+    <Checkbox
+      checked={newsletterSubscribed}
+      onChange={(e) => setNewsletterSubscribed(e.target.checked)}
+      sx={{ color: "#fff" }}
+    />
+  }
+  label={<Typography sx={{ color: "#fff" }}>Subscribe to Newsletter</Typography>}
+/>
+
               <Button
                 type="submit"
                 variant="contained"

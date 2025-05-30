@@ -178,7 +178,7 @@ const Cart = () => {
                               letterSpacing: 0.1,
                             }}
                           >
-                            {item.brand}
+                            {item.brand?.name}
                           </Typography>
                           <Typography
                             variant="body2"

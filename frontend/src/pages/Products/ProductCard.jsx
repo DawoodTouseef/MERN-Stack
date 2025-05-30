@@ -6,12 +6,10 @@ import { toast } from "react-toastify";
 import HeartIcon from "./HeartIcon";
 import { Box, Button, IconButton, Chip, Tooltip, Stack, Typography, Fade } from "@mui/material";
 import { useState } from "react";
-import { useFetchCategoriesQuery } from "../../redux/api/categoryApiSlice";
 
 const ProductCard = ({ p }) => {
   const dispatch = useDispatch();
   const [hovered, setHovered] = useState(false);
-  const { data: categories } = useFetchCategoriesQuery();
   const addToCartHandler = (product, qty) => {
     dispatch(addToCart({ ...product, qty }));
     toast.success("Item added successfully", {
@@ -59,7 +57,7 @@ const ProductCard = ({ p }) => {
               }}
             />
             <Chip
-              label={p.brand}
+              label={p.brand?.name}
               size="small"
               sx={{
                 position: "absolute",
@@ -138,7 +136,7 @@ const ProductCard = ({ p }) => {
 
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1, mb: 2 }}>
             <Chip
-              label={categories?.find((cat) => cat._id === p.category)?.name || "Uncategorized"}
+              label={p.category?.name || "Uncategorized"}
               size="small"
               sx={{
                 bgcolor: "#ffe082",
