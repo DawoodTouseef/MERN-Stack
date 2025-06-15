@@ -27,7 +27,7 @@ import { AiOutlineShoppingCart, AiOutlineDollarCircle } from "react-icons/ai";
 import { MdOutlineBarChart } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-
+import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 const StatCard = ({ icon, label, value, color }) => (
   <Paper
     elevation={6}
@@ -67,12 +67,12 @@ const StatCard = ({ icon, label, value, color }) => (
   </Paper>
 );
 
-const AdminDashboard = () => {
+const VendorDashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: sales, isLoading } = useGetTotalSalesQuery();
-  const { data: customers, isLoading: loadingCustomers } = useGetUsersQuery();
   const { data: orders, isLoading: loadingOrders } = useGetTotalOrdersQuery();
+  const { data: products , isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -142,8 +142,8 @@ const AdminDashboard = () => {
   }, [salesDetail]);
 
   let customersCount = 0;
-  if (userInfo?.isAdmin && customers) {
-    customersCount = customers.filter((u) => u.isAdmin === false ).length;
+  if (userInfo?.isAdmin && products) {
+    customersCount = products.filter((u) => u.user === userInfo._id ).length;
   }
 
   return (
@@ -190,9 +190,9 @@ const AdminDashboard = () => {
         />
         <StatCard
           icon={<FaUsers size={28} />}
-          label="Customers"
+          label="Products"
           value={
-            loadingCustomers ? <Loader size={24} /> : customersCount
+            loadingProducts ? <Loader size={24} /> : customersCount
           }
           color={theme.palette.info.main}
         />
@@ -281,4 +281,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default VendorDashboard;

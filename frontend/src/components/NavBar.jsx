@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   AppBar,
@@ -42,6 +42,10 @@ import { MdProductionQuantityLimits } from "react-icons/md";
 import { FaUsers, FaList } from "react-icons/fa";
 import { IoIosLogOut } from "react-icons/io";
 import { FaTag} from 'react-icons/fa';
+import {setSearchQuery} from "../redux/features/shop/shopSlice"
+import { useAllProductsQuery } from "../redux/api/productApiSlice";
+import Autosuggest from 'react-autosuggest';
+import debounce from "lodash.debounce";
 
 const NavBar = ({
   placeholder = "Search products...",
@@ -51,19 +55,25 @@ const NavBar = ({
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { data: products = [], isLoading } = useAllProductsQuery();
+  const [suggestions, setSuggestions] = useState([]);
   const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
+  const { cart } = useSelector((state) => state.shop);
   const [logoutApiCall] = useLogoutMutation();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const trimmedSearchTerm = searchTerm.trim();
     if (onSearch) {
-      onSearch(searchTerm.trim());
-    } else if (searchTerm.trim()) {
-      navigate(`/search/${searchTerm.trim()}`);
+      onSearch(trimmedSearchTerm);
+    } else {
+      dispatch(setSearchQuery(trimmedSearchTerm)); // Update search query in Redux
+      navigate("/shop")
+
     }
   };
 
@@ -77,9 +87,16 @@ const NavBar = ({
 
   const handleLogout = async () => {
     try {
+      let api;
+      if (userInfo.role==="vendor"){
+          api="/vendor/login"
+      }
+      if (userInfo.role==="admin"){
+          api="/admin/login"
+      }
       await logoutApiCall().unwrap();
       dispatch(logout());
-      navigate("/login");
+      navigate(api || '/login');
     } catch (error) {
       // handle error
     }
@@ -96,7 +113,70 @@ const NavBar = ({
           : `${parts[0][0]}`.toUpperCase(),
     };
   }
+  const getSuggestions = useMemo(
+    () =>
+      debounce((value, callback) => {
+        const inputValue = value.trim().toLowerCase();
+        const filtered =
+          inputValue.length === 0
+            ? []
+            : products.filter(
+                (product) =>
+                  product.name.toLowerCase().includes(inputValue) ||
+                  product.brand?.name?.toLowerCase().includes(inputValue) ||
+                  product.description?.toLowerCase().includes(inputValue)
+              );
+        callback(filtered.slice(0, 6));
+      }, 200),
+    [products]
+  );
 
+  const onSuggestionsFetchRequested = ({ value }) => {
+    getSuggestions(value, setSuggestions);
+  };
+
+  const onSuggestionsClearRequested = () => {
+    setSuggestions([]);
+  };
+
+  const getSuggestionValue = (suggestion) => suggestion.name;
+
+  const handleSuggestionSelected = (_, { suggestion }) => {
+    navigate(`/product/${suggestion._id}`);
+  };
+
+  const renderSuggestion = (suggestion, { query }) => {
+  const regex = new RegExp(`(${query})`, "gi");
+  const highlightedName = suggestion.name.replace(
+    regex,
+    (match) => `<span style="color:#2563eb; font-weight:bold;">${match}</span>`
+  );
+  
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <img
+        src={suggestion.media?.[0]?.url || "/placeholder.png"}
+        alt={suggestion.name}
+        style={{ width: 45, height: 45, borderRadius: 8, objectFit: "cover" }}
+      />
+      <Typography
+        variant="body2"
+        sx={{ fontSize: 15 }}
+        dangerouslySetInnerHTML={{ __html: highlightedName }}
+      />
+    </Box>
+  );
+};
+
+
+  const inputProps = {
+    placeholder,
+    value: searchTerm,
+    onChange: (e, { newValue }) => setSearchTerm(newValue),
+    onKeyDown: (e) => {
+      if (e.key === "Enter") handleSubmit(e);
+    },
+  };
   // Drawer content for mobile
   const drawerContent = (
     <Box sx={{ width: 260, pt: 2 }}>
@@ -118,7 +198,7 @@ const NavBar = ({
           </Typography>
         </ListItem>
         <Divider sx={{ my: 1 }} />
-        {userInfo && userInfo.isAdmin === false && (
+        {userInfo && userInfo.role==="customer" && (
           <>
             <ListItem button component={Link} to="/shop" onClick={() => setDrawerOpen(false)}>
               <ListItemIcon>
@@ -145,9 +225,9 @@ const NavBar = ({
         <Divider sx={{ my: 1 }} />
         {userInfo ? (
           <>
-            {userInfo.isAdmin && (
+            {userInfo.role==="vendor" ? (
               <>
-                <ListItem button component={Link} to="/vendor/dashboard" onClick={() => setDrawerOpen(false)}>
+                <ListItem button component={Link} to="/" onClick={() => setDrawerOpen(false)}>
                   <ListItemIcon>
                     <AiOutlineDashboard size={22} />
                   </ListItemIcon>
@@ -171,15 +251,23 @@ const NavBar = ({
                   </ListItemIcon>
                   <ListItemText primary="Orders" />
                 </ListItem>
-                <ListItem button component={Link} to="/vendor/userlist" onClick={() => setDrawerOpen(false)}>
-                  <ListItemIcon>
-                    <FaUsers size={22} />
-                  </ListItemIcon>
-                  <ListItemText primary="Users" />
-                </ListItem>
                 <Divider sx={{ my: 1 }} />
               </>
-            )}
+            ):(
+              <>
+              {userInfo.role === "admin" &&(
+                    <>
+                    <ListItem button component={Link} to="/admin/userlist" onClick={() => setDrawerOpen(false)}>
+                        <ListItemIcon>
+                          <FaUsers size={22} />
+                        </ListItemIcon>
+                        <ListItemText primary="Users" />
+                    </ListItem>
+                    <Divider sx={{ my: 1 }} />
+                    </>
+              )}
+              </>
+            )}            
             <ListItem button component={Link} to="/profile" onClick={() => setDrawerOpen(false)}>
               <ListItemIcon>
                 <AiOutlineProfile size={22} />
@@ -218,7 +306,7 @@ const NavBar = ({
       </List>
     </Box>
   );
-
+  
   return (
     <Slide in direction="down">
       <AppBar
@@ -280,44 +368,65 @@ const NavBar = ({
           {!isMobile && (
             <Box sx={{ flex: 2, display: "flex", justifyContent: "center" }}>
               <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
-                <Paper
-                  elevation={2}
-                  sx={{
-                    p: 1,
-                    bgcolor: "#fff",
-                    borderRadius: 4,
-                    boxShadow: "0 2px 12px 0 rgba(0,0,0,0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    width: "100%",
-                  }}
-                  className="shadow-md"
-                >
-                  <TextField
-                    fullWidth
-                    variant="standard"
-                    placeholder={placeholder}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      disableUnderline: true,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <IconButton edge="start" type="submit">
-                            <SearchIcon sx={{ color: "secondary.main" }} />
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      bgcolor: "#f3f4f6",
-                      borderRadius: 2,
-                      px: 1,
-                      "& input": { color: "#222", fontWeight: 500 },
-                    }}
-                    className="transition-all"
-                  />
-                </Paper>
+                <Autosuggest
+  suggestions={suggestions}
+  onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+  onSuggestionsClearRequested={onSuggestionsClearRequested}
+  onSuggestionSelected={handleSuggestionSelected}
+  getSuggestionValue={getSuggestionValue}
+  renderSuggestion={renderSuggestion}
+  inputProps={inputProps}
+  theme={{
+    container: {
+      position: "relative",
+      width: "100%",
+    },
+    input: {
+      width: "100%",
+      padding: "12px 20px",
+      fontSize: "16px",
+      borderRadius: "10px",
+      border: "2px solid #d1d5db",
+      backgroundColor: "#ffffff",
+      transition: "border 0.3s, box-shadow 0.3s",
+      outline: "none",
+    },
+    suggestionsContainer: {
+      position: "absolute",
+      top: "100%",
+      left: 0,
+      right: 0,
+      zIndex: 20,
+      backgroundColor: "#ffffff",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+      borderRadius: "12px",
+      marginTop: "8px",
+      overflow: "hidden",
+      maxHeight: "360px",
+      overflowY: "auto",
+      transition: "all 0.3s ease-in-out",
+    },
+    suggestionsList: {
+      listStyle: "none",
+      margin: 0,
+      padding: 0,
+    },
+    suggestion: {
+      padding: "14px 20px",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      transition: "background 0.3s ease-in-out",
+      fontSize: "15px",
+      borderBottom: "1px solid #f3f4f6",
+    },
+    suggestionHighlighted: {
+      backgroundColor: "#f0f9ff",
+    },
+  }}
+  className="transition-all"
+/>
+
               </form>
             </Box>
           )}
@@ -431,9 +540,9 @@ const NavBar = ({
                       horizontal: "right",
                     }}
                   >
-                    {userInfo.isAdmin && (
+                    {userInfo.role==="vendor" ? (
                       <>
-                        <MenuItem component={Link} to="/vendor/dashboard" onClick={handleMenuClose}>
+                        <MenuItem component={Link} to="/" onClick={handleMenuClose}>
                           <AiOutlineDashboard size={28} style={{ marginRight: 4 }} />
                           Dashboard
                         </MenuItem>
@@ -453,10 +562,15 @@ const NavBar = ({
                           <FaList size={28} style={{ marginRight: 4 }} />
                           Orders
                         </MenuItem>
-                        <MenuItem component={Link} to="/vendor/userlist" onClick={handleMenuClose}>
+                      </>
+                    ):(
+                      <>
+                      {userInfo.role === "admin"  && (
+                          <MenuItem component={Link} to="/admin/userlist" onClick={handleMenuClose}>
                           <FaUsers size={28} style={{ marginRight: 4 }} />
                           Users
                         </MenuItem>
+                        )}
                         <Divider />
                       </>
                     )}

@@ -1,7 +1,7 @@
 import { apiSlice } from "./apiSlice";
 import { BRAND_URL } from "../constants";
 
-// Assumes BRAND_URL = "/api/brands" or similar
+
 
 const brandApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({

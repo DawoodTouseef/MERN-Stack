@@ -88,11 +88,10 @@ const Navigation = () => {
 
       {userInfo  ? (
         <>
-        {console.log(userInfo)}
-        {userInfo.isAdmin ? (
+        {userInfo.role==="admin" ? (
           <>
         <Link
-          to="/admin/dashboard"
+          to="/"
           className="flex items-center transition-transform transform hover:translate-x-2"
         >
           <AiOutlineHome className="mr-2 mt-[3rem]" size={26} />
@@ -120,7 +119,7 @@ const Navigation = () => {
           <span className="hidden nav-item-name mt-[3rem]">USERS</span>{" "}
         </Link>
         <Link
-          to="/admin/allproductslist"
+          to="/vendor/allproductslist"
           className="flex items-center transition-transform transform hover:translate-x-2"
         >
           <AiOutlineShopping className="mr-2 mt-[3rem]" size={26} />
@@ -215,14 +214,14 @@ const Navigation = () => {
         {dropdownOpen && userInfo && (
           <ul
             className={`absolute right-0 mt-2 mr-14 space-y-2 bg-white text-gray-600 ${
-              !userInfo.isAdmin ? "-top-20" : "-top-80"
+              !userInfo.role==="admin" ? "-top-20" : "-top-80"
             } `}
           >
-            {userInfo.isAdmin && (
+            {userInfo.role==="admin" && (
               <>
                 <li>
                   <Link
-                    to="/admin/dashboard"
+                    to="/"
                     className="block px-4 py-2 hover:bg-gray-100"
                   >
                     Dashboard
@@ -230,7 +229,7 @@ const Navigation = () => {
                 </li>
                 <li>
                   <Link
-                    to="/admin/productlist"
+                    to="/vendor/productlist"
                     className="block px-4 py-2 hover:bg-gray-100"
                   >
                     Products

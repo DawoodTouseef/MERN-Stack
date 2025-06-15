@@ -1,245 +1,230 @@
 import { Link, useParams } from "react-router-dom";
 import { useGetProductsQuery } from "../redux/api/productApiSlice";
-import Loader from "../components/Loader";
-import Message from "../components/Message";
-import Header from "../components/Header";
-import Product from "./Products/Product";
+import { useFetchCategoriesQuery } from "../redux/api/categoryApiSlice";
 import { useSelector } from "react-redux";
-import AdminDashboard from "./Vendor/vendorDashboard";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Button,
-  Grow,
-  Slide,
   Container,
   Grid,
-  Paper,
   Divider,
+
 } from "@mui/material";
-import { useEffect, useState } from "react";
-import { AiOutlineShoppingCart } from "react-icons/ai";
-import { useFetchCategoriesQuery } from "../redux/api/categoryApiSlice";
+import { motion } from "framer-motion";
+import Loader from "../components/Loader";
+import Message from "../components/Message";
+import FeaturedCategories from "../components/FeaturedCategories";
+import BannerCarousel from "../components/BannerCarousel";
+import Product from "./Products/Product";
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import VendorDashboard from "./Vendor/vendorDashboard";
 import DocumentTitle from "react-document-title";
+import { useFetchBannersQuery} from "../redux/api/bannerApiSlice";
+import {useFetchOffersQuery} from "../redux/api/offerApiSlice";
+
+const fadeIn = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+};
 
 const Home = () => {
   const { keyword } = useParams();
   const { data, isLoading, isError, error } = useGetProductsQuery({ keyword });
-  
-  const { userInfo } = useSelector((state) => state.auth);
   const { data: categories } = useFetchCategoriesQuery();
+  
+  const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
+  const { userInfo } = useSelector((state) => state.auth);
   const [showProducts, setShowProducts] = useState(false);
-
+  const { data: banners, isLoading:bannerLoading, isError:BannnerIserror, error:BannerError } = useFetchBannersQuery();
+  const [filteredProducts, setFilteredProducts] = useState([]);
   useEffect(() => {
     if (!isLoading && data?.products?.length) {
       setShowProducts(true);
     }
-  }, [isLoading, data]);
+         if (offers) {
+        const productsWithOffers = offers
+    .filter((offer) => offer.offerType === "flash")
+    
+        setFilteredProducts(productsWithOffers);
+        
+      }
+ 
+  }, [isLoading, data,offers]);
+  if (userInfo?.role === "admin") return <AdminDashboard />;
+  if (userInfo?.role === "vendor") return <VendorDashboard />;
 
-  if (userInfo && userInfo.isAdmin) {
-    return <AdminDashboard />;
-  }
-  
   return (
-    <>
-      <DocumentTitle title="Home | Special Products" />
-      <Box
-        sx={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-          pb: 6,
-        }}
-      >
-        {!keyword && <Header />}
-        <Container maxWidth="xl" sx={{ pt: 6 }}>
-          {isLoading ? (
-            <Loader />
-          ) : isError ? (
-            <Message variant="danger">
-              {error?.data?.message || error?.error || "An error occurred"}
-            </Message>
-          ) : (
-            <>
-              <Slide direction="down" in timeout={700}>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{
-                    mt: 6,
-                    mb: 4,
-                    px: { xs: 1, md: 6 },
-                  }}
+    <DocumentTitle title="Home | Nexus Mart">
+      <Box sx={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
+      {banners && (
+        <BannerCarousel />
+      )}
+
+      <Container maxWidth="xl">
+        {isLoading ? (
+          <Loader />
+        ) : isError ? (
+          <Message variant="danger">
+            {error?.data?.message || error?.error || "An error occurred"}
+          </Message>
+        ) : (
+          <>
+            {/* Flash Sale Section */}
+            {filteredProducts.length!==0 &&(
+            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+              <Box
+                sx={{
+                  background: "linear-gradient(90deg, #ff8a00, #e52e71)",
+                  color: "white",
+                  borderRadius: 3,
+                  px: 4,
+                  py: 3,
+                  my: 5,
+                  textAlign: "center",
+                  boxShadow: 2,
+                }}
+              >
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  ⏰ Flash Sale – Limited Time Only!
+                </Typography>
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  Grab the best deals before they're gone!
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{ mt: 2 }}
+                  component={Link}
+                  to="/flash-sale"
                 >
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 900,
-                      letterSpacing: 1,
-                      color: "primary.main",
-                      textShadow: "2px 2px 8px #e1bee7",
-                    }}
-                  >
-                    Special Products
-                  </Typography>
-                  <Button
-                    component={Link}
-                    to="/shop"
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    sx={{
-                      fontWeight: "bold",
-                      borderRadius: "999px",
-                      py: 1.5,
-                      px: 5,
-                      boxShadow: 4,
-                      fontSize: "1.2rem",
-                      transition: "transform 0.2s",
-                      "&:hover": {
-                        transform: "scale(1.07)",
-                        boxShadow: 8,
-                      },
-                    }}
-                  >
-                    <AiOutlineShoppingCart size={28} style={{ marginRight: 4 }} />
-                    Shop
-                  </Button>
-                </Box>
-              </Slide>
+                  Shop Now
+                </Button>
+              </Box>
+            </motion.div>
+            )}
+            {/* Category Filter Chips */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, my: 4 }}>
+              {categories?.slice(0, 6).map((cat) => (
+                <Button
+                  key={cat._id}
+                  size="small"
+                  variant="outlined"
+                  component={Link}
+                  to={`/shop/${cat._id}`}
+                >
+                  {cat.name} 
+                </Button>
+              ))}
+            </Box>
 
-              <Grid container spacing={3} justifyContent="center">
-                {data?.products?.map((product, idx) => (
-                  <>
-                  <Grow
-                    in={showProducts}
-                    timeout={500 + idx * 120}
-                    key={product._id}
-                  >
-                    <Grid item xs={12} sm={6} md={4} lg={3}>
-                      <Paper
-                        elevation={6}
-                        sx={{
-                          p: 2,
-                          borderRadius: 4,
-                          bgcolor: "#fff",
-                          transition: "transform 0.2s, box-shadow 0.2s",
-                          "&:hover": {
-                            transform: "translateY(-8px) scale(1.03)",
-                            boxShadow: 10,
-                          },
-                        }}
-                      >
+            {/* Featured Categories */}
+            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+              <FeaturedCategories categories={categories} />
+            </motion.div>
+
+            {/* Top Deals Section */}
+            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+              <Box sx={{ mt: 6, mb: 5 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: "bold", mb: 2, textAlign: "center", color: "primary.main" }}
+                >
+                  Today's Top Deals
+                </Typography>
+                <Grid container spacing={3}>
+                  {data?.products?.slice(0, 8).map((product) => (
+                    <Grid item xs={12} sm={6} md={3} key={product._id}>
+                      <motion.div whileHover={{ scale: 1.03 }}>
                         <Product product={product} />
-                      </Paper>
+                      </motion.div>
                     </Grid>
-                  </Grow>
-                  </>
-                ))}
-              </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </motion.div>
 
-              {categories?.length > 0 && (
-                <>
-                  <Divider sx={{ my: 6, bgcolor: "#bbb" }} />
-                  {categories.map((category) => (
-                    <Box key={category._id} sx={{ mb: 8 }}>
-                      <Slide direction="down" in timeout={700}>
+            {/* Trending Now Section */}
+            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+              <Box sx={{ mt: 6, mb: 5 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: "bold", mb: 2, textAlign: "center", color: "#ff5722" }}
+                >
+                  🔥 Trending Now
+                </Typography>
+                <Grid container spacing={3}>
+                  {data?.products?.slice(8, 12).map((product) => (
+                    <Grid item xs={12} sm={6} md={3} key={product._id}>
+                      <motion.div whileHover={{ scale: 1.03 }}>
+                        <Product product={product} />
+                      </motion.div>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </motion.div>
+
+            {/* Category-wise Products */}
+            {categories?.length > 0 && (
+              <>
+                <Divider sx={{ my: 6 }} />
+                {categories.map((category, index) => {
+                  const filteredProducts = data?.products?.filter(
+                    (product) => product.category._id === category._id
+                  );
+                  if (!filteredProducts?.length) return null;
+
+                  return (
+                    <motion.div
+                      key={category._id}
+                      variants={fadeIn}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: index * 0.2 }}
+                    >
+                      <Box sx={{ mb: 6 }}>
                         <Box
                           display="flex"
                           justifyContent="space-between"
                           alignItems="center"
-                          sx={{
-                            mt: 8,
-                            mb: 3,
-                            px: { xs: 1, md: 6 },
-                          }}
+                          sx={{ mb: 2 }}
                         >
-                          {data?.products?.filter(
-                            (product) => product.category._id === category._id
-                          ).length === 0 ? (
-                            <>
-                            </>
-                          ):(
-                            <>
-                            <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 800,
-                              letterSpacing: 1,
-                              color: "secondary.main",
-                              textShadow: "2px 2px 8px #e1bee7",
-                            }}
-                          >
+                          <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
                             {category.name}
                           </Typography>
                           <Button
                             component={Link}
                             to={`/shop/${category._id}`}
-                            variant="contained"
-                            color="primary"
-                            size="large"
-                            sx={{
-                              fontWeight: "bold",
-                              borderRadius: "999px",
-                              py: 1.2,
-                              px: 4,
-                              boxShadow: 4,
-                              fontSize: "1.1rem",
-                              transition: "transform 0.2s",
-                              "&:hover": {
-                                transform: "scale(1.07)",
-                                boxShadow: 8,
-                              },
-                            }}
+                            variant="outlined"
+                            size="small"
                           >
-                            <AiOutlineShoppingCart size={24} style={{ marginRight: 4 }} />
-                            Shop
+                            View All
                           </Button>
-                            </>
-                          )}
                         </Box>
-                      </Slide>
-                        {data?.products
-                          ?.filter((product) => product.category._id === category._id)
-                          .map((product, idx) => (
-                            <>
-                            <Grid container spacing={3} justifyContent="center" key={product._id}>
-                            <Grow
-                              in={showProducts}
-                              timeout={500 + idx * 120}
-                              key={product._id}
-                            >
-                              <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
-                                <Paper
-                                  elevation={5}
-                                  sx={{
-                                    p: 2,
-                                    borderRadius: 4,
-                                    bgcolor: "#fff",
-                                    transition: "transform 0.2s, box-shadow 0.2s",
-                                    "&:hover": {
-                                      transform: "translateY(-8px) scale(1.03)",
-                                      boxShadow: 10,
-                                    },
-                                  }}
-                                >
-                                  <Product product={product} />
-                                </Paper>
-                              </Grid>
-                            </Grow>
+                        <Grid container spacing={2}>
+                          {filteredProducts.slice(0, 4).map((product) => (
+                            <Grid item xs={12} sm={6} md={3} key={product._id}>
+                              <motion.div whileHover={{ scale: 1.03 }}>
+                                <Product product={product} />
+                              </motion.div>
                             </Grid>
-                            </>
                           ))}
-                      
-                    </Box>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </Container>
-      </Box>
-    </>
+                        </Grid>
+                      </Box>
+                    </motion.div>
+                  );
+                })}
+              </>
+            )}
+
+            
+          </>
+        )}
+      </Container>
+    </Box>
+    </DocumentTitle>
   );
 };
 

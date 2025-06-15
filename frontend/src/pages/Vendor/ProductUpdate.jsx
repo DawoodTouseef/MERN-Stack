@@ -1,30 +1,48 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate ,useParams} from "react-router-dom";
 import {
+  useUploadProductImageMutation,
+  useDeleteProductImageMutation,
+  useGetProductByIdQuery,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useGetProductByIdQuery,
-  useUploadProductImageMutation,
 } from "../../redux/api/productApiSlice";
 import { useFetchCategoriesQuery } from "../../redux/api/categoryApiSlice";
+import { useGetBrandsQuery } from "../../redux/api/brandApiSlice";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 import {
   Box,
   Paper,
   Typography,
   Button,
-  Grid,
   TextField,
   MenuItem,
-  InputAdornment,
-  CircularProgress,
+  Select,
+  InputLabel,
+  FormControl,
+  IconButton,
+  Stack,
+  OutlinedInput,
+  Chip,
+  Divider,
 } from "@mui/material";
-import { PhotoCamera, Delete, Save } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import EditIcon from "@mui/icons-material/Edit";
 
-const AdminProductUpdate = () => {
-  const params = useParams();
-  const { data: productData, isLoading } = useGetProductByIdQuery(params._id);
-  const [image, setImage] = useState("");
+const ProductList = () => {
+  const param = useParams()
+  const { data: brands = [] } = useGetBrandsQuery();
+  const { data: categories = [] } = useFetchCategoriesQuery();
+  const {data:Product} = useGetProductByIdQuery(param._id);
+  const [uploadProductImage] = useUploadProductImageMutation();
+  const [deleteProductImage] = useDeleteProductImageMutation();
+  const [Updatemutiation] = useUpdateProductMutation();
+  const [images, setImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -32,40 +50,199 @@ const AdminProductUpdate = () => {
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
   const [stock, setStock] = useState("");
-  const navigate = useNavigate();
-  const { data: categories = [] } = useFetchCategoriesQuery();
-  const [uploadProductImage] = useUploadProductImageMutation();
-  const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
-  const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
+  const [tags, setTags] = useState([]);
+  const [variants, setVariants] = useState([]);
+  const [variantForm, setVariantForm] = useState({
+    sku: "",
+    color: "",
+    size: "",
+    storage: "",
+    price: "",
+    countInStock: "",
+    images: [],
+  });
+  const [warrantyPeriod, setWarrantyPeriod] = useState("");
+  const [returnPolicy, setReturnPolicy] = useState("");
+  const [specifications, setSpecifications] = useState({});
+  const [specKey, setSpecKey] = useState("");
+  const [specValue, setSpecValue] = useState("");
+  const [editVariantIndex, setEditVariantIndex] = useState(null);
+  const [editSpecKey, setEditSpecKey] = useState(null);
 
+  const navigate = useNavigate();
   useEffect(() => {
-    if (productData && productData._id) {
-      setName(productData.name || "");
-      setDescription(productData.description || "");
-      setPrice(productData.price || "");
-      setCategory(productData.category?._id || "");
-      setQuantity(productData.quantity || "");
-      setBrand(productData.brand || "");
-      setImage(productData.image || "");
-      setStock(productData.countInStock || "");
+    if (Product) {
+      setName(Product?.name || "");
+      setBrand(Product?.brand?._id || "")
+      setDescription(Product?.description || "");
+      setCategory(Product?.category?._id || "");
+      setStock(Product?.countInStock || "");
+      setQuantity(Product?.quantity || "");
+      setPrice(Product?.price || "");
+      setImages(Product?.media || []);
+      setImages(Product?.media.map((image)=>image.url) || []);
+      setTags(Product?.tags || []);
+      setVariants(Product?.variant || []);
+      setWarrantyPeriod(Product?.warrantyPeriod || "");
+      setReturnPolicy(Product?.returnPolicy || '');
+      setSpecifications(Product?.specifications || "");
     }
-  }, [productData]);
+  }, [Product]);
 
   const uploadFileHandler = async (e) => {
+    const files = e.target.files;
+    if (files.length + images.length > 5) {
+      toast.error("You can upload a maximum of 5 images.");
+      return;
+    }
     const formData = new FormData();
-    formData.append("image", e.target.files[0]);
+    for (let i = 0; i < files.length; i++) {
+      formData.append("image", files[i]);
+    }
     try {
       const res = await uploadProductImage(formData).unwrap();
-      toast.success("Image uploaded successfully", {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 2000,
-      });
-      setImage(res.image);
+      toast.success(res.message);
+      setImages([...images, ...res.images]);
+      setImageFiles([...imageFiles, ...files]);
+    } catch (error) {
+      toast.error(error?.data?.message || error.error);
+    }
+  };
+
+  const deleteImageHandler = async (imagePath) => {
+    try {
+      await deleteProductImage({ imagePath });
+      setImages(images.filter((img) => img !== imagePath));
+      setImageFiles(imageFiles.filter((_, i) => images[i] !== imagePath));
+      toast.success("Image deleted successfully");
     } catch (err) {
-      toast.error("Image upload failed", {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 2000,
+      toast.error("Failed to delete image");
+    }
+  };
+
+  const moveImage = (index, direction) => {
+    const newImages = [...images];
+    const newFiles = [...imageFiles];
+    const targetIndex = index + direction;
+    if (targetIndex >= 0 && targetIndex < newImages.length) {
+      [newImages[index], newImages[targetIndex]] = [
+        newImages[targetIndex],
+        newImages[index],
+      ];
+      [newFiles[index], newFiles[targetIndex]] = [
+        newFiles[targetIndex],
+        newFiles[index],
+      ];
+      setImages(newImages);
+      setImageFiles(newFiles);
+    }
+  };
+
+  const handleAddTag = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const tag = e.target.value.trim();
+      if (tag && !tags.includes(tag)) {
+        setTags((prev) => [...prev, tag]);
+      }
+      e.target.value = "";
+    }
+  };
+
+
+  const handleRemoveItem = (item) => {
+     setTags((prev) => prev.filter((t) => t !== item));
+     
+  };
+
+  const handleAddOrUpdateVariant = () => {
+    if (
+      !variantForm.sku &&
+      !variantForm.color &&
+      !variantForm.size &&
+      !variantForm.storage &&
+      !variantForm.price &&
+      !variantForm.countInStock
+    ) {
+      toast.error("Please fill at least one field for the variant.");
+      return;
+    }
+    if (editVariantIndex !== null) {
+      const updated = [...variants];
+      updated[editVariantIndex] = { ...variantForm };
+      setVariants(updated);
+      setEditVariantIndex(null);
+    } else {
+      setVariants([...variants, { ...variantForm }]);
+    }
+    setVariantForm({
+      sku: "",
+      color: "",
+      size: "",
+      storage: "",
+      price: "",
+      countInStock: "",
+      images: [],
+    });
+  };
+
+  const handleEditVariant = (index) => {
+    setVariantForm({ ...variants[index] });
+    setEditVariantIndex(index);
+  };
+
+  const handleDeleteVariant = (index) => {
+    setVariants(variants.filter((_, i) => i !== index));
+    if (editVariantIndex === index) {
+      setEditVariantIndex(null);
+      setVariantForm({
+        sku: "",
+        color: "",
+        size: "",
+        storage: "",
+        price: "",
+        countInStock: "",
+        images: [],
       });
+    }
+  };
+
+  const handleAddOrUpdateSpecification = () => {
+    if (!specKey || !specValue) {
+      toast.error("Please enter both key and value for the specification.");
+      return;
+    }
+    if (editSpecKey !== null) {
+      setSpecifications((prev) => {
+        const updated = { ...prev };
+        delete updated[editSpecKey];
+        updated[specKey] = specValue;
+        return updated;
+      });
+      setEditSpecKey(null);
+    } else {
+      setSpecifications((prev) => ({ ...prev, [specKey]: specValue }));
+    }
+    setSpecKey("");
+    setSpecValue("");
+  };
+
+  const handleEditSpecification = (key) => {
+    setSpecKey(key);
+    setSpecValue(specifications[key]);
+    setEditSpecKey(key);
+  };
+
+  const handleDeleteSpecification = (key) => {
+    setSpecifications((prev) => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+    if (editSpecKey === key) {
+      setEditSpecKey(null);
+      setSpecKey("");
+      setSpecValue("");
     }
   };
 
@@ -73,293 +250,359 @@ const AdminProductUpdate = () => {
     e.preventDefault();
     try {
       const formData = new FormData();
-      formData.append("image", image);
       formData.append("name", name);
       formData.append("description", description);
-      formData.append("price", price);
-      formData.append("category", category);
-      formData.append("quantity", quantity);
       formData.append("brand", brand);
-      formData.append("countInStock", stock);
-
-      const data = await updateProduct({ productId: params._id, formData });
-      if (data?.error) {
-        toast.error(data.error, {
-          position: toast.POSITION.TOP_RIGHT,
-          autoClose: 2000,
-        });
-      } else {
-        toast.success(`Product successfully updated`, {
-          position: toast.POSITION.TOP_RIGHT,
-          autoClose: 2000,
-        });
-        navigate("/admin/allproductslist");
-      }
-    } catch (err) {
-      toast.error("Product update failed. Try again.", {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 2000,
+      formData.append("category", category);
+      formData.append("price", Number(price));
+      formData.append("quantity", Number(quantity));
+      tags.forEach((tag,i) => formData.append(`tags[${i}]`, tag));
+      formData.append("warrantyPeriod", warrantyPeriod);
+      formData.append("returnPolicy", returnPolicy);
+      Object.entries(specifications || {}).forEach(([key, value]) => {
+        formData.append(`specifications[${key}]`, value);
       });
+      variants.forEach((variant, i) => {
+        Object.entries(variant).forEach(([key, value]) => {
+          if (key === "images") {
+            value.forEach((img, j) => {
+              formData.append(`variants[${i}][images][${j}]`, img);
+            });
+          } else {
+            formData.append(
+              `variants[${i}][${key}]`,
+              key === "price" || key === "countInStock" ? Number(value) : value
+            );
+          }
+        });
+      });
+      images.forEach((url, i) => {
+        formData.append(`media[${i}][type]`, "image");
+        formData.append(`media[${i}][url]`, url);
+      });
+      formData.append("countInStock", Number(stock));
+      
+      //console.log([...formData.entries()])
+      await Updatemutiation({productId:param._id,formData:formData}).unwrap();
+      toast.success(`${name} is created`);
+      navigate("/vendor/allproductslist");
+    } catch (error) {
+      console.log(error)
+      toast.error("Product create failed. Try Again.");
     }
   };
-
-  const handleDelete = async () => {
-    try {
-      let answer = window.confirm(
-        "Are you sure you want to delete this product?"
-      );
-      if (!answer) return;
-      const { data } = await deleteProduct(params._id);
-      toast.success(`"${data.name}" is deleted`, {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 2000,
-      });
-      navigate("/admin/allproductslist");
-    } catch (err) {
-      toast.error("Delete failed. Try again.", {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 2000,
-      });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
-        <CircularProgress color="secondary" />
-      </Box>
-    );
-  }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-        py: 6,
-        px: { xs: 1, md: 8 },
-      }}
-      className="min-h-screen"
-    >
-      <Grid container spacing={4} justifyContent="center">
-        <Grid item xs={12} md={3}>
-        </Grid>
-        <Grid item xs={12} md={9}>
-          <Paper
-            elevation={6}
-            sx={{
-              p: { xs: 2, md: 5 },
-              borderRadius: 4,
-              bgcolor: "#fff",
-              boxShadow: "0 8px 32px 0 rgba(236,72,153,0.10)",
-              maxWidth: 700,
-              mx: "auto",
-            }}
-            className="shadow-xl"
-          >
-            <Typography
-              variant="h4"
-              fontWeight={800}
-              color="primary.main"
-              sx={{
-                mb: 3,
-                letterSpacing: 1,
-                textAlign: "center",
-                textShadow: "2px 2px 8px #f3e7e9",
-              }}
-            >
-              Update / Delete Product
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                mb: 3,
-              }}
-            >
-              {image && (
+    <Box sx={{ maxWidth: "100vw", px: { xs: 1, md: 4 }, py: 2 }}>
+      <Paper
+        elevation={3}
+        sx={{ bgcolor: "#151515", color: "#fff", p: 3, mt: 2, mb: 2, borderRadius: 3 }}
+      >
+        <Typography variant="h5" sx={{ mb: 3 }}>
+         Update Product
+        </Typography>
+        {images.length > 0 && (
+          <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: "wrap" }}>
+            {images.map((url, index) => (
+              <Box key={index} sx={{ position: "relative" }}>
                 <img
-                  src={image}
-                  alt="product"
-                  style={{
-                    maxWidth: "320px",
-                    maxHeight: "220px",
-                    borderRadius: "1rem",
-                    marginBottom: "1rem",
-                    boxShadow: "0 2px 16px 0 rgba(236,72,153,0.10)",
-                  }}
-                  className="shadow-lg"
+                  src={url}
+                  alt={`img-${index}`}
+                  style={{ height: 100, borderRadius: 8 }}
                 />
-              )}
-              <Button
-                variant="contained"
-                component="label"
-                color="secondary"
-                startIcon={<PhotoCamera />}
-                sx={{
-                  mb: 2,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  bgcolor: "#ec4899",
-                  "&:hover": { bgcolor: "#be185d" },
-                }}
-                className="hover:bg-pink-700"
-              >
-                Upload Image
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  hidden
-                  onChange={uploadFileHandler}
-                />
-              </Button>
-            </Box>
-            <form onSubmit={handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Name"
-                    fullWidth
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Price"
-                    type="number"
-                    fullWidth
-                    required
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">$</InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Quantity"
-                    type="number"
-                    fullWidth
-                    required
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Brand"
-                    fullWidth
-                    required
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Description"
-                    fullWidth
-                    required
-                    multiline
-                    minRows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Count In Stock"
-                    type="number"
-                    fullWidth
-                    required
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    select
-                    label="Category"
-                    fullWidth
-                    required
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    sx={{ mb: 2 }}
-                  >
-                    {categories?.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>
-                        {c.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-              </Grid>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 4 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="success"
-                  size="large"
-                  startIcon={<Save />}
-                  disabled={updating}
-                  sx={{
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    px: 4,
-                    boxShadow: 2,
-                    letterSpacing: 1,
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "scale(1.04)",
-                      boxShadow: 6,
-                    },
-                  }}
-                  className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                >
-                  {updating ? "Updating..." : "Update"}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="large"
-                  startIcon={<Delete />}
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  sx={{
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    px: 4,
-                    boxShadow: 2,
-                    letterSpacing: 1,
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "scale(1.04)",
-                      boxShadow: 6,
-                    },
-                  }}
-                  className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                >
-                  {deleting ? "Deleting..." : "Delete"}
-                </Button>
+                <Stack direction="row" spacing={0} sx={{ mt: 1 }}>
+                  <IconButton size="small" onClick={() => moveImage(index, -1)}>
+                    <ArrowUpwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => moveImage(index, 1)}>
+                    <ArrowDownwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => deleteImageHandler(url)}>
+                    <DeleteIcon fontSize="small" sx={{ color: "red" }} />
+                  </IconButton>
+                </Stack>
               </Box>
-            </form>
-          </Paper>
-        </Grid>
-      </Grid>
+            ))}
+          </Stack>
+        )}
+        <Button
+          variant="outlined"
+          component="label"
+          fullWidth
+          sx={{
+            color: "#fff",
+            borderColor: "#fff",
+            bgcolor: "#222",
+            mb: 3,
+            py: 3,
+            fontWeight: "bold",
+            borderRadius: 2,
+          }}
+          startIcon={<AddPhotoAlternateIcon />}
+        >
+          Upload Images
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            multiple
+            onChange={uploadFileHandler}
+          />
+        </Button>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
+          <TextField
+            label="Name *"
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Price *"
+            type="number"
+            fullWidth
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Quantity *"
+            type="number"
+            fullWidth
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Description *"
+            multiline
+            fullWidth
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Count In Stock *"
+            type="number"
+            fullWidth
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#fff" }}>Brand *</InputLabel>
+            <Select
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              sx={{ color: "#fff" }}
+              label="Brand *"
+            >
+              {brands.map((b) => (
+                <MenuItem key={b._id} value={b._id}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#fff" }}>Category *</InputLabel>
+            <Select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              sx={{ color: "#fff" }}
+              label="Category *"
+            >
+              {categories.map((c) => (
+                <MenuItem key={c._id} value={c._id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Add Tags (Enter to Add) *"
+            fullWidth
+            onKeyDown={handleAddTag}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
+            {tags.map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                onDelete={() => handleRemoveItem(tag)}
+                sx={{ bgcolor: "#222", color: "#fff" }}
+              />
+            ))}
+          </Stack>
+          <Divider sx={{ my: 2, bgcolor: "#fff" }} />
+          <Typography variant="h6">Add Variant</Typography>
+          <Stack direction="row" spacing={2} flexWrap="wrap">
+            {["sku", "color", "size", "storage", "price", "countInStock"].map(
+              (field) => (
+                <TextField
+                  key={field}
+                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  value={variantForm[field]}
+                  onChange={(e) =>
+                    setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
+                  }
+                  sx={{ input: { color: "#fff" }, label: { color: "#fff" }, width: "150px" }}
+                />
+              )
+            )}
+            <Button
+              onClick={handleAddOrUpdateVariant}
+              variant="outlined"
+              sx={{ color: "#fff", borderColor: "#fff" }}
+            >
+              {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
+            </Button>
+            {editVariantIndex !== null && (
+              <Button
+                onClick={() => {
+                  setEditVariantIndex(null);
+                  setVariantForm({
+                    sku: "",
+                    color: "",
+                    size: "",
+                    storage: "",
+                    price: "",
+                    countInStock: "",
+                    images: [],
+                  });
+                }}
+                variant="outlined"
+                color="secondary"
+                sx={{ color: "#fff", borderColor: "#fff" }}
+              >
+                Cancel
+              </Button>
+            )}
+          </Stack>
+          <Stack spacing={1}>
+            {variants.map((v, i) => (
+              <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography sx={{ color: "#ccc" }}>{JSON.stringify(v)}</Typography>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => handleEditVariant(i)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteVariant(i)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+          </Stack>
+          <TextField
+            label="Warranty Period"
+            fullWidth
+            value={warrantyPeriod}
+            onChange={(e) => setWarrantyPeriod(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Return Policy"
+            fullWidth
+            value={returnPolicy}
+            onChange={(e) => setReturnPolicy(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Specifications
+          </Typography>
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Key"
+              value={specKey}
+              onChange={(e) => setSpecKey(e.target.value)}
+              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            />
+            <TextField
+              label="Value"
+              value={specValue}
+              onChange={(e) => setSpecValue(e.target.value)}
+              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            />
+            <Button
+              onClick={handleAddOrUpdateSpecification}
+              variant="outlined"
+              sx={{ color: "#fff", borderColor: "#fff" }}
+            >
+              {editSpecKey !== null ? "Update" : "Add"}
+            </Button>
+            {editSpecKey !== null && (
+              <Button
+                onClick={() => {
+                  setEditSpecKey(null);
+                  setSpecKey("");
+                  setSpecValue("");
+                }}
+                variant="outlined"
+                color="secondary"
+                sx={{ color: "#fff", borderColor: "#fff" }}
+              >
+                Cancel
+              </Button>
+            )}
+          </Stack>
+          <Stack>
+            {Object.entries(specifications).map(([k, v]) => (
+              <Box key={k} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography sx={{ color: "#ccc" }}>
+                  {k}: {v}
+                </Typography>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => handleEditSpecification(k)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteSpecification(k)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+          </Stack>
+          <Stack direction="row" spacing={2} flexWrap="wrap" sx={{justifyContent:"center"}}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
+          >
+            Update Product
+          </Button>
+          <Divider></Divider>
+          <Button
+            type="submit"
+            variant="contained"
+            color="error"
+            sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
+          >
+            Delete Product
+          </Button>
+          </Stack>
+        </Box>
+      </Paper>
     </Box>
   );
 };
 
-export default AdminProductUpdate;
+export default ProductList;

@@ -13,12 +13,30 @@ import {
   Chip,
 } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
-import { useSelector } from "react-redux";
 
 const AllProducts = () => {
-  const { data: products = [], isLoading, isError } = useAllProductsQuery();
+  const { data: products = [], isLoading, isError, refetch } = useAllProductsQuery();
+  const [refreshFlag, setRefreshFlag] = useState(false);
 
-  
+  // Listen for product add/update/delete events in localStorage
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "productChanged") {
+        setRefreshFlag((f) => !f);
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
+
+  // Optionally, trigger refetch on focus (for single tab)
+  useEffect(() => {
+    const onFocus = () => refetch();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refetch]);
+
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
@@ -64,7 +82,7 @@ const AllProducts = () => {
         </Box>
         <Button
           component={Link}
-          to="/admin/productlist"
+          to="/vendor/productlist"
           variant="contained"
           color="secondary"
           startIcon={<IoAdd />}
@@ -116,7 +134,7 @@ const AllProducts = () => {
               >
                 <Avatar
                   variant="rounded"
-                  src={product.image}
+                  src={product.media[0]?.url}
                   alt={product.name}
                   sx={{
                     width: 120,
@@ -158,7 +176,7 @@ const AllProducts = () => {
                   >
                     <Button
                       component={Link}
-                      to={`/admin/product/update/${product._id}`}
+                      to={`/vendor/product/update/${product._id}`}
                       variant="contained"
                       color="primary"
                       sx={{
@@ -171,6 +189,10 @@ const AllProducts = () => {
                           bgcolor: "secondary.main",
                           color: "#fff",
                         },
+                      }}
+                      // Add a callback to set localStorage flag on update
+                      onClick={() => {
+                        localStorage.setItem("productChanged", Date.now().toString());
                       }}
                     >
                       Update Product

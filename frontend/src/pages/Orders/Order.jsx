@@ -15,8 +15,10 @@ import {
   Button,
   Box,
   CircularProgress,
+  Chip,
+  Divider,
 } from "@mui/material";
-import Messsage from "../../components/Message";
+import Message from "../../components/Message";
 import Loader from "../../components/Loader";
 import {
   useDeliverOrderMutation,
@@ -24,6 +26,8 @@ import {
   useGetPaypalClientIdQuery,
   usePayOrderMutation,
 } from "../../redux/api/orderApiSlice";
+import DocumentTitle from "react-document-title";
+
 
 const Order = () => {
   const { id: orderId } = useParams();
@@ -34,28 +38,42 @@ const Order = () => {
     isLoading,
     error,
   } = useGetOrderDetailsQuery(orderId);
-  
+
   const [payOrder, { isLoading: loadingPay }] = usePayOrderMutation();
-  const [deliverOrder, { isLoading: loadingDeliver }] =
-    useDeliverOrderMutation();
+  const [deliverOrder, { isLoading: loadingDeliver }] = useDeliverOrderMutation();
   const { userInfo } = useSelector((state) => state.auth);
-  
+
   const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
   const {
     data: paypal,
-    isLoading: loadingPaPal,
+    isLoading: loadingPayPal,
     error: errorPayPal,
   } = useGetPaypalClientIdQuery();
-
-
+  const currency = useSelector((state) => state.currency.selectedCurrency);
+  const price = useSelector((state) => state.currency.price);
+  const getCurrencySymbol = () => {
+          try {
+            const formatter = new Intl.NumberFormat('en', {
+              style: 'currency',
+              currency: currency,
+              currencyDisplay: 'symbol',
+            });
+      
+            const parts = formatter.formatToParts(1);
+            const symbol = parts.find(part => part.type === 'currency')?.value;
+            return symbol || currency;
+          } catch (err) {
+            return currency; // fallback if currency code is invalid
+          }
+        };
   useEffect(() => {
-    if (!errorPayPal && !loadingPaPal && paypal.clientId) {
-      const loadingPaPalScript = async () => {
+    if (!errorPayPal && !loadingPayPal && paypal.clientId) {
+      const loadPayPalScript = async () => {
         paypalDispatch({
           type: "resetOptions",
           value: {
             "client-id": paypal.clientId,
-            currency: "USD",
+            currency: currency,
           },
         });
         paypalDispatch({ type: "setLoadingStatus", value: "pending" });
@@ -63,16 +81,14 @@ const Order = () => {
 
       if (order && !order.isPaid) {
         if (!window.paypal) {
-          loadingPaPalScript();
+          loadPayPalScript();
         }
       }
     }
-  }, [errorPayPal, loadingPaPal, order, paypal, paypalDispatch]);
+  }, [errorPayPal, loadingPayPal, order, paypal, paypalDispatch]);
 
-  
-
-  function onApprove(data, actions) {
-    return actions.order.capture().then(async function (details) {
+  const onApprove = async (data, actions) => {
+    return actions.order.capture().then(async (details) => {
       try {
         await payOrder({ orderId, details });
         refetch();
@@ -81,9 +97,9 @@ const Order = () => {
         toast.error(error?.data?.message || error.message);
       }
     });
-  }
+  };
 
-  function createOrder(data, actions) {
+  const createOrder = (data, actions) => {
     return actions.order
       .create({
         purchase_units: [{ amount: { value: order.totalPrice } }],
@@ -91,31 +107,37 @@ const Order = () => {
       .then((orderID) => {
         return orderID;
       });
-  }
+  };
 
-  function onError(err) {
+  const onError = (err) => {
     toast.error(err.message);
-  }
+  };
 
   const deliverHandler = async () => {
     await deliverOrder(orderId);
     refetch();
   };
 
-
-
-  return isLoading ? (
+  return (
+    <>
+    <DocumentTitle title= "Orders | Nexus Mart">
+    {
+      isLoading ? (
     <Loader />
   ) : error ? (
-    <Messsage variant="danger">{error.data.message}</Messsage>
+    <Message variant="danger">{error.data.message}</Message>
   ) : (
     <Box display="flex" flexDirection={{ xs: "column", md: "row" }} p={4}>
+      {/* Order Items Section */}
       <Box flex={2} pr={4}>
-        <Paper elevation={3} sx={{ p: 2, mb: 4 }}>
+        <Paper elevation={3} sx={{ p: 2, mb: 4, borderRadius: 4 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#6366f1" }}>
+            Order Items
+          </Typography>
           {order.orderItems.length === 0 ? (
-            <Messsage>Order is empty</Messsage>
+            <Message>Order is empty</Message>
           ) : (
-            <TableContainer component={Paper}>
+            <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -131,17 +153,28 @@ const Order = () => {
                     <TableRow key={index}>
                       <TableCell>
                         <img
-                          src={item.image}
+                          src={item.media[0].url}
                           alt={item.name}
-                          style={{ width: "64px", height: "64px", objectFit: "cover" }}
+                          style={{
+                            width: "64px",
+                            height: "64px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1px solid #e3e3e3",
+                          }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Link to={`/product/${item.product}`}>{item.name}</Link>
+                        <Link
+                          to={`/product/${item.product}`}
+                          style={{ textDecoration: "none", color: "#6366f1" }}
+                        >
+                          {item.name}
+                        </Link>
                       </TableCell>
                       <TableCell align="center">{item.qty}</TableCell>
-                      <TableCell>${item.price}</TableCell>
-                      <TableCell>${(item.qty * item.price).toFixed(2)}</TableCell>
+                      <TableCell>{getCurrencySymbol()}{(item.price*price).toFixed(2)}</TableCell>
+                      <TableCell>{getCurrencySymbol()}{((item.qty * item.price)*price).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -151,13 +184,17 @@ const Order = () => {
         </Paper>
       </Box>
 
+      {/* Order Summary Section */}
       <Box flex={1}>
-        <Paper elevation={3} sx={{ p: 2, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Shipping
+        <Paper elevation={3} sx={{ p: 2, mb: 4, borderRadius: 4 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#6366f1" }}>
+            Order Details
           </Typography>
           <Typography>
-            <strong>Order:</strong> {order._id}
+            <strong>Order Number:</strong> {order.orderNumber}
+          </Typography>
+          <Typography>
+            <strong>Order ID:</strong> {order._id}
           </Typography>
           <Typography>
             <strong>Name:</strong> {order.user?.username || "N/A"}
@@ -166,63 +203,90 @@ const Order = () => {
             <strong>Email:</strong> {order.user?.email || "N/A"}
           </Typography>
           <Typography>
-            <strong>Address:</strong>{" "}
-            {order.shippingAddress?.street}{" "}{order.shippingAddress?.city}{","}
-            {order.shippingAddress?.state}{","}
-            {order.shippingAddress?.country}{"-"}{order.shippingAddress?.postalCode}{" "}
+            <strong>Address:</strong> {order.shippingAddress?.street}, {order.shippingAddress?.city},{" "}
+            {order.shippingAddress?.state}, {order.shippingAddress?.country} -{" "}
+            {order.shippingAddress?.postalCode}
           </Typography>
           <Typography>
-            <strong>Method:</strong> {order.paymentMethod}
+            <strong>Payment Method:</strong> {order.paymentMethod}
           </Typography>
-          {order.isPaid ? (
-            <Messsage variant="success">Paid on {order.paidAt}</Messsage>
-          ) : (
-            <Messsage variant="danger">Not paid</Messsage>
+          <Typography>
+            <strong>Payment Status:</strong>{" "}
+            <Chip
+              label={order.paymentStatus}
+              color={
+                order.paymentStatus === "Completed"
+                  ? "success"
+                  : order.paymentStatus === "Failed"
+                  ? "error"
+                  : "warning"
+              }
+              sx={{ fontWeight: 600 }}
+            />
+          </Typography>
+          
+          <Divider sx={{ my: 2 }} />
+          <Typography>
+            <strong>Order Status:</strong>{" "}
+            <Chip
+              label={order.orderStatus}
+              color={
+                order.orderStatus === "Delivered"
+                  ? "success"
+                  : order.orderStatus === "Cancelled"
+                  ? "error"
+                  : "warning"
+              }
+              sx={{ fontWeight: 600 }}
+            />
+          </Typography>
+          {order.trackingNumber && (
+            <Typography>
+              <strong>Tracking Number:</strong> {order.trackingNumber}
+            </Typography>
+          )}
+          {order.shippingCarrier && (
+            <Typography>
+              <strong>Shipping Carrier:</strong> {order.shippingCarrier}
+            </Typography>
+          )}
+          {order.trackingUrl && (
+            <Typography>
+              <strong>Tracking URL:</strong>{" "}
+              <a href={order.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#6366f1" }}>
+                Track your order
+              </a>
+            </Typography>
+          )}
+          {order.notes && (
+            <Typography>
+              <strong>Notes:</strong> {order.notes}
+            </Typography>
           )}
         </Paper>
 
-        <Paper elevation={3} sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper elevation={3} sx={{ p: 2, borderRadius: 4 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#6366f1" }}>
             Order Summary
           </Typography>
           <Box display="flex" justifyContent="space-between">
             <Typography>Items</Typography>
-            <Typography>${order.itemsPrice}</Typography>
+            <Typography>{getCurrencySymbol()}{(order.itemsPrice*price).toFixed(2)}</Typography>
           </Box>
           <Box display="flex" justifyContent="space-between">
             <Typography>Shipping</Typography>
-            <Typography>${order.shippingPrice}</Typography>
+            <Typography>{getCurrencySymbol()}{(order.shippingPrice*price).toFixed(2)}</Typography>
           </Box>
-          <Box display="flex" justifyContent="space-between">
-            <Typography>Tax</Typography>
-            <Typography>${order.taxPrice}</Typography>
-          </Box>
-          <Box display="flex" justifyContent="space-between">
+          <Divider sx={{ my: 2 }} />
+          <Box display="flex" justifyContent="space-between" fontWeight="bold">
             <Typography>Total</Typography>
-            <Typography>${order.totalPrice}</Typography>
+            <Typography>{getCurrencySymbol()}{(order.totalPrice*price).toFixed(2)}</Typography>
           </Box>
 
-          {!order.isPaid && (
-            <Box mt={2}>
-              {loadingPay && <CircularProgress />}
-              {isPending ? (
-                <CircularProgress />
-              ) : (
-                <>
-                {order.paymentMethod === "PayPal" && (
-                  <PayPalButtons
-                  createOrder={createOrder}
-                  onApprove={onApprove}
-                  onError={onError}
-                />
-                  )}
-                </>
-              )}
-            </Box>
-          )}
+          
 
           {loadingDeliver && <CircularProgress />}
-          {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
+          {userInfo && userInfo.role === "vendor" && order.isPaid && !order.isDelivered && (
             <Button
               variant="contained"
               color="primary"
@@ -236,7 +300,11 @@ const Order = () => {
         </Paper>
       </Box>
     </Box>
-  );
+  )
+    }
+    </DocumentTitle>
+    </>
+  )
 };
 
 export default Order;

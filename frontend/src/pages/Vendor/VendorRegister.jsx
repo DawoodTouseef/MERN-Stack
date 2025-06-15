@@ -95,7 +95,6 @@ const VendorRegister = () => {
         username,
         email,
         password,
-        isAdmin: true,
         role: "vendor",
         vendorProfile: {
           companyName,

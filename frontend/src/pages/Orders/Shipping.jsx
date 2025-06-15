@@ -21,10 +21,15 @@ import {
   RadioGroup,
   FormControlLabel,
   FormControl,
+  Stack,
+  Divider,
+  Tooltip,
+  Chip,
 } from "@mui/material";
 import { toast } from "react-toastify";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import AddIcon from "@mui/icons-material/Add";
+import { FaHome, FaBriefcase, FaMapPin } from "react-icons/fa";
 
 const Shipping = () => {
   const cart = useSelector((state) => state.cart);
@@ -78,14 +83,24 @@ const Shipping = () => {
   }, [addresses, selectedAddressId]);
 
   return (
-    <Box sx={{ maxWidth: 700, mx: "auto", mt: 6 }}>
+    <Box sx={{ maxWidth: 800, mx: "auto", mt: 6, pb: 6 }}>
       <ProgressSteps step1 step2 />
 
-      {/* Address Selection (not in form) */}
-      <Paper sx={{ p: 4, mb: 4 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+      {/* Address Selection */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          mb: 4,
+          borderRadius: 4,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+          background: "linear-gradient(135deg, #fff 70%, #f3f4f6 100%)",
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#6366f1" }}>
           Select Shipping Address
         </Typography>
+        <Divider sx={{ mb: 3 }} />
         {isLoading ? (
           <CircularProgress />
         ) : addresses.length === 0 ? (
@@ -96,10 +111,18 @@ const Shipping = () => {
               color="secondary"
               fullWidth
               size="large"
-              sx={{ borderRadius: 4, fontWeight: "bold", fontSize: "1.1rem", mt: 2 }}
+              sx={{
+                borderRadius: 4,
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                mt: 2,
+                background: "#ec4899",
+                "&:hover": { background: "#be185d" },
+              }}
               component={Link}
               to="/address"
             >
+              <AddIcon sx={{ mr: 1 }} />
               Add New Address
             </Button>
           </>
@@ -116,28 +139,63 @@ const Shipping = () => {
                   sx={{
                     mb: 2,
                     p: 2,
-                    border: "1px solid #eee",
-                    borderRadius: 2,
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 3,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    bgcolor: "#fafafa",
+                    bgcolor: "#f9fafb",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                    transition: "box-shadow 0.2s, border 0.2s",
+                    "&:hover": {
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+                      border: "1px solid #ec4899",
+                    },
                   }}
                 >
                   <FormControlLabel
                     value={addr._id}
                     control={<Radio color="secondary" />}
                     label={
-                      <Typography>
-                        <b>{addr.address}</b>, {addr.city}, {addr.state && `${addr.state}, `}
-                        {addr.postalCode}, {addr.country}
-                      </Typography>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Chip
+                          icon={
+                            addr.label === "Home" ? (
+                              <FaHome style={{ color: "#ec4899" }} />
+                            ) : addr.label === "Work" ? (
+                              <FaBriefcase style={{ color: "#ec4899" }} />
+                            ) : (
+                              <FaMapPin style={{ color: "#ec4899" }} />
+                            )
+                          }
+                          label={addr.label}
+                          sx={{
+                            bgcolor: addr.isDefault ? "#f8bbd0" : "#e3eeff",
+                            color: addr.isDefault ? "#ad1457" : "#6366f1",
+                            fontWeight: 700,
+                            borderRadius: "999px",
+                            px: 1.5,
+                            fontSize: "0.95rem",
+                          }}
+                        />
+                        <Typography>
+                          <b>{addr.fullName}</b> ({addr.phone})<br />
+                          {addr.street}, {addr.city}, {addr.state && `${addr.state}, `}
+                          {addr.postalCode}, {addr.country}
+                        </Typography>
+                      </Stack>
                     }
                   />
                   <Box>
-                    <IconButton color="error" onClick={() => handleDelete(addr._id)}>
-                      <DeleteIcon />
-                    </IconButton>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(addr._id)}
+                        disabled={isDeleting}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </Box>
               ))}
@@ -147,34 +205,39 @@ const Shipping = () => {
               color="secondary"
               fullWidth
               size="large"
-              sx={{ borderRadius: 4, fontWeight: "bold", fontSize: "1.1rem", mt: 2 }}
+              sx={{
+                borderRadius: 4,
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                mt: 2,
+                background: "#ec4899",
+                "&:hover": { background: "#be185d" },
+              }}
               component={Link}
               to="/address"
             >
+              <AddIcon sx={{ mr: 1 }} />
               Add New Address
             </Button>
           </FormControl>
         )}
       </Paper>
 
-      {/* Payment Method and Continue Button in Form */}
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+      {/* Payment Method */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          borderRadius: 4,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+          background: "linear-gradient(135deg, #fff 70%, #f3f4f6 100%)",
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#6366f1" }}>
           Select Payment Method
         </Typography>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const selected = addresses.find((addr) => addr._id === selectedAddressId);
-            if (!selected) {
-              toast.error("Please select a shipping address.");
-              return;
-            }
-            dispatch(saveShippingAddress(selected));
-            dispatch(savePaymentMethod(paymentMethod));
-            navigate("/placeorder");
-          }}
-        >
+        <Divider sx={{ mb: 3 }} />
+        <form onSubmit={handleContinue}>
           <FormControl component="fieldset" sx={{ width: "100%" }}>
             <RadioGroup
               row
@@ -200,7 +263,14 @@ const Shipping = () => {
             fullWidth
             size="large"
             type="submit"
-            sx={{ borderRadius: 4, fontWeight: "bold", fontSize: "1.1rem", mt: 3 }}
+            sx={{
+              borderRadius: 4,
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              mt: 3,
+              background: "#6366f1",
+              "&:hover": { background: "#4f46e5" },
+            }}
           >
             Continue
           </Button>

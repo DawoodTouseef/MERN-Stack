@@ -21,6 +21,8 @@ import { useLoginMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import { logout } from "../../redux/features/auth/authSlice";
+import { useLogoutMutation } from "../../redux/api/usersApiSlice";
 
 const VendorLogin = () => {
   const [email, setEmail] = useState("");
@@ -29,6 +31,7 @@ const VendorLogin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [logoutApiCall] = useLogoutMutation();
   const [login, { isLoading }] = useLoginMutation();
   const { userInfo } = useSelector((state) => state.auth);
   const { search } = useLocation();
@@ -36,26 +39,41 @@ const VendorLogin = () => {
   const redirect = sp.get("redirect") || "/";
 
   useEffect(() => {
-    if (userInfo?.isAdmin) {
-      navigate("/vendor/dashboard");
+    if (userInfo?.role==="vendor") {
+      navigate("/");
     }
   }, [navigate, userInfo]);
 
+  const handleLogout = async () => {
+      try {
+        let api;
+        if (userInfo.role==="vendor"){
+            api="/vendor/login"
+        }
+        await logoutApiCall().unwrap();
+        dispatch(logout());
+        navigate(api || '/login');
+      } catch (error) {
+        // handle error
+      }
+
+    };
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
       const res = await login({ email, password }).unwrap();
-      if (!res.isAdmin) {
-        toast.error("Access denied. Admins only.");
+      if (res.role !== "vendor" || res.role==="admin") {
+        toast.error("Access denied. Vendors only.");
+        handleLogout();
         return;
       }
       dispatch(setCredentials({ ...res }));
       toast.success("Login successful");
-      navigate("/vendor/dashboard");
+      navigate("/");
     } catch (err) {
       toast.error(err?.data?.message || "Invalid email or password");
     }
-  };
+};
 
   return (
     <Grid

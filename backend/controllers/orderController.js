@@ -1,67 +1,64 @@
 import Order from "../models/orderModel.js";
 import Product from "../models/productModel.js";
-import Address from "../models/addressModel.js";
-import Category from "../models/categoryModel.js";
 
 // Utility Function
-function calcPrices(orderItems) {
-  const itemsPrice = orderItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const shippingPrice = itemsPrice > 100 ? 0 : 10;
-  const taxRate = 0.15;
-  const taxPrice = +(itemsPrice * taxRate).toFixed(2);
-  const totalPrice = +(itemsPrice + shippingPrice + taxPrice).toFixed(2);
 
-  return {
-    itemsPrice: +itemsPrice.toFixed(2),
-    shippingPrice: +shippingPrice.toFixed(2),
-    taxPrice,
-    totalPrice,
-  };
+
+function generateOrderNumber() {
+  return `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
-
 const createOrder = async (req, res) => {
   try {
-    const { orderItems, shippingAddress, paymentMethod } = req.body;
-
+    const { orderItems, shippingAddress, paymentMethod, notes } = req.body;
     if (!orderItems || orderItems.length === 0) {
       return res.status(400).json({ error: "No order items provided" });
     }
 
-    const itemsFromDB = await Product.find({ _id: { $in: orderItems.map((x) => x._id) } }).populate("category");
+    // Fetch product details from the database
+    const itemsFromDB = await Product.find({ _id: { $in: orderItems.map((x) => x._id) } });
 
     const dbOrderItems = orderItems.map((clientItem) => {
       const dbItem = itemsFromDB.find((p) => p._id.toString() === clientItem._id);
       if (!dbItem) {
         throw new Error(`Product not found: ${clientItem._id}`);
       }
-
       return {
         name: dbItem.name,
         qty: clientItem.qty,
-        image: dbItem.image,
+        media: dbItem.media, // Ensure this field is populated
         price: dbItem.price,
         product: dbItem._id,
       };
     });
 
-    const prices = calcPrices(dbOrderItems);
-
+    const {  itemsPrice ,
+        shippingPrice ,
+        taxPrice,
+        totalPrice
+      } = req.body
     const order = new Order({
       user: req.user._id,
+      orderNumber: generateOrderNumber(),
       orderItems: dbOrderItems,
       shippingAddress,
       paymentMethod,
-      ...prices,
+      notes,
+      itemsPrice,
+  taxPrice,
+  shippingPrice,
+  totalPrice,
     });
 
     const createdOrder = await order.save();
 
+    // Update product stock
     for (const item of dbOrderItems) {
       await Product.updateOne({ _id: item.product }, { $inc: { countInStock: -item.qty } });
     }
 
     res.status(201).json(createdOrder);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -78,6 +75,7 @@ const getAllOrders = async (req, res) => {
 };
 
 const getUserOrders = async (req, res) => {
+  
   try {
     const orders = await Order.find({ user: req.user._id }).populate("shippingAddress");
     res.json(orders);

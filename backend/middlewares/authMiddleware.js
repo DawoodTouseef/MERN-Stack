@@ -24,12 +24,18 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 });
 
-const authorizeAdmin = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
+const authorizeVendor = (req, res, next) => {
+  if (req.user && (req.user.role === "admin" || req.user.role === "vendor")) {
     next();
   } else {
     res.status(401).send("Not authorized as an admin.");
   }
 };
-
-export { authenticate, authorizeAdmin };
+const IsAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === "admin")) {
+    next();
+  } else {
+    res.status(401).send("Not authorized as an admin.");
+  }
+};
+export { authenticate, authorizeVendor,IsAdmin };

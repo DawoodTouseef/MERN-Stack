@@ -40,16 +40,15 @@ const ProductList = () => {
   const [deleteProductImage] = useDeleteProductImageMutation();
 
   const [images, setImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
-  const [stock, setStock] = useState(0);
+  const [stock, setStock] = useState("");
   const [tags, setTags] = useState([]);
-  const [countries, setCountries] = useState([]);
-  const [selectedCountries, setSelectedCountries] = useState([]);
   const [variants, setVariants] = useState([]);
   const [variantForm, setVariantForm] = useState({
     sku: "",
@@ -62,24 +61,25 @@ const ProductList = () => {
   });
   const [warrantyPeriod, setWarrantyPeriod] = useState("");
   const [returnPolicy, setReturnPolicy] = useState("");
-  const [discount, setDiscount] = useState({ percentage: "", validUntil: "" });
   const [specifications, setSpecifications] = useState({});
   const [specKey, setSpecKey] = useState("");
   const [specValue, setSpecValue] = useState("");
+  const [editVariantIndex, setEditVariantIndex] = useState(null);
+  const [editSpecKey, setEditSpecKey] = useState(null);
 
   const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
 
-  // Fetch countries on mount
   useEffect(() => {
-    axios.get("https://api.first.org/data/v1/countries")
-      .then(res => {
-        const countryList = Object.entries(res.data.data).map(([code, val]) => ({ code, name: val.country }));
-        setCountries(countryList);
-      });
+    axios.get("https://api.first.org/data/v1/countries").then((res) => {
+      const countryList = Object.entries(res.data.data).map(([code, val]) => ({
+        code,
+        name: val.country,
+      }));
+      setCountries(countryList);
+    });
   }, []);
 
-  // Image upload handler
   const uploadFileHandler = async (e) => {
     const files = e.target.files;
     if (files.length + images.length > 5) {
@@ -94,35 +94,44 @@ const ProductList = () => {
       const res = await uploadProductImage(formData).unwrap();
       toast.success(res.message);
       setImages([...images, ...res.images]);
+      setImageFiles([...imageFiles, ...files]);
     } catch (error) {
       toast.error(error?.data?.message || error.error);
     }
   };
 
-  // Image delete handler
   const deleteImageHandler = async (imagePath) => {
     try {
       await deleteProductImage({ imagePath });
       setImages(images.filter((img) => img !== imagePath));
+      setImageFiles(imageFiles.filter((_, i) => images[i] !== imagePath));
       toast.success("Image deleted successfully");
     } catch (err) {
       toast.error("Failed to delete image");
     }
   };
 
-  // Move image order
   const moveImage = (index, direction) => {
     const newImages = [...images];
+    const newFiles = [...imageFiles];
     const targetIndex = index + direction;
     if (targetIndex >= 0 && targetIndex < newImages.length) {
-      [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+      [newImages[index], newImages[targetIndex]] = [
+        newImages[targetIndex],
+        newImages[index],
+      ];
+      [newFiles[index], newFiles[targetIndex]] = [
+        newFiles[targetIndex],
+        newFiles[index],
+      ];
       setImages(newImages);
+      setImageFiles(newFiles);
     }
   };
 
-  // Tag/country/pincode handlers
   const handleAddTag = (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       const tag = e.target.value.trim();
       if (tag && !tags.includes(tag)) {
         setTags((prev) => [...prev, tag]);
@@ -130,9 +139,11 @@ const ProductList = () => {
       e.target.value = "";
     }
   };
+
+
   const handleRemoveItem = (item, type) => {
     if (type === "pincode") {
-      setDeliverablePincodes((prev) => prev.filter((p) => p !== item));
+      setPincodes((prev) => prev.filter((p) => p !== item));
     } else if (type === "tag") {
       setTags((prev) => prev.filter((t) => t !== item));
     } else if (type === "country") {
@@ -140,8 +151,6 @@ const ProductList = () => {
     }
   };
 
-  // Add variant
-  const [editVariantIndex, setEditVariantIndex] = useState(null);
   const handleAddOrUpdateVariant = () => {
     if (
       !variantForm.sku &&
@@ -155,42 +164,51 @@ const ProductList = () => {
       return;
     }
     if (editVariantIndex !== null) {
-      // Update
       const updated = [...variants];
       updated[editVariantIndex] = { ...variantForm };
       setVariants(updated);
       setEditVariantIndex(null);
     } else {
-      // Add
       setVariants([...variants, { ...variantForm }]);
     }
-    setVariantForm({ sku: "", color: "", size: "", storage: "", price: "", countInStock: "", images: [] });
+    setVariantForm({
+      sku: "",
+      color: "",
+      size: "",
+      storage: "",
+      price: "",
+      countInStock: "",
+      images: [],
+    });
   };
 
-  // Edit variant handler
   const handleEditVariant = (index) => {
     setVariantForm({ ...variants[index] });
     setEditVariantIndex(index);
   };
 
-  // Delete variant handler
   const handleDeleteVariant = (index) => {
     setVariants(variants.filter((_, i) => i !== index));
     if (editVariantIndex === index) {
       setEditVariantIndex(null);
-      setVariantForm({ sku: "", color: "", size: "", storage: "", price: "", countInStock: "", images: [] });
+      setVariantForm({
+        sku: "",
+        color: "",
+        size: "",
+        storage: "",
+        price: "",
+        countInStock: "",
+        images: [],
+      });
     }
   };
 
-  // Add specification
-  const [editSpecKey, setEditSpecKey] = useState(null);
   const handleAddOrUpdateSpecification = () => {
     if (!specKey || !specValue) {
       toast.error("Please enter both key and value for the specification.");
       return;
     }
     if (editSpecKey !== null) {
-      // Update
       setSpecifications((prev) => {
         const updated = { ...prev };
         delete updated[editSpecKey];
@@ -199,21 +217,18 @@ const ProductList = () => {
       });
       setEditSpecKey(null);
     } else {
-      // Add
       setSpecifications((prev) => ({ ...prev, [specKey]: specValue }));
     }
     setSpecKey("");
     setSpecValue("");
   };
 
-  // Edit specification handler
   const handleEditSpecification = (key) => {
     setSpecKey(key);
     setSpecValue(specifications[key]);
     setEditSpecKey(key);
   };
 
-  // Delete specification handler
   const handleDeleteSpecification = (key) => {
     setSpecifications((prev) => {
       const updated = { ...prev };
@@ -227,50 +242,97 @@ const ProductList = () => {
     }
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (
+      !name.trim() ||
+      images.length === 0 ||
+      !price ||
+      !quantity ||
+      !description.trim() ||
+      !stock ||
+      tags.length === 0 ||
+      !category ||
+      !brand
+    ) {
+      toast.error(
+        "Please fill all required fields: Name, Images, Price, Quantity, Description, Count in Stock, Tags, Category, Brand."
+      );
+      return;
+    }
+
     try {
-      const productData = {
-        name,
-        description,
-        price,
-        category,
-        quantity,
-        brand,
-        countInStock: stock,
-        user: userInfo._id,
-        images,
-        tags,
-        deliverablePincodes,
-        variants,
-        warrantyPeriod,
-        returnPolicy,
-        discount,
-        specifications,
-      };
-      await createProduct(productData).unwrap();
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("brand", brand);
+      formData.append("category", category);
+      formData.append("price", Number(price));
+      formData.append("quantity", Number(quantity));
+      tags.forEach((tag) => formData.append("tags", tag));
+      formData.append("warrantyPeriod", warrantyPeriod);
+      formData.append("returnPolicy", returnPolicy);
+      Object.entries(specifications || {}).forEach(([key, value]) => {
+        formData.append(`specifications[${key}]`, value);
+      });
+      variants.forEach((variant, i) => {
+        Object.entries(variant).forEach(([key, value]) => {
+          if (key === "images") {
+            value.forEach((img, j) => {
+              formData.append(`variants[${i}][images][${j}]`, img);
+            });
+          } else {
+            formData.append(
+              `variants[${i}][${key}]`,
+              key === "price" || key === "countInStock" ? Number(value) : value
+            );
+          }
+        });
+      });
+      images.forEach((url, i) => {
+        formData.append(`media[${i}][type]`, "image");
+        formData.append(`media[${i}][url]`, url);
+      });
+      formData.append("countInStock", Number(stock));
+      formData.append("user", userInfo._id);
+
+      await createProduct(formData).unwrap();
       toast.success(`${name} is created`);
-      navigate("/admin/allproductslist");
+      navigate("/vendor/allproductslist");
     } catch (error) {
+      console.log(error)
       toast.error("Product create failed. Try Again.");
     }
   };
 
   return (
     <Box sx={{ maxWidth: "100vw", px: { xs: 1, md: 4 }, py: 2 }}>
-      <Paper elevation={3} sx={{ bgcolor: "#151515", color: "#fff", p: 3, mt: 2, mb: 2, borderRadius: 3 }}>
-        <Typography variant="h5" sx={{ mb: 3 }}>Add New Product</Typography>
-        {/* Images */}
+      <Paper
+        elevation={3}
+        sx={{ bgcolor: "#151515", color: "#fff", p: 3, mt: 2, mb: 2, borderRadius: 3 }}
+      >
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          Add New Product
+        </Typography>
         {images.length > 0 && (
           <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: "wrap" }}>
             {images.map((url, index) => (
               <Box key={index} sx={{ position: "relative" }}>
-                <img src={url} alt={`img-${index}`} style={{ height: 100, borderRadius: 8 }} />
+                <img
+                  src={url}
+                  alt={`img-${index}`}
+                  style={{ height: 100, borderRadius: 8 }}
+                />
                 <Stack direction="row" spacing={0} sx={{ mt: 1 }}>
-                  <IconButton size="small" onClick={() => moveImage(index, -1)}><ArrowUpwardIcon fontSize="small" sx={{ color: "#fff" }} /></IconButton>
-                  <IconButton size="small" onClick={() => moveImage(index, 1)}><ArrowDownwardIcon fontSize="small" sx={{ color: "#fff" }} /></IconButton>
-                  <IconButton size="small" onClick={() => deleteImageHandler(url)}><DeleteIcon fontSize="small" sx={{ color: "red" }} /></IconButton>
+                  <IconButton size="small" onClick={() => moveImage(index, -1)}>
+                    <ArrowUpwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => moveImage(index, 1)}>
+                    <ArrowDownwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => deleteImageHandler(url)}>
+                    <DeleteIcon fontSize="small" sx={{ color: "red" }} />
+                  </IconButton>
                 </Stack>
               </Box>
             ))}
@@ -280,98 +342,132 @@ const ProductList = () => {
           variant="outlined"
           component="label"
           fullWidth
-          sx={{ color: "#fff", borderColor: "#fff", bgcolor: "#222", mb: 3, py: 3, fontWeight: "bold", borderRadius: 2 }}
+          sx={{
+            color: "#fff",
+            borderColor: "#fff",
+            bgcolor: "#222",
+            mb: 3,
+            py: 3,
+            fontWeight: "bold",
+            borderRadius: 2,
+          }}
           startIcon={<AddPhotoAlternateIcon />}
         >
           Upload Images
-          <input type="file" accept="image/*" hidden multiple onChange={uploadFileHandler} />
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            multiple
+            onChange={uploadFileHandler}
+          />
         </Button>
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <TextField label="Name" fullWidth value={name} onChange={(e) => setName(e.target.value)} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-          <TextField label="Price" type="number" fullWidth value={price} onChange={(e) => setPrice(e.target.value)} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-          <TextField label="Quantity" type="number" fullWidth value={quantity} onChange={(e) => setQuantity(e.target.value)} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-          <TextField label="Description" multiline fullWidth value={description} onChange={(e) => setDescription(e.target.value)} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-          <TextField label="Count In Stock" type="number" fullWidth value={stock} onChange={(e) => setStock(e.target.value)} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
+          <TextField
+            label="Name *"
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Price *"
+            type="number"
+            fullWidth
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Quantity *"
+            type="number"
+            fullWidth
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Description *"
+            multiline
+            fullWidth
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <TextField
+            label="Count In Stock *"
+            type="number"
+            fullWidth
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
           <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>Brand</InputLabel>
-            <Select value={brand} onChange={(e) => setBrand(e.target.value)} sx={{ color: "#fff" } } label="Brand">
-              {brands.map((b) => (<MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>Category</InputLabel>
-            <Select value={category} onChange={(e) => setCategory(e.target.value)} sx={{ color: "#fff" }} label="Category">
-              {categories.map((c) => (<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-
-          {/* Tags */}
-          <TextField label="Add Tags (Enter to Add)" fullWidth onKeyDown={handleAddTag} sx={{ input: { color: "#fff" }, label: { color: "#fff" } }} />
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
-            {tags.map((tag) => (
-              <Chip key={tag} label={tag} onDelete={() => handleRemoveItem(tag, "tag")} sx={{ bgcolor: "#222", color: "#fff" }} />
-            ))}
-          </Stack>
-
-          {/* Deliverable Countries */}
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>Deliverable Countries</InputLabel>
+            <InputLabel sx={{ color: "#fff" }}>Brand *</InputLabel>
             <Select
-              multiple
-              value={selectedCountries}
-              onChange={e => setSelectedCountries(e.target.value)}
-              input={<OutlinedInput label="Deliverable Countries" />}
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
               sx={{ color: "#fff" }}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip
-                      key={value}
-                      label={value}
-                      onDelete={() => setSelectedCountries(selectedCountries.filter(c => c !== value))}
-                      sx={{ bgcolor: "#222", color: "#fff" }}
-                    />
-                  ))}
-                </Box>
-              )}
+              label="Brand *"
             >
-              {countries.map(c => (
-                <MenuItem key={c.code} value={c.name}>
+              {brands.map((b) => (
+                <MenuItem key={b._id} value={b._id}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#fff" }}>Category *</InputLabel>
+            <Select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              sx={{ color: "#fff" }}
+              label="Category *"
+            >
+              {categories.map((c) => (
+                <MenuItem key={c._id} value={c._id}>
                   {c.name}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-
-          {/* Show selected countries as chips below the select for extra visibility */}
-          {selectedCountries.length > 0 && (
-            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
-              {selectedCountries.map((country) => (
-                <Chip
-                  key={country}
-                  label={country}
-                  onDelete={() => setSelectedCountries(selectedCountries.filter(c => c !== country))}
-                  sx={{ bgcolor: "#222", color: "#fff" }}
-                />
-              ))}
-            </Stack>
-          )}
-
-          {/* Variants */}
+          <TextField
+            label="Add Tags (Enter to Add) *"
+            fullWidth
+            onKeyDown={handleAddTag}
+            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+          />
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
+            {tags.map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                onDelete={() => handleRemoveItem(tag, "tag")}
+                sx={{ bgcolor: "#222", color: "#fff" }}
+              />
+            ))}
+          </Stack>
           <Divider sx={{ my: 2, bgcolor: "#fff" }} />
           <Typography variant="h6">Add Variant</Typography>
           <Stack direction="row" spacing={2} flexWrap="wrap">
-            {["sku", "color", "size", "storage", "price", "countInStock"].map((field) => (
-              <TextField
-                key={field}
-                label={field}
-                value={variantForm[field]}
-                onChange={(e) => setVariantForm(prev => ({ ...prev, [field]: e.target.value }))}
-                sx={{ input: { color: "#fff" }, label: { color: "#fff" }, width: "150px" }}
-              />
-            ))}
+            {["sku", "color", "size", "storage", "price", "countInStock"].map(
+              (field) => (
+                <TextField
+                  key={field}
+                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  value={variantForm[field]}
+                  onChange={(e) =>
+                    setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
+                  }
+                  sx={{ input: { color: "#fff" }, label: { color: "#fff" }, width: "150px" }}
+                />
+              )
+            )}
             <Button
               onClick={handleAddOrUpdateVariant}
               variant="outlined"
@@ -383,7 +479,15 @@ const ProductList = () => {
               <Button
                 onClick={() => {
                   setEditVariantIndex(null);
-                  setVariantForm({ sku: "", color: "", size: "", storage: "", price: "", countInStock: "", images: [] });
+                  setVariantForm({
+                    sku: "",
+                    color: "",
+                    size: "",
+                    storage: "",
+                    price: "",
+                    countInStock: "",
+                    images: [],
+                  });
                 }}
                 variant="outlined"
                 color="secondary"
@@ -397,17 +501,23 @@ const ProductList = () => {
             {variants.map((v, i) => (
               <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography sx={{ color: "#ccc" }}>{JSON.stringify(v)}</Typography>
-                <IconButton size="small" color="primary" onClick={() => handleEditVariant(i)}>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => handleEditVariant(i)}
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
-                <IconButton size="small" color="error" onClick={() => handleDeleteVariant(i)}>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteVariant(i)}
+                >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Box>
             ))}
           </Stack>
-
-          {/* Warranty, Return, Discount */}
           <TextField
             label="Warranty Period"
             fullWidth
@@ -422,27 +532,9 @@ const ProductList = () => {
             onChange={(e) => setReturnPolicy(e.target.value)}
             sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
           />
-          <Typography variant="h6" sx={{ mt: 2 }}>Discount</Typography>
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Percentage"
-              type="number"
-              value={discount.percentage}
-              onChange={(e) => setDiscount(prev => ({ ...prev, percentage: e.target.value }))}
-              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
-            />
-            <TextField
-              label="Valid Until"
-              type="date"
-              value={discount.validUntil}
-              onChange={(e) => setDiscount(prev => ({ ...prev, validUntil: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
-            />
-          </Stack>
-
-          {/* Specifications */}
-          <Typography variant="h6" sx={{ mt: 2 }}>Specifications</Typography>
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Specifications
+          </Typography>
           <Stack direction="row" spacing={2}>
             <TextField
               label="Key"
@@ -481,18 +573,32 @@ const ProductList = () => {
           <Stack>
             {Object.entries(specifications).map(([k, v]) => (
               <Box key={k} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography sx={{ color: "#ccc" }}>{k}: {v}</Typography>
-                <IconButton size="small" color="primary" onClick={() => handleEditSpecification(k)}>
+                <Typography sx={{ color: "#ccc" }}>
+                  {k}: {v}
+                </Typography>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => handleEditSpecification(k)}
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
-                <IconButton size="small" color="error" onClick={() => handleDeleteSpecification(k)}>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteSpecification(k)}
+                >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Box>
             ))}
           </Stack>
-
-          <Button type="submit" variant="contained" color="secondary" sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="secondary"
+            sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
+          >
             Submit
           </Button>
         </Box>

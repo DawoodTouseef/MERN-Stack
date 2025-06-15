@@ -17,11 +17,14 @@ import {
   Stack,
   Divider,
   Chip,
+  Tooltip,
+  Switch,
+  MenuItem
 } from "@mui/material";
 import { toast } from "react-toastify";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { FaMapMarkerAlt } from "react-icons/fa";
+import { FaMapMarkerAlt, FaHome, FaBriefcase, FaMapPin } from "react-icons/fa";
 
 const Address = () => {
   const { data: addresses = [], isLoading, refetch } = useGetAddressQuery();
@@ -30,16 +33,24 @@ const Address = () => {
   const [deleteAddress, { isLoading: isDeleting }] = useDeleteAddressMutation();
 
   const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
     street: "",
     city: "",
     state: "",
     postalCode: "",
     country: "",
+    label: "Home",
+    isDefault: false,
   });
   const [editId, setEditId] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleToggleDefault = () => {
+    setForm({ ...form, isDefault: !form.isDefault });
   };
 
   const handleSubmit = async (e) => {
@@ -53,27 +64,35 @@ const Address = () => {
         toast.success("Address added!");
       }
       setForm({
+        fullName: "",
+        phone: "",
         street: "",
         city: "",
         state: "",
         postalCode: "",
         country: "",
+        label: "Home",
+        isDefault: false,
       });
       setEditId(null);
       refetch();
     } catch (error) {
-      console.error(error);
+      console.log(error)
       toast.error(error?.data?.message || error.error || "Failed to save address");
     }
   };
 
   const handleEdit = (address) => {
     setForm({
-      street: address.street || address.address || "",
+      fullName: address.fullName,
+      phone: address.phone,
+      street: address.street,
       city: address.city,
       state: address.state || "",
       postalCode: address.postalCode,
       country: address.country,
+      label: address.label || "Home",
+      isDefault: address.isDefault || false,
     });
     setEditId(address._id);
   };
@@ -93,7 +112,7 @@ const Address = () => {
   return (
     <Box
       sx={{
-        maxWidth: 700,
+        maxWidth: 800,
         mx: "auto",
         mt: 8,
         px: { xs: 1, md: 0 },
@@ -102,6 +121,7 @@ const Address = () => {
         background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
       }}
     >
+      {/* Address Form */}
       <Paper
         elevation={6}
         sx={{
@@ -121,6 +141,42 @@ const Address = () => {
         <Divider sx={{ mb: 3, bgcolor: "#e3eeff" }} />
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Full Name"
+                name="fullName"
+                fullWidth
+                required
+                value={form.fullName}
+                onChange={handleChange}
+                sx={{
+                  bgcolor: "#f9fafb",
+                  borderRadius: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#e3eeff" },
+                    "&:hover fieldset": { borderColor: "#ec4899" },
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Phone"
+                name="phone"
+                fullWidth
+                required
+                value={form.phone}
+                onChange={handleChange}
+                sx={{
+                  bgcolor: "#f9fafb",
+                  borderRadius: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#e3eeff" },
+                    "&:hover fieldset": { borderColor: "#6366f1" },
+                  },
+                }}
+              />
+            </Grid>
             <Grid item xs={12}>
               <TextField
                 label="Street"
@@ -210,6 +266,47 @@ const Address = () => {
                 }}
               />
             </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                label="Label"
+                name="label"
+                fullWidth
+                value={form.label}
+                onChange={handleChange}
+                sx={{
+                  bgcolor: "#f9fafb",
+                  borderRadius: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#e3eeff" },
+                    "&:hover fieldset": { borderColor: "#ec4899" },
+                  },
+                }}
+              >
+                <MenuItem value="Home">
+                  <FaHome style={{ marginRight: 8 }} />
+                  Home
+                </MenuItem>
+                <MenuItem value="Work">
+                  <FaBriefcase style={{ marginRight: 8 }} />
+                  Work
+                </MenuItem>
+                <MenuItem value="Other">
+                  <FaMapPin style={{ marginRight: 8 }} />
+                  Other
+                </MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography>Set as Default</Typography>
+                <Switch
+                  checked={form.isDefault}
+                  onChange={handleToggleDefault}
+                  color="secondary"
+                />
+              </Stack>
+            </Grid>
             <Grid item xs={12}>
               <Button
                 type="submit"
@@ -249,11 +346,15 @@ const Address = () => {
                   onClick={() => {
                     setEditId(null);
                     setForm({
+                      fullName: "",
+                      phone: "",
                       street: "",
                       city: "",
                       state: "",
                       postalCode: "",
                       country: "",
+                      label: "Home",
+                      isDefault: false,
                     });
                   }}
                 >
@@ -265,6 +366,7 @@ const Address = () => {
         </form>
       </Paper>
 
+      {/* Address List */}
       <Paper
         elevation={4}
         sx={{
@@ -306,10 +408,10 @@ const Address = () => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Chip
                   icon={<FaMapMarkerAlt style={{ color: "#ec4899" }} />}
-                  label="Delivery"
+                  label={addr.label || "Delivery"}
                   sx={{
-                    bgcolor: "#f8bbd0",
-                    color: "#ad1457",
+                    bgcolor: addr.isDefault ? "#f8bbd0" : "#e3eeff",
+                    color: addr.isDefault ? "#ad1457" : "#6366f1",
                     fontWeight: 700,
                     borderRadius: "999px",
                     px: 1.5,
@@ -317,7 +419,8 @@ const Address = () => {
                   }}
                 />
                 <Typography sx={{ color: "#18181b" }}>
-                  <b>{addr.street || addr.address}</b>, {addr.city}, {addr.state && `${addr.state}, `}
+                  <b>{addr.fullName}</b> ({addr.phone})<br />
+                  <b>{addr.street}</b>, {addr.city}, {addr.state && `${addr.state}, `}
                   {addr.postalCode}, {addr.country}
                 </Typography>
               </Stack>

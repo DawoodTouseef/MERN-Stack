@@ -20,7 +20,7 @@ const productSchema = mongoose.Schema({
   brand: { type: ObjectId, ref: "Brand", required: true },
   category: { type: ObjectId, ref: "Category", required: true },
   description: { type: String, required: true },
-
+  price:{type:Number,required:true},
   variants: [
     {
       sku: String,
@@ -32,7 +32,8 @@ const productSchema = mongoose.Schema({
       images: [String]
     }
   ],
-
+  countInStock:{type:Number,required:true},
+  quantity:{type:Number,required:true},
   media: [
     { type: { type: String, enum: ["image", "video"], default: "image" }, url: String }
   ],
@@ -41,12 +42,6 @@ const productSchema = mongoose.Schema({
   tags: [String],
   warrantyPeriod: String,
   returnPolicy: String,
-  discount: {
-    percentage: Number,
-    validUntil: Date
-  },
-  deliverablePincodes: [String],
-
   reviews: [reviewSchema],
   rating: { type: Number, default: 0 },
   numReviews: { type: Number, default: 0 },

@@ -7,6 +7,7 @@ const initialState = {
   radio: [],
   brandCheckboxes: {},
   checkedBrands: [],
+  searchQuery:'',
 };
 
 const shopSlice = createSlice({
@@ -28,6 +29,9 @@ const shopSlice = createSlice({
     setSelectedBrand: (state, action) => {
       state.selectedBrand = action.payload;
     },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+    },
   },
 });
 
@@ -37,6 +41,7 @@ export const {
   setChecked,
   setRadio,
   setSelectedBrand,
+  setSearchQuery
 } = shopSlice.actions;
 
 export default shopSlice.reducer;

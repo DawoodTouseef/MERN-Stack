@@ -17,6 +17,8 @@ import {
   Divider,
 } from "@mui/material";
 import { Visibility, VisibilityOff, Google, Microsoft } from "@mui/icons-material";
+import { logout } from "../../redux/features/auth/authSlice";
+import { useLogoutMutation } from "../../redux/api/usersApiSlice";
 
 // Read OAuth client IDs from env
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -27,6 +29,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [logoutApiCall] = useLogoutMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -39,20 +42,39 @@ const Login = () => {
   const redirect = sp.get("redirect") || "/";
 
   useEffect(() => {
-    if (userInfo) {
-      navigate(redirect);
-    }
-  }, [navigate, redirect, userInfo]);
-
+      if (userInfo?.role==="customer") {
+        navigate("/");
+      }
+    }, [navigate, userInfo]);
+  
+  const handleLogout = async () => {
+        try {
+          let api;
+          if (userInfo.role==="vendor"){
+              api="/vendor/login"
+          }
+          await logoutApiCall().unwrap();
+          dispatch(logout());
+          navigate(api || '/login');
+        } catch (error) {
+          // handle error
+        }
+  
+      };
   const submitHandler = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ ...res }));
-      navigate(redirect);
-    } catch (err) {
-      toast.error(err?.data?.message || err.error);
-    }
+      e.preventDefault();
+      try {
+        const res = await login({ email, password }).unwrap();
+        if (res.role !== "customer") {
+          toast.error("Access denied. Customer only.");
+          handleLogout();
+          return;
+        }
+        dispatch(setCredentials({ ...res }));
+        navigate(redirect);
+      } catch (err) {
+        toast.error(err?.data?.message || err.error);
+      }
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);

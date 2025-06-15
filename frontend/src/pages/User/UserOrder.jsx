@@ -19,8 +19,26 @@ import {
   Zoom,
 } from "@mui/material";
 import DocumentTitle from "react-document-title";
+import { useSelector } from "react-redux";
 const UserOrder = () => {
   const { data: orders = [], isLoading, error } = useGetMyOrdersQuery();
+  const currency = useSelector((state) => state.currency.selectedCurrency);
+      const price = useSelector((state) => state.currency.price);
+      const getCurrencySymbol = () => {
+              try {
+                const formatter = new Intl.NumberFormat('en', {
+                  style: 'currency',
+                  currency: currency,
+                  currencyDisplay: 'symbol',
+                });
+          
+                const parts = formatter.formatToParts(1);
+                const symbol = parts.find(part => part.type === 'currency')?.value;
+                return symbol || currency;
+              } catch (err) {
+                return currency; // fallback if currency code is invalid
+              }
+            };
   return (
     <DocumentTitle title="My Orders | Nexus Mart">
     <Box sx={{ maxWidth: "1000px", mx: "auto", mt: 6, p: 2 }}>
@@ -55,14 +73,14 @@ const UserOrder = () => {
                       <TableCell>
                         <Avatar
                           variant="rounded"
-                          src={order.orderItems[0]?.image}
+                          src={order.orderItems[0]?.media[0].url}
                           alt={order.orderItems[0]?.name}
                           sx={{ width: 56, height: 56 }}
                         />
                       </TableCell>
                       <TableCell>{order._id}</TableCell>
                       <TableCell>{order.createdAt.substring(0, 10)}</TableCell>
-                      <TableCell>${order.totalPrice}</TableCell>
+                      <TableCell>{getCurrencySymbol()}{(order.totalPrice*price).toFixed(2)}</TableCell>
                       <TableCell>
                         {order.isPaid ? (
                           <Chip label="Completed" color="success" sx={{ width: 90 }} />

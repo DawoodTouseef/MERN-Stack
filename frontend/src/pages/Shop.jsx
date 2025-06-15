@@ -29,30 +29,36 @@ import {
   Slide,
 } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { FaFilter, FaSyncAlt, FaTags, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import {
+  FaFilter,
+  FaSyncAlt,
+  FaTags,
+  FaChevronDown,
+  FaChevronUp,
+} from "react-icons/fa";
 import DocumentTitle from "react-document-title";
 
 const Shop = () => {
   const { id: categoriesId } = useParams() || {};
   const dispatch = useDispatch();
-  const { categories, products, checked, radio } = useSelector(
+  const { categories, products, checked, radio,searchQuery } = useSelector(
     (state) => state.shop
   );
+
   const categoriesQuery = useFetchCategoriesQuery();
   const [priceFilter, setPriceFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   const filteredProductsQuery = useGetFilteredProductsQuery({
     checked,
     radio,
   });
-
   useEffect(() => {
     if (!categoriesQuery.isLoading) {
       dispatch(setCategories(categoriesQuery.data));
     }
   }, [categoriesQuery.data, dispatch]);
-
   useEffect(() => {
     if (!checked.length || !radio.length) {
       if (!filteredProductsQuery.isLoading) {
@@ -68,7 +74,23 @@ const Shop = () => {
       }
     }
   }, [checked, radio, filteredProductsQuery.data, dispatch, priceFilter]);
+  
 
+  useEffect(() => {
+  // Filter products by search text
+  if (searchQuery.trim() === "") {
+    setFilteredProducts(products); // Reset to all products if search query is empty
+  } else {
+    setFilteredProducts(
+      products.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }
+}, [searchQuery, products]);
   const handleBrandClick = (brand) => {
     const productsByBrand = filteredProductsQuery.data?.filter(
       (product) => product.brand?.name === brand
@@ -99,18 +121,20 @@ const Shop = () => {
 
   // Responsive filter toggle for mobile
   const handleFilterToggle = () => setShowFilters((prev) => !prev);
+
   return (
     <>
-    <DocumentTitle title="Shop Products" />
+      <DocumentTitle title="Shop Products" />
       <Box
-            sx={{
-              maxWidth: "100vw",
-              px: { xs: 1, md: 4 },
-              py: 2,
-              background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-              minHeight: "100vh",
-            }}
-          >
+        sx={{
+          maxWidth: "100vw",
+          px: { xs: 1, md: 4 },
+          py: 2,
+          background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Header */}
         <Stack
           direction="row"
           alignItems="center"
@@ -164,9 +188,16 @@ const Shop = () => {
             </Button>
           </Badge>
         </Stack>
+
+        {/* Main Content */}
         <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" } }}>
           {/* Sidebar Filters */}
-          <Slide direction="down" in={showFilters || window.innerWidth >= 900} mountOnEnter unmountOnExit>
+          <Slide
+            direction="down"
+            in={showFilters || window.innerWidth >= 900}
+            mountOnEnter
+            unmountOnExit
+          >
             <Paper
               elevation={4}
               sx={{
@@ -188,6 +219,7 @@ const Shop = () => {
               }}
               className="shadow-lg"
             >
+              {/* Filter by Categories */}
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography
                   variant="h6"
@@ -240,6 +272,7 @@ const Shop = () => {
 
               <Divider sx={{ my: 2, bgcolor: "#333" }} />
 
+              {/* Filter by Brands */}
               <Typography
                 variant="h6"
                 align="center"
@@ -282,6 +315,7 @@ const Shop = () => {
 
               <Divider sx={{ my: 2, bgcolor: "#333" }} />
 
+              {/* Filter by Price */}
               <Typography
                 variant="h6"
                 align="center"
@@ -354,34 +388,33 @@ const Shop = () => {
               position: "relative",
             }}
           >
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <Loader />
             ) : (
-              products
-                .filter((p) => !categoriesId || p.category === categoriesId)
+              filteredProducts
+                .filter((p) => !categoriesId || p.category?._id === categoriesId)
                 .map((p) => (
-                <>
-                <Fade in key={p._id}>
+                  <Fade in key={p._id}>
                     <Paper
-                                      key={p._id}
-                                      elevation={6}
-                                      sx={{
-                                        p: 2,
-                                        borderRadius: 4,
-                                        bgcolor: "#fff",
-                                        minWidth: 260,
-                                        maxWidth: 320,
-                                        transition: "transform 0.2s, box-shadow 0.2s",
-                                        "&:hover": {
-                                          transform: "translateY(-8px) scale(1.03)",
-                                          boxShadow: 10,
-                                          borderColor: "secondary.main",
-                                        },
-                                        boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
-                                      }}
-                                      className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                                    >
-                                      <ProductCard p={p} />
+                      key={p._id}
+                      elevation={6}
+                      sx={{
+                        p: 2,
+                        borderRadius: 4,
+                        bgcolor: "#fff",
+                        minWidth: 260,
+                        maxWidth: 320,
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "translateY(-8px) scale(1.03)",
+                          boxShadow: 10,
+                          borderColor: "secondary.main",
+                        },
+                        boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
+                      }}
+                      className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
+                    >
+                      <ProductCard product={p} />
                       {p.countInStock === 0 && (
                         <Chip
                           label="Out of Stock"
@@ -402,8 +435,6 @@ const Shop = () => {
                       )}
                     </Paper>
                   </Fade>
-                
-                </>
                 ))
             )}
           </Box>

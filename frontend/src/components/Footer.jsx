@@ -1,19 +1,88 @@
-import { useState } from "react";
-import { Box, Container, Typography, Link, Stack, Divider, TextField, Button } from "@mui/material";
-import { FaFacebook, FaTwitter, FaInstagram, FaGithub } from "react-icons/fa";
-
+import { useState, useRef, useEffect } from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  Link,
+  Stack,
+  Divider,
+  TextField,
+  Button,
+  MenuItem,
+  Select,
+  IconButton,
+  Fade,
+  Paper,
+} from "@mui/material";
+import { FaFacebook, FaTwitter, FaInstagram, FaGithub, FaComments, FaArrowUp } from "react-icons/fa";
+import { useGetExchangeCodeMutation,useGetExchangeApiKeyQuery ,useGetExchangeRatesMutation} from "../redux/api/currencyApiSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrency,setPrice } from "../redux/features/currency/currencySlice";
 const Footer = () => {
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterMsg, setNewsletterMsg] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [language, setLanguage] = useState("en");
+  const [currencyData,setCurrencyData] = useState([]);
+  const chatRef = useRef();
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    // Here you would call your newsletter API
-    setNewsletterMsg("Thank you for subscribing!");
-    setNewsletterEmail("");
-    setTimeout(() => setNewsletterMsg(""), 3000);
+  // Fetch API key
+  const { data: apiKey, isLoading: apiKeyLoading, error: apiKeyError } = useGetExchangeApiKeyQuery();
+  const [fetchExchangeRates] =useGetExchangeRatesMutation();
+
+  // Fetch currency codes using the API key
+  const [fetchCurrencyCodes] = useGetExchangeCodeMutation();
+  useEffect(() => {
+  const fetchCurrencyData = async () => {
+    if (apiKey?.apikey) { // Use apiKey.apikey to access the API key
+      try {
+        const result = await fetchCurrencyCodes({ apiKey: apiKey.apikey }).unwrap();
+        setCurrencyData(result?.supported_codes || []); // Assuming the API returns `supported_codes`
+      } catch (error) {
+        console.error("Error fetching currency codes:", error);
+      }
+    }
   };
 
+  fetchCurrencyData();
+}, [apiKey, fetchCurrencyCodes]);
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (!email) {
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+    setMessage("Thank you for subscribing!");
+    setEmail("");
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const dispatch = useDispatch();
+  const selectedCurrency = useSelector((state) => state.currency.selectedCurrency); 
+  const prcie = useSelector((state)=>(state.currency.price));
+  const handleCurrencyChange = async(e) => {
+    e.preventDefault()
+    const newCurrency = e.target.value;
+    setCurrency(newCurrency);
+    dispatch(setCurrency(newCurrency)); 
+    try {
+    // Fetch the exchange rate from USD to the selected currency
+    const result = await fetchExchangeRates({
+      apiKey: apiKey?.apikey,
+      from: "USD",
+      to: newCurrency,
+      amount: 1, // Convert 1 USD to the selected currency
+    }).unwrap();
+    const exchangeRate = result?.conversion_rates?.[newCurrency] || 1; // Get the conversion rate
+    console.log(`Exchange rate for ${newCurrency}:`, exchangeRate);
+    dispatch(setPrice(exchangeRate)); // Dispatch the updated price to Redux
+  } catch (error) {
+    console.error("Error fetching exchange rate:", error);
+  }
+  };
   return (
     <Box
       component="footer"
@@ -23,9 +92,8 @@ const Footer = () => {
         pt: 6,
         pb: 2,
         mt: 8,
-        boxShadow: "0 -2px 16px 0 rgba(0,0,0,0.12)",
+        position: "static",
       }}
-      className="shadow-[0_-2px_16px_0_rgba(0,0,0,0.12)]"
     >
       <Container maxWidth="lg">
         <Stack
@@ -37,157 +105,84 @@ const Footer = () => {
         >
           {/* Brand */}
           <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: 1,
-                mb: 1,
-                color: "primary.main",
-              }}
-              className="tracking-wider"
-            >
+            <Typography variant="h5" fontWeight={700} color="primary.main">
               Nexus Mart
             </Typography>
-            <Typography variant="body2" sx={{ color: "#d1d5db" }}>
+            <Typography variant="body2" sx={{ color: "#d1d5db", mb: 1 }}>
               Your one-stop shop for everything!
             </Typography>
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <Link
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener"
-                color="inherit"
-                className="hover:text-blue-500 transition-colors"
-              >
-                <FaFacebook size={22} />
+            <Stack direction="row" spacing={2}>
+              <Link href="https://facebook.com" target="_blank" color="inherit">
+                <FaFacebook />
               </Link>
-              <Link
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener"
-                color="inherit"
-                className="hover:text-sky-400 transition-colors"
-              >
-                <FaTwitter size={22} />
+              <Link href="https://twitter.com" target="_blank" color="inherit">
+                <FaTwitter />
               </Link>
-              <Link
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener"
-                color="inherit"
-                className="hover:text-pink-400 transition-colors"
-              >
-                <FaInstagram size={22} />
+              <Link href="https://instagram.com" target="_blank" color="inherit">
+                <FaInstagram />
               </Link>
-              <Link
-                href="https://github.com"
-                target="_blank"
-                rel="noopener"
-                color="inherit"
-                className="hover:text-gray-400 transition-colors"
-              >
-                <FaGithub size={22} />
+              <Link href="https://github.com" target="_blank" color="inherit">
+                <FaGithub />
               </Link>
             </Stack>
           </Box>
-          {/* Customer Service */}
+
+          {/* Customer Links */}
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
               Customer Service
             </Typography>
             <Stack spacing={1}>
-              <Link
-                href="/contact"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/contact" underline="hover" color="#d1d5db">
                 Contact Us
               </Link>
-              <Link
-                href="/vendor/login"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
-                Sell with us
+              <Link href="/vendor/login" underline="hover" color="#d1d5db">
+                Sell With Us
               </Link>
-              <Link
-                href="/cart"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
-                Cart
-              </Link>
-              <Link
-                href="/privacy-policy"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/privacy-policy" underline="hover" color="#d1d5db">
                 Privacy Policy
               </Link>
             </Stack>
           </Box>
+
           {/* Quick Links */}
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
               Quick Links
             </Typography>
             <Stack spacing={1}>
-              <Link
-                href="/"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/" underline="hover" color="#d1d5db">
                 Home
               </Link>
-              <Link
-                href="/shop"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/shop" underline="hover" color="#d1d5db">
                 Shop
               </Link>
-              <Link
-                href="/cart"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/cart" underline="hover" color="#d1d5db">
                 Cart
               </Link>
-              <Link
-                href="/contact"
-                underline="none"
-                color="#d1d5db"
-                className="hover:text-primary transition-colors font-medium"
-              >
+              <Link href="/contact" underline="hover" color="#d1d5db">
                 Contact
               </Link>
             </Stack>
           </Box>
-          {/* Newsletter Signup */}
+
+          {/* Newsletter */}
           <Box sx={{ minWidth: 250 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
               Newsletter
             </Typography>
             <Typography variant="body2" sx={{ color: "#d1d5db", mb: 1 }}>
               Sign up for exclusive offers and updates.
             </Typography>
-            <form onSubmit={handleNewsletterSubmit}>
+            <form onSubmit={handleSubscribe}>
               <Stack direction="row" spacing={1}>
                 <TextField
                   size="small"
                   type="email"
                   required
                   placeholder="Your email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   sx={{
                     bgcolor: "#23232a",
                     borderRadius: 2,
@@ -196,9 +191,6 @@ const Footer = () => {
                       "& fieldset": { borderColor: "#444" },
                       "&:hover fieldset": { borderColor: "#ec4899" },
                     },
-                  }}
-                  InputProps={{
-                    style: { color: "#fff" },
                   }}
                 />
                 <Button
@@ -209,66 +201,134 @@ const Footer = () => {
                     fontWeight: 700,
                     borderRadius: 2,
                     px: 2.5,
-                    letterSpacing: 1,
                     bgcolor: "#ec4899",
                     "&:hover": { bgcolor: "#be185d" },
-                    boxShadow: 2,
                   }}
                 >
                   Sign Up
                 </Button>
               </Stack>
-              {newsletterMsg && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#22d3ee", mt: 1, display: "block" }}
-                >
-                  {newsletterMsg}
+              {message && (
+                <Typography variant="caption" sx={{ mt: 1, color: "#22d3ee" }}>
+                  {message}
                 </Typography>
               )}
             </form>
           </Box>
-          {/* Contact */}
+
+          {/* Language and Currency Switcher */}
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-              Contact Us
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              Preferences
             </Typography>
-            <Typography variant="body2" sx={{ color: "#d1d5db" }}>
-              Email:{" "}
-              <Link
-                href="mailto:tdawood140@gmail.com"
-                target="_blank"
-                color="inherit"
-                underline="hover"
-                className="hover:text-primary"
+            <Stack spacing={1}>
+              <Select
+                value={language}
+                size="small"
+                onChange={(e) => setLanguage(e.target.value)}
+                sx={{ bgcolor: "#23232a", color: "#fff" }}
               >
-                tdawood140@gmail.com
-              </Link>
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#d1d5db" }}>
-              Phone:{" "}
-              <Link
-                href="tel:+917348848706"
-                target="_blank"
-                color="inherit"
-                underline="hover"
-                className="hover:text-primary"
+                <MenuItem value="en">English</MenuItem>
+                <MenuItem value="hi">Hindi</MenuItem>
+                <MenuItem value="es">Spanish</MenuItem>
+              </Select>
+              <Select
+                value={selectedCurrency}
+                size="small"
+                onChange={handleCurrencyChange}
+                sx={{ bgcolor: "#23232a", color: "#fff" }}
               >
-                +91 7348848706
-              </Link>
-            </Typography>
+                {currencyData.length > 0 ? (
+                  currencyData.map(([code, name]) => (
+                    <MenuItem key={code} value={code}>
+                      {name} ({code})
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>No currencies available</MenuItem>
+                )}
+              </Select>
+            </Stack>
           </Box>
         </Stack>
+
         <Divider sx={{ bgcolor: "#27272a", mb: 2 }} />
-        <Typography
-          variant="body2"
-          align="center"
-          sx={{ color: "#a1a1aa", fontSize: "0.95rem" }}
-        >
-          &copy; {new Date().getFullYear()} Nexus Mart. All rights
-          reserved.
-        </Typography>
+
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2" sx={{ color: "#a1a1aa" }}>
+            &copy; 2024- {new Date().getFullYear()} Nexus Mart. All rights reserved.
+          </Typography>
+
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleScrollToTop}
+            sx={{ color: "#fff", borderColor: "#444", "&:hover": { borderColor: "#ec4899" } }}
+            startIcon={<FaArrowUp />}
+          >
+            Scroll to Top
+          </Button>
+        </Stack>
       </Container>
+
+      {/* Live Chat Button */}
+      <IconButton
+        onClick={() => setChatOpen(!chatOpen)}
+        sx={{
+          position: "fixed",
+          bottom: 30,
+          right: 30,
+          bgcolor: "#ec4899",
+          color: "#fff",
+          "&:hover": { bgcolor: "#be185d" },
+          zIndex: 2000,
+        }}
+      >
+        <FaComments />
+      </IconButton>
+
+      {/* Live Chat Panel */}
+      <Fade in={chatOpen}>
+        <Paper
+          elevation={8}
+          sx={{
+            position: "fixed",
+            bottom: 90,
+            right: 30,
+            width: 320,
+            maxHeight: 400,
+            bgcolor: "#1f1f1f",
+            p: 2,
+            borderRadius: 2,
+            color: "#fff",
+            zIndex: 2000,
+            overflowY: "auto",
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Live Chat
+          </Typography>
+          <Typography variant="body2">
+            👋 Hi! How can we help you today?
+          </Typography>
+          {/* Simulate chat UI */}
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Type your message..."
+              size="small"
+              sx={{
+                bgcolor: "#2d2d2d",
+                borderRadius: 1,
+                input: { color: "#fff" },
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "#444" },
+                },
+              }}
+            />
+          </Box>
+        </Paper>
+      </Fade>
     </Box>
   );
 };

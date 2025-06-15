@@ -2,13 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* Global Styles */
 body {
-  background: #0f0f10;
+  background: linear-gradient(135deg, #0f0f10, #1c1c1e); /* Gradient background */
   color: #fff;
+  font-family: 'Roboto', sans-serif; /* Modern font */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 input,
 textarea {
   color: #000;
+  border-radius: 8px; /* Rounded corners for inputs */
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  transition: all 0.3s ease; /* Smooth hover effect */
+}
+
+button:hover {
+  transform: scale(1.05); /* Slight zoom effect */
+  background-color: #ec4899; /* Highlight color */
+}
+
+a {
+  color: #ec4899; /* Accent color for links */
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #be185d; /* Darker accent color on hover */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: bold;
+  margin: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+footer {
+  background: #18181b;
+  color: #d1d5db;
+  padding: 16px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }

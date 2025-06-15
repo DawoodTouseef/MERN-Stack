@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 
 const VendorRoute = () => {
   const { userInfo } = useSelector((state) => state.auth);
-  return userInfo && userInfo.isAdmin && userInfo.role==="vendor" ? (
+  return userInfo  && userInfo.role==="vendor" ? (
     <Outlet />
   ) : (
     <Navigate to="/vendor/login" replace />

@@ -26,7 +26,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (userInfo?.isAdmin) {
-      navigate("/vendor/dashboard");
+      navigate("/");
     }
   }, [navigate, userInfo]);
 
@@ -35,14 +35,14 @@ const AdminLogin = () => {
 
     try {
       const res = await login({ email, password }).unwrap();
-      if (!res.isAdmin) {
+      if (res.role!=="admin") {
         toast.error("Access denied. Admins only.");
         return;
       }
 
       dispatch(setCredentials({ ...res }));
       toast.success("Login successful");
-      navigate("/vendor/dashboard");
+      navigate("/");
     } catch (err) {
       toast.error(err?.data?.message || "Invalid email or password");
     }

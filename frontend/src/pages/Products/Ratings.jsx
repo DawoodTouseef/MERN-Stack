@@ -8,6 +8,7 @@ const Ratings = ({ value = 0, text, color }) => {
 
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
+      {/* Star Ratings */}
       <Box sx={{ display: "flex", alignItems: "center" }}>
         {[...Array(fullStars)].map((_, idx) => (
           <FaStar
@@ -15,9 +16,11 @@ const Ratings = ({ value = 0, text, color }) => {
             style={{
               color: color || "#fbbf24",
               marginLeft: idx === 0 ? 0 : 2,
-              fontSize: "1.25rem",
+              fontSize: "1.4rem",
               filter: "drop-shadow(0 1px 4px #fbbf2433)",
+              transition: "transform 0.2s",
             }}
+            className="hover:scale-110"
           />
         ))}
         {halfStars === 1 && (
@@ -25,9 +28,11 @@ const Ratings = ({ value = 0, text, color }) => {
             style={{
               color: color || "#fbbf24",
               marginLeft: fullStars > 0 ? 2 : 0,
-              fontSize: "1.25rem",
+              fontSize: "1.4rem",
               filter: "drop-shadow(0 1px 4px #fbbf2433)",
+              transition: "transform 0.2s",
             }}
+            className="hover:scale-110"
           />
         )}
         {[...Array(emptyStars)].map((_, idx) => (
@@ -36,11 +41,15 @@ const Ratings = ({ value = 0, text, color }) => {
             style={{
               color: "#e5e7eb",
               marginLeft: 2,
-              fontSize: "1.25rem",
+              fontSize: "1.4rem",
+              transition: "transform 0.2s",
             }}
+            className="hover:scale-110"
           />
         ))}
       </Box>
+
+      {/* Rating Text */}
       {text && (
         <Tooltip title={text}>
           <Typography
@@ -57,6 +66,11 @@ const Ratings = ({ value = 0, text, color }) => {
               borderRadius: 2,
               boxShadow: "0 1px 4px #ec489933",
               display: "inline-block",
+              transition: "transform 0.2s",
+              "&:hover": {
+                transform: "scale(1.05)",
+                boxShadow: "0 2px 8px #ec489955",
+              },
             }}
             className="shadcn-rating-text"
           >

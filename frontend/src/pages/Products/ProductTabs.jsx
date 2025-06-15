@@ -19,7 +19,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { FaUserCircle } from "react-icons/fa";
-
+import { useSelector } from "react-redux";
 const ProductTabs = ({
   loadingProductReview,
   userInfo,
@@ -32,12 +32,8 @@ const ProductTabs = ({
   images,
   setImages,
 }) => {
-  const { data, isLoading } = useGetTopProductsQuery();
+  const { data: relatedProducts, isLoading } = useGetTopProductsQuery();
   const [activeTab, setActiveTab] = useState(1); // Default to All Reviews
-
-  if (isLoading) {
-    return <Loader />;
-  }
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -222,10 +218,10 @@ const ProductTabs = ({
             Related Products
           </Typography>
           <Grid container spacing={2}>
-            {!data ? (
+            {isLoading ? (
               <Loader />
             ) : (
-              data.slice(0, 8).map((prod) => (
+              relatedProducts.slice(0, 8).map((prod) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={prod._id}>
                   <SmallProduct product={prod} />
                 </Grid>

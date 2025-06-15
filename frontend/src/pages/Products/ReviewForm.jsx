@@ -54,7 +54,7 @@ const ReviewForm = ({
             }}
           >
             <Grid container spacing={4}>
-              {/* Rating */}
+              {/* Rating Section */}
               <Grid item xs={12} md={6}>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
                   Your Rating
@@ -103,14 +103,15 @@ const ReviewForm = ({
                   sx={{ mb: 2 }}
                 >
                   <MenuItem value="">Select</MenuItem>
-                  <MenuItem value={1}>Inferior</MenuItem>
-                  <MenuItem value={2}>Decent</MenuItem>
-                  <MenuItem value={3}>Great</MenuItem>
-                  <MenuItem value={4}>Excellent</MenuItem>
-                  <MenuItem value={5}>Exceptional</MenuItem>
+                  {Object.entries(ratingLabels).map(([key, label]) => (
+                    <MenuItem key={key} value={key}>
+                      {label}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
-              {/* Upload Images */}
+
+              {/* Upload Images Section */}
               <Grid item xs={12} md={6}>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
                   Upload Images
@@ -160,7 +161,8 @@ const ReviewForm = ({
                     ))}
                 </Box>
               </Grid>
-              {/* Comment */}
+
+              {/* Comment Section */}
               <Grid item xs={12}>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
                   Comment
@@ -183,7 +185,8 @@ const ReviewForm = ({
                   }}
                 />
               </Grid>
-              {/* Submit */}
+
+              {/* Submit Button */}
               <Grid item xs={12}>
                 <Button
                   type="submit"

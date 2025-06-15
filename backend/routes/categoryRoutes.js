@@ -8,16 +8,16 @@ import {
   readCategory,
 } from "../controllers/categoryController.js";
 
-import { authenticate, authorizeAdmin } from "../middlewares/authMiddleware.js";
+import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
 
 // Create category
-router.route("/").post(authenticate, authorizeAdmin, createCategory);
+router.route("/").post(authenticate, authorizeVendor, createCategory);
 
 // Update and delete category by ID
 router
   .route("/:categoryId")
-  .put(authenticate, authorizeAdmin, updateCategory)
-  .delete(authenticate, authorizeAdmin, removeCategory);
+  .put(authenticate, authorizeVendor, updateCategory)
+  .delete(authenticate, authorizeVendor, removeCategory);
 
 // Get all categories
 router.route("/categories").get(listCategory);

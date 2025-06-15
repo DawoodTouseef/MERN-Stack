@@ -7,7 +7,6 @@ const userSchema = mongoose.Schema({
   phone: { type: String },
 
   password: { type: String, required: true },
-  isAdmin: { type: Boolean, default: false },
 
   role: { type: String, enum: ["customer", "admin", "vendor"], default: "customer" },
   status: { type: String, enum: ["active", "inactive", "banned"], default: "active" },
@@ -28,7 +27,6 @@ const userSchema = mongoose.Schema({
 
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   recentlyViewed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
 
   newsletterSubscribed: { type: Boolean, default: false },
 

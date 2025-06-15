@@ -2,6 +2,8 @@ import User from "../models/userModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import createToken from "../utils/createToken.js";
+import Token from "../models/tokenModel.js";
+import { randomBytes } from "crypto";
 
 // Create new user (Register)
 const createUser = asyncHandler(async (req, res) => {
@@ -15,7 +17,6 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist,
     recentlyViewed,
     newsletterSubscribed,
-    isAdmin, // Deprecated, use role instead
   } = req.body;
 
   if (!username || !email || !password) {
@@ -45,7 +46,6 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist: Array.isArray(wishlist) ? wishlist : [],
     recentlyViewed: Array.isArray(recentlyViewed) ? recentlyViewed : [],
     newsletterSubscribed: newsletterSubscribed === true,
-    isAdmin: isAdmin === true, // Deprecated, use role instead
   });
 
   // Save user and create token cookie
@@ -133,7 +133,11 @@ const updateCurrentUserProfile = asyncHandler(async (req, res) => {
     req.body.newsletterSubscribed !== undefined
       ? req.body.newsletterSubscribed
       : user.newsletterSubscribed;
-
+  
+  user.SellerVerified =
+    req.body.SellerVerified !== undefined
+      ? req.body.SellerVerified
+      : false;
   if (req.body.password) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
@@ -216,6 +220,58 @@ const updateUserById = asyncHandler(async (req, res) => {
   res.json(updatedUser);
 });
 
+
+const bcryptSalt = 10;
+
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.find({ email });
+    console.log(user)
+    if (!user) {
+      return res.status(400).json({ data: { message: "Email not found" } });
+    }
+
+    await Token.deleteMany({ userId: user._id });
+
+    const resetToken = randomBytes(32).toString("hex");
+    const hashedToken = await bcrypt.hash(resetToken, bcryptSalt);
+
+    await new Token({
+      userId: user._id,
+      token: hashedToken,
+      createdAt: Date.now(),
+    }).save();
+
+    const link = `/passwordReset?token=${resetToken}&id=${user._id}`;
+    console.log("Password Reset Link:", link);
+
+    res.status(200).json({
+      data: {
+        link,
+        message: "Reset link generated",
+        userId: user._id,
+      },
+    });
+  } catch (error) {
+    console.error("Reset error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const changePassword = async (req,res) => {
+  const { userId, token, newPassword } = req.body;
+
+  let user = Token.findById(userId)
+  if (!user || user.resetToken !== token || user.createdAt < Date.now()) {
+    return res.status(400).json({ message: 'Invalid or expired token' });
+  }
+  let users=User.findById(userId)
+  users.password = await bcrypt.hash(newPassword, 10);
+  await users.save();
+  res.json({ message: 'Password reset successful' ,users});
+}
 export {
   createUser,
   loginUser,
@@ -226,4 +282,6 @@ export {
   deleteUserById,
   getUserById,
   updateUserById,
+  requestPasswordReset,
+  changePassword
 };
