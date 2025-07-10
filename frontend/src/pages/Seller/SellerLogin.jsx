@@ -24,7 +24,7 @@ import { toast } from "react-toastify";
 import { logout } from "../../redux/features/auth/authSlice";
 import { useLogoutMutation } from "../../redux/api/usersApiSlice";
 
-const VendorLogin = () => {
+const SellerLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -39,7 +39,7 @@ const VendorLogin = () => {
   const redirect = sp.get("redirect") || "/";
 
   useEffect(() => {
-    if (userInfo?.role==="vendor") {
+    if (userInfo?.role==="Seller") {
       navigate("/");
     }
   }, [navigate, userInfo]);
@@ -47,8 +47,8 @@ const VendorLogin = () => {
   const handleLogout = async () => {
       try {
         let api;
-        if (userInfo.role==="vendor"){
-            api="/Vendor/login"
+        if (userInfo.role==="Seller"){
+            api="/seller/login"
         }
         await logoutApiCall().unwrap();
         dispatch(logout());
@@ -62,8 +62,8 @@ const VendorLogin = () => {
     e.preventDefault();
     try {
       const res = await login({ email, password }).unwrap();
-      if (res.role !== "vendor" || res.role==="admin") {
-        toast.error("Access denied. Vendors only.");
+      if (res.role !== "seller" || res.role==="admin") {
+        toast.error("Access denied. Sellers only.");
         handleLogout();
         return;
       }
@@ -142,7 +142,7 @@ const VendorLogin = () => {
                 textShadow: "2px 2px 8px #ec4899",
               }}
             >
-              Vendor Login
+              Seller Login
             </Typography>
             <Typography
               variant="subtitle2"
@@ -154,7 +154,7 @@ const VendorLogin = () => {
                 textAlign: "center",
               }}
             >
-              Welcome back! Please login to your Vendor dashboard.
+              Welcome back! Please login to your Seller dashboard.
             </Typography>
             <Divider sx={{ width: "100%", mb: 2, bgcolor: "#ec4899", opacity: 0.3 }} />
             <Box
@@ -236,9 +236,9 @@ const VendorLogin = () => {
               </Button>
               <Box sx={{ mt: 3, textAlign: "center" }}>
                 <Typography variant="body2" color="#fff">
-                  New Vendor?{" "}
+                  New Seller?{" "}
                   <Link
-                    to={redirect ? `/vendor/register?redirect=${redirect}` : "/vendor/register"}
+                    to={redirect ? `/seller/register?redirect=${redirect}` : "/seller/register"}
                     style={{
                       color: "#ec4899",
                       textDecoration: "underline",
@@ -269,4 +269,4 @@ const VendorLogin = () => {
   );
 };
 
-export default VendorLogin;
+export default SellerLogin;

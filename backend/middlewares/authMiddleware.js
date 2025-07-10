@@ -25,7 +25,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
 });
 
 const authorizeVendor = (req, res, next) => {
-  if (req.user && (req.user.role === "admin" || req.user.role === "vendor")) {
+  if (req.user && (req.user.role === "admin" || req.user.role === "vendor" || req.user.role === "seller")) {
     next();
   } else {
     res.status(401).send("Not authorized as an admin.");

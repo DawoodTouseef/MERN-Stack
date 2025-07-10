@@ -21,8 +21,13 @@ const ForgotPassword = () => {
 
       // Send request to backend
       const data = request_password({email:email}).unwrap()
-
-      toast.success(data.message || "Password reset email sent successfully.");
+      if (data.status===400){
+        console.log(data?.data)
+      }
+      else{
+        toast.success(data?.data.message || "Password reset email sent successfully.");
+        
+      }
       setEmail("");
     } catch (error) {
       toast.error(

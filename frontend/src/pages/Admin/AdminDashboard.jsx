@@ -20,10 +20,18 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { FaUsers } from "react-icons/fa";
+import { FaUsers ,FaProductHunt} from "react-icons/fa";
+import { AiOutlineShoppingCart, AiOutlineDollarCircle } from "react-icons/ai";
+import { MdOutlineBarChart } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import DocumentTitle from "react-document-title"
+import DocumentTitle from "react-document-title";
+import { useAllProductsQuery } from "../../redux/api/productApiSlice";
+import {
+  useGetOrdersQuery
+} from "../../redux/api/orderApiSlice";
+
+
 const StatCard = ({ icon, label, value, color }) => (
   <Paper
     elevation={6}
@@ -69,7 +77,10 @@ const AdminDashboard = () => {
   const { data: sales, isLoading } = useGetTotalSalesQuery();
   const { data: customers, isLoading: loadingCustomers } = useGetUsersQuery();
   const { data: orders, isLoading: loadingOrders } = useGetTotalOrdersQuery();
+  const {data:order,isLoading:loadingOrder} = useGetOrdersQuery()
+  const { data: products, isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
+    
   const { userInfo } = useSelector((state) => state.auth);
 
   const [chartType, setChartType] = useState("bar");
@@ -139,7 +150,15 @@ const AdminDashboard = () => {
 
   let customersCount = 0;
   if (userInfo?.role==="admin" && customers) {
-    customersCount = customers.filter((u) => u.role === "vendor" ).length;
+    customersCount = customers.filter((u) => u.role === "customer" ).length;
+  }
+  let sellerCount = 0;
+  if (userInfo?.role==="admin" && customers) {
+    sellerCount = customers.filter((u) => u.role === "seller" ).length;
+  }
+  let vendorsCount = 0;
+  if (userInfo?.role==="admin" && customers) {
+    vendorsCount = customers.filter((u) => u.role === "vendor" ).length;
   }
 
   return (
@@ -172,17 +191,60 @@ const AdminDashboard = () => {
         spacing={3}
         justifyContent="center"
         alignItems="center"
-        sx={{ mb: 4 }}
+        sx={{ mb: 4, display: "flex", flexWrap: "wrap" ,gap: 2}}
       >
         <StatCard
-          icon={<FaUsers size={28} />}
-          label="Vendors"
-          value={
-            loadingCustomers ? <Loader size={24} /> : customersCount
-          }
-          color={theme.palette.info.main}
-        />
-        
+                    icon={<AiOutlineDollarCircle size={32} />}
+                    label="Total Sales"
+                    value={
+                      isLoading ? (
+                        <Loader size={24} />
+                      ) : (
+                        `$${sales?.totalSales?.toFixed(2) || 0}`
+                      )
+                    }
+                    color={theme.palette.secondary.main}
+                  />
+                  <StatCard
+                    icon={<FaProductHunt size={28} />}
+                    label="Products"
+                    value={loadingProducts ? <Loader size={24} /> : products.length || 0}
+                    color={theme.palette.info.main}
+                  />
+                  <StatCard
+                    icon={<FaUsers size={28} />}
+                    label="Users"
+                    value={loadingProducts ? <Loader size={24} /> : customersCount}
+                    color={theme.palette.info.main}
+                  />
+                  <StatCard
+                    icon={<FaUsers size={28} />}
+                    label="Vendors"
+                    value={loadingProducts ? <Loader size={24} /> : vendorsCount}
+                    color={theme.palette.info.main}
+                  />
+                  <StatCard
+                    icon={<FaUsers size={28} />}
+                    label="Sellers"
+                    value={loadingProducts ? <Loader size={24} /> : sellerCount}
+                    color={theme.palette.info.main}
+                  />
+                  <StatCard
+                    icon={<AiOutlineShoppingCart size={32} />}
+                    label="All Orders"
+                    value={loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0}
+                    color={theme.palette.success.main}
+                  />
+                  <StatCard
+                    icon={<MdOutlineBarChart size={32} />}
+                    label="Avg. Order Value"
+                    value={
+                      isLoading || loadingOrders
+                        ? <Loader size={24} />
+                        : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
+                    }
+                    color={theme.palette.warning.main}
+                  />
       </Stack>
 
       <Paper

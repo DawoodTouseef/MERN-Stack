@@ -34,6 +34,9 @@ a {
   text-decoration: none;
   transition: color 0.3s ease;
 }
+:root {
+  --main-bg-color: #0d1117;
+}
 
 a:hover {
   color: #be185d; /* Darker accent color on hover */

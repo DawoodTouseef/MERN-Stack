@@ -42,10 +42,10 @@ const UserList = () => {
     refetch();
   }, [refetch]);
 
-  const deleteHandler = async (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+  const deleteHandler = async (user) => {
+    if (window.confirm("Are you sure you want to delete this "+user.role+"?")) {
       try {
-        await deleteUser(id);
+        await deleteUser(user._id);
         refetch();
         toast.success("User deleted");
       } catch (err) {
@@ -132,7 +132,7 @@ const UserList = () => {
                     <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Admin</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
                     <TableCell sx={{ fontWeight: 700 }} align="center">
                       Actions
                     </TableCell>
@@ -237,17 +237,17 @@ const UserList = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {user.isAdmin ? (
+                        {user.role==="admin" ? (
                           <Chip label="Admin" color="success" size="small" />
                         ) : (
-                          <Chip label="User" color="info" size="small" />
+                          <Chip label={user.role.toUpperCase()} color="info" size="small" />
                         )}
                       </TableCell>
                       <TableCell align="center">
-                        {!user.isAdmin && (
+                        {user.role!=="admin" && (
                           <Tooltip title="Delete User">
                             <IconButton
-                              onClick={() => deleteHandler(user._id)}
+                              onClick={() => deleteHandler(user)}
                               color="error"
                               size="small"
                             >

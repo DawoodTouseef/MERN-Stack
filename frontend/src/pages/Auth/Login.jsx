@@ -283,34 +283,21 @@ const Login = () => {
                 </Box>
               </>
             )}
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="body2" color="#fff">
-                New Customer?{" "}
-                <Link
-                  to={redirect ? `/register?redirect=${redirect}` : "/register"}
-                  style={{
-                    color: "#f50057",
-                    textDecoration: "underline",
-                  }}
-                >
+            <Box sx={{ mt: 3, textAlign: "center" }}>
+              <Typography variant="body2" color="#ccc">
+                Don't have an account?{" "}
+                <Link to={`/register?redirect=${redirect}`} style={{ color: "#ec4899", textDecoration: "underline" }}>
                   Register
+                </Link>
+              </Typography>
+              <Typography variant="body2" color="#ccc" mt={1}>
+                <Link to={`/forgot-password?redirect=${redirect}`} style={{ color: "#ec4899", textDecoration: "underline" }}>
+                  Forgot Password
                 </Link>
               </Typography>
             </Box>
           </Paper>
         </Grid>
-        <Grid
-          item
-          md={6}
-          sx={{
-            display: { xs: "none", md: "block" },
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1964&q=80')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            borderRadius: "0 16px 16px 0",
-          }}
-        />
       </Grid>
     </Box>
   );

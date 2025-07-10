@@ -46,6 +46,12 @@ const Footer = () => {
 
   fetchCurrencyData();
 }, [apiKey, fetchCurrencyCodes]);
+
+  const chatbot = (e)=>{
+      e.preventDefault();
+      console.log(e.target.value);
+  
+  }
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (!email) {
@@ -253,12 +259,11 @@ const Footer = () => {
         </Stack>
 
         <Divider sx={{ bgcolor: "#27272a", mb: 2 }} />
-
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="body2" sx={{ color: "#a1a1aa" }}>
+        <Typography variant="body2" sx={{ color: "#a1a1aa" ,textAlign:"center"}}>
             &copy; 2024- {new Date().getFullYear()} Nexus Mart. All rights reserved.
           </Typography>
 
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Button
             size="small"
             variant="outlined"
@@ -325,6 +330,7 @@ const Footer = () => {
                   "& fieldset": { borderColor: "#444" },
                 },
               }}
+              onClick={chatbot}
             />
           </Box>
         </Paper>

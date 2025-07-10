@@ -34,6 +34,10 @@ const createUser = asyncHandler(async (req, res) => {
   // Hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
+  let default_status = "active" || status ;
+  if (role === "vendor") {
+    default_status = "inactive"; 
+  }
 
   // Build new user object
   const newUser = new User({
@@ -41,7 +45,7 @@ const createUser = asyncHandler(async (req, res) => {
     email,
     password: hashedPassword,
     role: role || "customer",
-    status: status || "active",
+    status: default_status,
     addresses: Array.isArray(addresses) ? addresses : [],
     wishlist: Array.isArray(wishlist) ? wishlist : [],
     recentlyViewed: Array.isArray(recentlyViewed) ? recentlyViewed : [],
@@ -227,8 +231,7 @@ const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await User.find({ email });
-    console.log(user)
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ data: { message: "Email not found" } });
     }
@@ -237,7 +240,6 @@ const requestPasswordReset = async (req, res) => {
 
     const resetToken = randomBytes(32).toString("hex");
     const hashedToken = await bcrypt.hash(resetToken, bcryptSalt);
-
     await new Token({
       userId: user._id,
       token: hashedToken,
@@ -248,30 +250,47 @@ const requestPasswordReset = async (req, res) => {
     console.log("Password Reset Link:", link);
 
     res.status(200).json({
-      data: {
-        link,
         message: "Reset link generated",
-        userId: user._id,
-      },
-    });
+      });
   } catch (error) {
     console.error("Reset error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-const changePassword = async (req,res) => {
+const changePassword = async (req, res) => {
   const { userId, token, newPassword } = req.body;
 
-  let user = Token.findById(userId)
-  if (!user || user.resetToken !== token || user.createdAt < Date.now()) {
-    return res.status(400).json({ message: 'Invalid or expired token' });
+  try {
+    // Get token record for the user
+    const tokenDoc = await Token.findOne(userId);
+    if (!tokenDoc || !tokenDoc.token) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    // Compare provided token with hashed token
+    const isValid = await bcrypt.compare(token, tokenDoc.token);
+    if (!isValid) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    // Find user and update password
+    const user = await User.findById(tokenDoc.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    // Delete token after successful password change
+    await Token.deleteOne({ _id: tokenDoc._id });
+    res.status(200).json({ message: "Password reset successful",role:user.role });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-  let users=User.findById(userId)
-  users.password = await bcrypt.hash(newPassword, 10);
-  await users.save();
-  res.json({ message: 'Password reset successful' ,users});
-}
+};
+
+
 export {
   createUser,
   loginUser,

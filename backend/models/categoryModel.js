@@ -35,6 +35,10 @@ const categorySchema = new mongoose.Schema(
       required: true,
       ref: "User",
     },
+    isApproved:{
+      type:Boolean,
+      default:false,
+    }
   },
   { timestamps: true }
 );

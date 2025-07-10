@@ -141,7 +141,7 @@ const OrderList = () => {
                   <StyledTableCell align="center">
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                       <Avatar
-                        src={order.orderItems[0]?.image}
+                        src={order.orderItems[0]?.media[0].url}
                         alt={order.orderItems[0]?.name}
                         sx={{ width: 48, height: 48, border: "2px solid #ec4899" }}
                         variant="rounded"
@@ -183,9 +183,6 @@ const OrderList = () => {
                   </StyledTableCell>
                   <StyledTableCell align="center">
                     {getPaymentChip(order.paymentStatus)}
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                      {order.paymentMethod}
-                    </Typography>
                   </StyledTableCell>
                   <StyledTableCell align="center">
                     <Chip

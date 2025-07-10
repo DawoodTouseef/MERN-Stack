@@ -13,11 +13,14 @@ import {
   Chip,
 } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
+import DocumentTitle from "react-document-title";
+import { useSelector } from "react-redux";
 
 const AllProducts = () => {
   const { data: products = [], isLoading, isError, refetch } = useAllProductsQuery();
   const [refreshFlag, setRefreshFlag] = useState(false);
-
+  const [filteredProducts, setfilteredProducts] = useState([]);
+  const { userInfo } = useSelector((state) => state.auth);
   // Listen for product add/update/delete events in localStorage
   useEffect(() => {
     const handleStorage = (e) => {
@@ -29,7 +32,10 @@ const AllProducts = () => {
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, [refetch]);
-
+  useEffect(() => {
+    const filter=products.filter((p)=>(p.user===userInfo._id));
+    setfilteredProducts(filter);
+  }, [products]);
   // Optionally, trigger refetch on focus (for single tab)
   useEffect(() => {
     const onFocus = () => refetch();
@@ -54,6 +60,7 @@ const AllProducts = () => {
   }
 
   return (
+    <DocumentTitle title="Products | Nexus Mart">
     <Box
       sx={{
         px: { xs: 1, md: 8 },
@@ -75,14 +82,15 @@ const AllProducts = () => {
             My Products
           </Typography>
           <Chip
-            label={`Total: ${products.length}`}
+            label={`Total: ${filteredProducts.length}`}
             color="secondary"
             sx={{ ml: 2, fontWeight: 600, fontSize: "1rem" }}
           />
         </Box>
-        <Button
+        {userInfo?.role === "vendor" ? (
+          <Button
           component={Link}
-          to="/vendor/productlist"
+          to="/vendor/productlist" 
           variant="contained"
           color="secondary"
           startIcon={<IoAdd />}
@@ -104,8 +112,34 @@ const AllProducts = () => {
         >
           Create Product
         </Button>
+        ):(
+          <Button
+          component={Link}
+          to="/seller/productlist" 
+          variant="contained"
+          color="secondary"
+          startIcon={<IoAdd />}
+          sx={{
+            borderRadius: 2,
+            fontWeight: 600,
+            boxShadow: 3,
+            letterSpacing: 1,
+            px: 3,
+            py: 1,
+            fontSize: "1.05rem",
+            transition: "transform 0.2s, box-shadow 0.2s",
+            "&:hover": {
+              transform: "scale(1.04)",
+              boxShadow: 6,
+            },
+          }}
+          className="transition-transform"
+        >
+          Create Product
+        </Button>
+        )}
       </Box>
-      {products.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 8 }}>
           <Typography variant="h6" color="text.secondary">
             You have not added any products yet.
@@ -113,7 +147,7 @@ const AllProducts = () => {
         </Box>
       ) : (
         <Grid container spacing={4}>
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <Grid item xs={12} md={6} key={product._id}>
               <Paper
                 elevation={6}
@@ -208,6 +242,7 @@ const AllProducts = () => {
         </Grid>
       )}
     </Box>
+    </DocumentTitle>
   );
 };
 

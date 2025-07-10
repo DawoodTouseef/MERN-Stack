@@ -19,6 +19,7 @@ import FeaturedCategories from "../components/FeaturedCategories";
 import BannerCarousel from "../components/BannerCarousel";
 import Product from "./Products/Product";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
+import SellerDashBoard from "./Seller/SellerDashBoard";
 import VendorDashboard from "./Vendor/vendorDashboard";
 import DocumentTitle from "react-document-title";
 import { useFetchBannersQuery} from "../redux/api/bannerApiSlice";
@@ -39,6 +40,7 @@ const Home = () => {
   const [showProducts, setShowProducts] = useState(false);
   const { data: banners, isLoading:bannerLoading, isError:BannnerIserror, error:BannerError } = useFetchBannersQuery();
   const [filteredProducts, setFilteredProducts] = useState([]);
+  
   useEffect(() => {
     if (!isLoading && data?.products?.length) {
       setShowProducts(true);
@@ -53,6 +55,7 @@ const Home = () => {
  
   }, [isLoading, data,offers]);
   if (userInfo?.role === "admin") return <AdminDashboard />;
+  if (userInfo?.role === "seller") return <SellerDashBoard />;
   if (userInfo?.role === "vendor") return <VendorDashboard />;
 
   return (

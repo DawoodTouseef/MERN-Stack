@@ -1,4 +1,5 @@
 import Chart from "react-apexcharts";
+import { useGetUsersQuery } from "../../redux/api/usersApiSlice";
 import {
   useGetTotalOrdersQuery,
   useGetTotalSalesByDateQuery,
@@ -6,10 +7,11 @@ import {
   useGetOrdersQuery
 } from "../../redux/api/orderApiSlice";
 import { useState, useEffect } from "react";
-import OrderList from "../Seller/OrderList";
+import OrderList from "./OrderList";
 import Loader from "../../components/Loader";
 import {
   Box,
+  Grid,
   Paper,
   Typography,
   Avatar,
@@ -116,7 +118,7 @@ const SellerDashBoard = () => {
   });
 
   useEffect(() => {
-    if (!userInfo?.role === "vendor") navigate("/unauthorized");
+    if (!userInfo?.role === "seller") navigate("/unauthorized");
   }, [userInfo, navigate]);
 
   useEffect(() => {
@@ -158,7 +160,7 @@ const SellerDashBoard = () => {
   }, [salesDetail, products, order]);
 
   let customersCount = 0;
-  if (userInfo?.role==="vendor" && products) {
+  if (userInfo?.role==="seller" && products) {
     customersCount = products.filter((u) => u.user === userInfo._id).length;
     
   }

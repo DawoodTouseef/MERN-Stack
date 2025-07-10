@@ -45,6 +45,8 @@ const productSchema = mongoose.Schema({
   reviews: [reviewSchema],
   rating: { type: Number, default: 0 },
   numReviews: { type: Number, default: 0 },
+  taxProductCode: { type: String }, // e.g., "MOB123" for tax classification
+  countryOfOrigin: { type: String }, // Optional: for international rules
 
   user: { type: ObjectId, required: true, ref: "User" },
 }, { timestamps: true });

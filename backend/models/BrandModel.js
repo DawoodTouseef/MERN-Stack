@@ -10,6 +10,7 @@ const BrandSchema = new mongoose.Schema(
     website: { type: String },
     isActive: { type: Boolean, default: true },
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
+    isApproved:{type:Boolean,default:false}
   },
   { timestamps: true }
 );

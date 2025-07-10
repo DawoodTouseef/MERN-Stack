@@ -34,8 +34,7 @@ import {
   Person,
 } from "@mui/icons-material";
 
-// filepath: e:\Intern\MERN-E-Commerce-Store\frontend\src\pages\Vendor\VendorRegister.jsx
-const VendorRegister = () => {
+const SellerRegister = () => {
   // Stepper state
   const [activeStep, setActiveStep] = useState(0);
 
@@ -95,9 +94,8 @@ const VendorRegister = () => {
         username,
         email,
         password,
-        role: "vendor",
-        status: "inactive",
-        VendorProfile: {
+        role: "seller",
+        SellerProfile: {
           companyName,
           taxId,
           gstId,
@@ -106,7 +104,7 @@ const VendorRegister = () => {
       }).unwrap();
       dispatch(setCredentials({ ...res }));
       navigate(redirect);
-      toast.success("Vendor successfully registered");
+      toast.success("Seller successfully registered");
     } catch (err) {
       toast.error(err?.data?.message || "Registration failed");
     }
@@ -194,7 +192,7 @@ const VendorRegister = () => {
                     textShadow: "2px 2px 8px #ec4899",
                   }}
                 >
-                  Vendor Registration
+                  Seller Registration
                 </Typography>
                 <Typography
                   variant="subtitle2"
@@ -205,7 +203,7 @@ const VendorRegister = () => {
                     textAlign: "center",
                   }}
                 >
-                  Join as a Vendor and grow your business with us!
+                  Join as a Seller and grow your business with us!
                 </Typography>
               </Box>
               <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
@@ -424,7 +422,7 @@ const VendorRegister = () => {
               <Typography variant="body2" color="#fff" sx={{ textAlign: "center" }}>
                 Already have an account?{" "}
                 <Link
-                  to={redirect ? `/Vendor/login?redirect=${redirect}` : "/Vendor/login"}
+                  to={redirect ? `/seller/login?redirect=${redirect}` : "/seller/login"}
                   style={{ color: "#ec4899", textDecoration: "underline", fontWeight: 600 }}
                 >
                   Login
@@ -485,4 +483,4 @@ const submitButtonStyle = {
   },
 };
 
-export default VendorRegister;
+export default SellerRegister;

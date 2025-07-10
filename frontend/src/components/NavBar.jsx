@@ -88,11 +88,14 @@ const NavBar = ({
   const handleLogout = async () => {
     try {
       let api;
-      if (userInfo.role==="vendor"){
-          api="/vendor/login"
+      if (userInfo.role==="seller"){
+          api="/seller/login"
       }
       if (userInfo.role==="admin"){
           api="/admin/login"
+      }
+      if (userInfo.role==="vendor"){
+          api="/vendor/login"
       }
       await logoutApiCall().unwrap();
       dispatch(logout());
@@ -222,52 +225,68 @@ const NavBar = ({
             </ListItem>
           </>
         )}
-        <Divider sx={{ my: 1 }} />
-        {userInfo ? (
+        { userInfo && userInfo.role==="vendor" && (
           <>
-            {userInfo.role==="vendor" ? (
-              <>
-                <ListItem button component={Link} to="/" onClick={() => setDrawerOpen(false)}>
+            <ListItem button component={Link} to="/vendor/brand" onClick={() => setDrawerOpen(false)}>
+              <ListItemIcon>
+                <FaTag size={22} />
+              </ListItemIcon>
+              <ListItemText primary="Brand" />
+            </ListItem>
+          </> 
+        )}
+        {userInfo && userInfo.role==="admin" && (
+          <>
+            <ListItem button component={Link} to="/admin/settings" onClick={() => setDrawerOpen(false)}>
+              <ListItemIcon>
+                <AiOutlineDashboard size={22} />
+              </ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+            <ListItem button component={Link} to="/admin/banner" onClick={() => setDrawerOpen(false)}>
+              <ListItemIcon>
+                <AiOutlineShoppingCart size={22} />
+              </ListItemIcon>
+              <ListItemText primary="Banner" />
+            </ListItem>
+            <ListItem button component={Link} to="/admin/userlist" onClick={() => setDrawerOpen(false)}>  
+              <ListItemIcon>
+                <FaUsers size={22} />
+              </ListItemIcon>
+              <ListItemText primary="Users" />
+            </ListItem>
+            <ListItem button component={Link} to="/admin/categorylist" onClick={() => setDrawerOpen(false)}>
+              <ListItemIcon>
+                <AiOutlineShopping size={22} />
+              </ListItemIcon>
+              <ListItemText primary="Category" />
+            </ListItem>
+          </>
+        )}
+        {userInfo && userInfo.role==="seller" && (
+          <>
+          <ListItem button component={Link} to="/" onClick={() => setDrawerOpen(false)}>
                   <ListItemIcon>
                     <AiOutlineDashboard size={22} />
                   </ListItemIcon>
                   <ListItemText primary="Dashboard" />
                 </ListItem>
-                <ListItem button component={Link} to="/vendor/allproductslist" onClick={() => setDrawerOpen(false)}>
+                <ListItem button component={Link} to="/seller/allproductslist" onClick={() => setDrawerOpen(false)}>
                   <ListItemIcon>
                     <MdProductionQuantityLimits size={22} />
                   </ListItemIcon>
                   <ListItemText primary="Products" />
                 </ListItem>
-                <ListItem button component={Link} to="/vendor/categorylist" onClick={() => setDrawerOpen(false)}>
-                  <ListItemIcon>
-                    <AiOutlineShoppingCart size={22} />
-                  </ListItemIcon>
-                  <ListItemText primary="Category" />
-                </ListItem>
-                <ListItem button component={Link} to="/vendor/orderlist" onClick={() => setDrawerOpen(false)}>
+                <ListItem button component={Link} to="/seller/orderlist" onClick={() => setDrawerOpen(false)}>
                   <ListItemIcon>
                     <FaList size={22} />
                   </ListItemIcon>
                   <ListItemText primary="Orders" />
                 </ListItem>
-                <Divider sx={{ my: 1 }} />
-              </>
-            ):(
-              <>
-              {userInfo.role === "admin" &&(
-                    <>
-                    <ListItem button component={Link} to="/admin/userlist" onClick={() => setDrawerOpen(false)}>
-                        <ListItemIcon>
-                          <FaUsers size={22} />
-                        </ListItemIcon>
-                        <ListItemText primary="Users" />
-                    </ListItem>
-                    <Divider sx={{ my: 1 }} />
-                    </>
-              )}
-              </>
-            )}            
+          </>)}
+        <Divider sx={{ my: 1 }} />
+        {userInfo ? (
+          <>
             <ListItem button component={Link} to="/profile" onClick={() => setDrawerOpen(false)}>
               <ListItemIcon>
                 <AiOutlineProfile size={22} />
@@ -540,25 +559,17 @@ const NavBar = ({
                       horizontal: "right",
                     }}
                   >
-                    {userInfo.role==="vendor" ? (
+                    {userInfo.role==="seller" ? (
                       <>
                         <MenuItem component={Link} to="/" onClick={handleMenuClose}>
                           <AiOutlineDashboard size={28} style={{ marginRight: 4 }} />
                           Dashboard
                         </MenuItem>
-                        <MenuItem component={Link} to="/vendor/allproductslist" onClick={handleMenuClose}>
+                        <MenuItem component={Link} to="/seller/allproductslist" onClick={handleMenuClose}>
                           <MdProductionQuantityLimits size={28} style={{ marginRight: 4 }} />
                           Products
                         </MenuItem>
-                        <MenuItem component={Link} to="/vendor/categorylist" onClick={handleMenuClose}>
-                          <AiOutlineShoppingCart size={28} style={{ marginRight: 4 }} />
-                          Category
-                        </MenuItem>
-                        <MenuItem component={Link} to="/vendor/brand" onClick={handleMenuClose}>
-                          <FaTag size={28} style={{ marginRight: 4 }} />
-                          Brand
-                        </MenuItem>
-                        <MenuItem component={Link} to="/vendor/orderlist" onClick={handleMenuClose}>
+                        <MenuItem component={Link} to="/seller/orderlist" onClick={handleMenuClose}>
                           <FaList size={28} style={{ marginRight: 4 }} />
                           Orders
                         </MenuItem>
@@ -566,21 +577,50 @@ const NavBar = ({
                     ):(
                       <>
                       {userInfo.role === "admin"  && (
-                          <MenuItem component={Link} to="/admin/userlist" onClick={handleMenuClose}>
+                        <>
+                        <MenuItem component={Link} to="/admin/categorylist" onClick={handleMenuClose}>
+                          <AiOutlineShoppingCart size={28} style={{ marginRight: 4 }} />
+                          Category
+                        </MenuItem>
+                
+                        <MenuItem component={Link} to="/admin/userlist" onClick={handleMenuClose}>
                           <FaUsers size={28} style={{ marginRight: 4 }} />
                           Users
                         </MenuItem>
+                        
+                        <MenuItem component={Link} to="/admin/banner" onClick={handleMenuClose}>
+                          <AiOutlineShopping size={28} style={{ marginRight: 4 }} />
+                          Banner
+                        </MenuItem>
+                        <MenuItem component={Link} to="/admin/settings" onClick={handleMenuClose}>
+                          <AiOutlineDashboard size={28} style={{ marginRight: 4 }} />
+                          Settings
+                        </MenuItem>
+                        <MenuItem component={Link} to="/admin/offer" onClick={handleMenuClose}>
+                          <FaTag size={28} style={{ marginRight: 4 }} />
+                          Offer
+                        </MenuItem>
+                        <MenuItem component={Link} to="/admin/pages" onClick={handleMenuClose}>
+                          <AiOutlineShopping size={28} style={{ marginRight: 4 }} />
+                          Pages
+                        </MenuItem>
+
+                        </>
                         )}
+                        {userInfo.role === "vendor" && (
+                          <MenuItem component={Link} to="/vendor/brand" onClick={handleMenuClose}>
+                            <FaTag size={28} style={{ marginRight: 4 }} />
+                            Brand
+                          </MenuItem>
+
+                        )}
+
                         <Divider />
                       </>
                     )}
                     <MenuItem component={Link} to="/profile" onClick={handleMenuClose}>
                       <AiOutlineProfile size={28} style={{ marginRight: 4 }} />
                       Profile
-                    </MenuItem>
-                    <MenuItem component={Link} to="/orders" onClick={handleMenuClose}>
-                      <FaList size={28} style={{ marginRight: 4 }} />
-                      Orders
                     </MenuItem>
                     <MenuItem onClick={handleLogout}>
                       <IoIosLogOut size={28} style={{ marginRight: 4 }} />

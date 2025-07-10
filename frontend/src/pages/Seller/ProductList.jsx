@@ -21,7 +21,6 @@ import {
   FormControl,
   IconButton,
   Stack,
-  OutlinedInput,
   Chip,
   Divider,
 } from "@mui/material";
@@ -66,7 +65,8 @@ const ProductList = () => {
   const [specValue, setSpecValue] = useState("");
   const [editVariantIndex, setEditVariantIndex] = useState(null);
   const [editSpecKey, setEditSpecKey] = useState(null);
-
+  const [countries, setCountries] = useState([]);
+  const [selectedCountries, setSelectedCountries] = useState();
   const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -269,6 +269,7 @@ const ProductList = () => {
       formData.append("category", category);
       formData.append("price", Number(price));
       formData.append("quantity", Number(quantity));
+      formData.append('countries',selectedCountries);
       tags.forEach((tag) => formData.append("tags", tag));
       formData.append("warrantyPeriod", warrantyPeriod);
       formData.append("returnPolicy", returnPolicy);
@@ -416,6 +417,21 @@ const ProductList = () => {
             >
               {brands.map((b) => (
                 <MenuItem key={b._id} value={b._id}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#fff" }}>countries *</InputLabel>
+            <Select
+              value={selectedCountries}
+              onChange={(e) => setSelectedCountries(e.target.value)}
+              sx={{ color: "#fff" }}
+              label="Countries *"
+            >
+              {countries.map((b) => (
+                <MenuItem key={b.code} value={b.value}>
                   {b.name}
                 </MenuItem>
               ))}

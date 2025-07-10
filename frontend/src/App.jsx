@@ -3,18 +3,41 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
-import { Box } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "./redux/features/auth/authSlice";
+import { useLogoutMutation } from "./redux/api/usersApiSlice";
+import { useNavigate } from "react-router-dom";
 
 const App = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [logoutApiCall] = useLogoutMutation();
+
+  const isInactiveVendor = userInfo?.role === "vendor" && userInfo?.status === "inactive";
+
+  const handleLogout = async () => {
+    try {
+      await logoutApiCall().unwrap();
+      dispatch(logout());
+      navigate("/vendor/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
-        minHeight: "100vh", // Ensures the page takes up the full viewport height
+        minHeight: "100vh",
         margin: 0,
         padding: 0,
-        bgcolor: "#f9fafb", // Light background for the entire app
+        bgcolor: "#f9fafb",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
       <ToastContainer
@@ -33,18 +56,57 @@ const App = () => {
       <Box
         component="main"
         sx={{
-          flex: 1, // Allows the main content to expand and push the footer to the bottom
+          flex: 1,
           display: "flex",
           flexDirection: "column",
           margin: 0,
           padding: 0,
-          bgcolor: "#ffffff", // White background for the main content
-          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)", // Subtle shadow for the main content
+          bgcolor: "#ffffff",
+          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+          filter: isInactiveVendor ? "blur(6px)" : "none",
+          pointerEvents: isInactiveVendor ? "none" : "auto",
+          transition: "filter 0.3s ease-in-out",
         }}
       >
         <Outlet />
       </Box>
       <Footer />
+
+      {isInactiveVendor && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 2000,
+            width: "100vw",
+            height: "100vh",
+            bgcolor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            color: "#fff",
+          }}
+        >
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Account is not verified
+          </Typography>
+          <Typography variant="body1" mb={3}>
+            Please wait for an admin to activate your account.
+          </Typography>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleLogout}
+            sx={{ px: 4, py: 1.5, fontWeight: "bold", fontSize: "1rem" ,borderRadius:"25px" ,color:"yellow"}}
+          >
+            Logout
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };

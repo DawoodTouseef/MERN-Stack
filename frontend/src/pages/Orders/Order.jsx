@@ -27,7 +27,7 @@ import {
   usePayOrderMutation,
 } from "../../redux/api/orderApiSlice";
 import DocumentTitle from "react-document-title";
-
+import {useFetchOffersQuery} from "../../redux/api/offerApiSlice";
 
 const Order = () => {
   const { id: orderId } = useParams();
@@ -49,6 +49,8 @@ const Order = () => {
     isLoading: loadingPayPal,
     error: errorPayPal,
   } = useGetPaypalClientIdQuery();
+  const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
+  
   const currency = useSelector((state) => state.currency.selectedCurrency);
   const price = useSelector((state) => state.currency.price);
   const getCurrencySymbol = () => {
@@ -63,7 +65,7 @@ const Order = () => {
             const symbol = parts.find(part => part.type === 'currency')?.value;
             return symbol || currency;
           } catch (err) {
-            return currency; // fallback if currency code is invalid
+            return "$"; // fallback if currency code is invalid
           }
         };
   useEffect(() => {
@@ -117,7 +119,34 @@ const Order = () => {
     await deliverOrder(orderId);
     refetch();
   };
+  const calculateDiscountedPrice = (product) => {
+  if (!product || !product.price) return 0; // Return 0 if product or price is undefined
+  if (!offers || offers.length === 0) return product.price * price; // Return original price if no offers
 
+  let discountedPrice = product.price;
+
+  // Iterate through all offers to find applicable discounts
+  offers.forEach((offer) => {
+    const isProductInOffer =
+      offer.products.some((p) => p._id === product.product);
+
+    if (isProductInOffer) {
+      if (offer.discountUnit === "percent" && offer.endTime !== Date()) {
+        discountedPrice = Math.min(
+          discountedPrice,
+          product.price - product.price * (offer.discountValue / 100)
+        );
+      } else if (offer.discountUnit === "flat") {
+        discountedPrice = Math.min(
+          discountedPrice,
+          product.price - offer.discountValue
+        );
+      }
+    }
+  });
+  let percentage= ((product.price-discountedPrice)/product.price)*100;
+  return percentage;
+};
   return (
     <>
     <DocumentTitle title= "Orders | Nexus Mart">
@@ -146,6 +175,7 @@ const Order = () => {
                     <TableCell align="center">Quantity</TableCell>
                     <TableCell>Unit Price</TableCell>
                     <TableCell>Total</TableCell>
+                    <TableCell>Offer</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -175,6 +205,7 @@ const Order = () => {
                       <TableCell align="center">{item.qty}</TableCell>
                       <TableCell>{getCurrencySymbol()}{(item.price*price).toFixed(2)}</TableCell>
                       <TableCell>{getCurrencySymbol()}{((item.qty * item.price)*price).toFixed(2)}</TableCell>
+                      <TableCell>{`${calculateDiscountedPrice(item)}% Off`}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
