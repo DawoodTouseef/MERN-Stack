@@ -19,7 +19,7 @@ import FeaturedCategories from "../components/FeaturedCategories";
 import BannerCarousel from "../components/BannerCarousel";
 import Product from "./Products/Product";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
-import SellerDashBoard from "./Seller/SellerDashBoard";
+import SellerDashBoard from "./Seller/SellerDashboard";
 import VendorDashboard from "./Vendor/vendorDashboard";
 import DocumentTitle from "react-document-title";
 import { useFetchBannersQuery} from "../redux/api/bannerApiSlice";
