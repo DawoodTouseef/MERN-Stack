@@ -1,4 +1,5 @@
-export const BASE_URL = "";
+export const BASE_URL = process.env.VITE_API_URL || "";
+console.log(BASE_URL)
 export const USERS_URL = "/api/users";
 export const CATEGORY_URL = "/api/category";
 export const ADDRESS_URL = "/api/address";
