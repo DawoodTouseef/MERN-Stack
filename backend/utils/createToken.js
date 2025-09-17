@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET="admin123";
+const JWT_SECRET = process.env.JWT_SECRET || "admin123";
 const generateToken = (res, userId) => {
   const token = jwt.sign({ userId }, JWT_SECRET, {
     expiresIn: "30d",
