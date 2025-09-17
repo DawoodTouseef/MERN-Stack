@@ -13,7 +13,7 @@ import {
   changePassword
 } from "../controllers/userController.js";
 
-import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
+import { authenticate, authorizeVendor ,IsAdmin} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
