@@ -23,6 +23,7 @@
     "clsx": "^2.1.1",
     "flowbite": "^2.0.0",
     "framer-motion": "^12.15.0",
+    "js-cookie": "^3.0.5",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.511.0",
     "moment": "^2.29.4",
