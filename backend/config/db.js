@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 
-const MONGO_URI = "mongodb://localhost:27017/huxnStors";
+const MONGO_URI = process.env.MONGODB_URL || "mongodb://localhost:27017/huxnStors";
+console.log(MONGO_URI)
 const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI);
