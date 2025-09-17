@@ -1,5 +1,5 @@
-export const BASE_URL = import.meta.env.VITE_API_URL || "";
-console.log(BASE_URL)
+export const BASE_URL = "https://mern-stack-backend-mz29.onrender.com" || '';
+
 export const USERS_URL = "/api/users";
 export const CATEGORY_URL = "/api/category";
 export const ADDRESS_URL = "/api/address";
