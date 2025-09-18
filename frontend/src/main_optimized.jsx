@@ -15,7 +15,7 @@ import {
   LazyUser,
   LazyOrders,
   LazyProducts,
-  LazyPages,
+  LazyMiscPages, // Use the new name instead of LazyPages
   App,
   Home,
   PrivateRoute
@@ -42,6 +42,7 @@ const router = createBrowserRouter(
         <Route path="offer" element={<LazyAdmin.AdminOffer />} />
         <Route path="categorylist" element={<LazyAdmin.CategoryList />} />
         <Route path="user/edit/:id" element={<LazyAdmin.UserEditPage />} />
+        <Route path="vendors" element={<LazyAdmin.VendorManagement />} />
       </Route>
       
       {/* Seller Routes - Lazy loaded */}
@@ -71,20 +72,20 @@ const router = createBrowserRouter(
       <Route path="/product/:id" element={<LazyProducts.ProductDetails />} />
       
       {/* Shopping Routes - Lazy loaded */}
-      <Route path="/cart" element={<LazyPages.Cart />} />
-      <Route path="/shop" element={<LazyPages.Shop />} />
-      <Route path="/shop/:id" element={<LazyPages.Shop />} />
-      <Route path="/search/:keyword" element={<LazyPages.Search />} />
-      <Route path="/Categories" element={<LazyPages.Categories />} />
-      <Route path="/flash-sale" element={<LazyPages.FlashSale />} />
+      <Route path="/cart" element={<LazyMiscPages.Cart />} />
+      <Route path="/shop" element={<LazyMiscPages.Shop />} />
+      <Route path="/shop/:id" element={<LazyMiscPages.Shop />} />
+      <Route path="/search/:keyword" element={<LazyMiscPages.Search />} />
+      <Route path="/Categories" element={<LazyMiscPages.Categories />} />
+      <Route path="/flash-sale" element={<LazyMiscPages.FlashSale />} />
       
       {/* Utility Routes - Lazy loaded */}
       <Route path="/address" element={<LazyOrders.Address />} />
-      <Route path="/privacy-policy" element={<LazyPages.Privacy />} />
-      <Route path="/contact" element={<LazyPages.ContactUs />} />
-      <Route path="/faq" element={<LazyPages.Faq />} />
-      <Route path="/forgot-password" element={<LazyPages.ForgotPassword />} />
-      <Route path="/passwordReset" element={<LazyPages.RequestPassword />} />
+      <Route path="/privacy-policy" element={<LazyMiscPages.Privacy />} />
+      <Route path="/contact" element={<LazyMiscPages.ContactUs />} />
+      <Route path="/faq" element={<LazyMiscPages.Faq />} />
+      <Route path="/forgot-password" element={<LazyMiscPages.ForgotPassword />} />
+      <Route path="/passwordReset" element={<LazyMiscPages.RequestPassword />} />
       
       {/* Protected User Routes - Lazy loaded with private route wrapper */}
       <Route path="" element={<PrivateRoute />}>
@@ -93,7 +94,7 @@ const router = createBrowserRouter(
         <Route path="/shipping" element={<LazyOrders.Shipping />} />
         <Route path="/placeorder" element={<LazyOrders.PlaceOrder />} />
         <Route path="/order/:id" element={<LazyOrders.Order />} />
-        <Route path="/support/chat" element={<LazyPages.LiveChat />} />
+        <Route path="/support/chat" element={<LazyMiscPages.LiveChat />} />
       </Route>
     </Route>
   )

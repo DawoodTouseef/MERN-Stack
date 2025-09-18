@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Route, createRoutesFromElements } from 'react-router';
-import { LazyPages, LoadingFallback } from '../Utils/lazyLoading';
+import { LazyPages as UtilsLazyPages, LoadingFallback } from '../Utils/lazyLoading';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 // Higher-order component for route-level error boundaries
@@ -160,7 +160,8 @@ const LazyProducts = {
   ),
 };
 
-const LazyPages = {
+// Renamed from LazyPages to LazyMiscPages to avoid duplicate declaration
+const LazyMiscPages = {
   Cart: withErrorBoundary(
     React.lazy(() => import('../pages/Cart')),
     <div>Failed to load shopping cart. Please refresh and try again.</div>
@@ -220,7 +221,8 @@ export {
   LazyUser,
   LazyOrders,
   LazyProducts,
-  LazyPages,
+  LazyMiscPages, // Export with the new name to avoid conflict
+  UtilsLazyPages as LazyPages, // Export the utility LazyPages with its original name
   App,
   Home,
   PrivateRoute
