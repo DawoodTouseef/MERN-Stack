@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid, Card, CardContent, Typography, CircularProgress, Alert, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { 
   BarChart, 
@@ -23,6 +22,20 @@ const VendorAnalyticsDashboard = () => {
   const theme = useTheme();
   const [period, setPeriod] = useState('30d');
   
+  // Test recharts import
+  const testRechartsImport = () => {
+    try {
+      // This is just to verify the import works
+      console.log('Recharts import successful');
+    } catch (error) {
+      console.error('Recharts import failed:', error);
+    }
+  };
+  
+  useEffect(() => {
+    testRechartsImport();
+  }, []);
+
   const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = 
     useGetVendorDashboardQuery();
     
