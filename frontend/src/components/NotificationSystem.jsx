@@ -14,7 +14,7 @@ const NotificationSystem = () => {
   useEffect(() => {
     if (userInfo && userInfo.token) {
       // Initialize socket connection
-      socketRef.current = io(process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000', {
+      socketRef.current = io(process.env.VITE_API_URL || 'http://localhost:5000', {
         auth: {
           token: userInfo.token
         },

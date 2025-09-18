@@ -31,6 +31,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import dynamicPricingRoutes from './routes/dynamicPricingRoutes.js';
+import vendorRoutes from './routes/vendorRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import notificationManager from './services/notificationService.js';
 import taxServiceManager from './services/thirdPartyTaxService.js';
@@ -111,6 +112,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/pricing', dynamicPricingRoutes);
+app.use('/api/vendors', vendorRoutes);
 // app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
 
 // Security headers for config endpoints
