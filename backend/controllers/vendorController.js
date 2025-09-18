@@ -183,8 +183,8 @@ export const getVendorSalesAnalytics = asyncHandler(async (req, res) => {
       'orderItems.product': { $in: products.map(p => p._id) },
       isPaid: true,
       createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        $lte: endDate ? new Date(endDate) : new Date()
       }
     };
 
@@ -252,8 +252,8 @@ export const getVendorProductAnalytics = asyncHandler(async (req, res) => {
           'orderItems.product': { $in: products.map(p => p._id) },
           isPaid: true,
           createdAt: {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate)
+            $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            $lte: endDate ? new Date(endDate) : new Date()
           }
         }
       },
@@ -330,8 +330,8 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
       'orderItems.product': { $in: products.map(p => p._id) },
       isPaid: true,
       createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        $lte: endDate ? new Date(endDate) : new Date()
       }
     };
 

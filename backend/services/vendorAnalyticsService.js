@@ -110,7 +110,7 @@ class VendorAnalyticsService {
   }
   
   // Calculate sales growth
-  static async calculateGrowth(productIds, endDate, startDate) {
+  static async calculateGrowth(productIds, startDate, endDate) {
     try {
       // Calculate current period
       const currentPeriod = await Order.aggregate([
@@ -144,7 +144,7 @@ class VendorAnalyticsService {
       // Calculate previous period
       const periodDiff = endDate.getTime() - startDate.getTime();
       const previousStart = new Date(startDate.getTime() - periodDiff);
-      const previousEnd = startDate;
+      const previousEnd = new Date(endDate.getTime() - periodDiff);
       
       const previousPeriod = await Order.aggregate([
         {

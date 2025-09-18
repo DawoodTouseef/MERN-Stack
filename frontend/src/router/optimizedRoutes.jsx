@@ -63,6 +63,10 @@ const LazyAdmin = {
     React.lazy(() => import('../pages/Admin/Users')),
     <div>Failed to load user editor. Please refresh and try again.</div>
   ),
+  VendorManagement: withErrorBoundary(
+    React.lazy(() => import('../pages/Admin/VendorManagement')),
+    <div>Failed to load vendor management. Please refresh and try again.</div>
+  ),
 };
 
 const LazySeller = {
