@@ -14,8 +14,19 @@ import {
   fetchTopProducts,
   fetchNewProducts,
   filterProducts,
+  advancedSearch,
+  facetedSearch,
+  getSearchSuggestions,
+  voteOnReview,
+  reportReview,
+  getProductReviews,
+  updateReview,
+  addVendorResponse,
+  getFlashSales,
+  getTrendingProducts,
 } from "../controllers/productController.js";
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
+import { searchLimiter } from "../middlewares/rateLimitMiddleware.js";
 import checkId from "../middlewares/checkId.js";
 
 router
@@ -24,11 +35,23 @@ router
   .post(authenticate, authorizeVendor, formidable(), addProduct);
 
 router.route("/allproducts").get(fetchAllProducts);
-router.route("/:id/reviews").post(authenticate, checkId, addProductReview);
 
+// Special routes that should be defined BEFORE the :id route
 router.get("/top", fetchTopProducts);
 router.get("/new", fetchNewProducts);
+router.get('/flash-sales', getFlashSales);
+router.get('/trending', getTrendingProducts);
 
+// Review routes
+router.route("/:id/reviews").post(authenticate, checkId, addProductReview).get(getProductReviews);
+
+// Enhanced review routes
+router.route("/reviews/:reviewId").put(authenticate, updateReview);
+router.route("/reviews/vote").post(authenticate, voteOnReview);
+router.route("/reviews/report").post(authenticate, reportReview);
+router.route("/reviews/vendor-response").post(authenticate, addVendorResponse);
+
+// Product ID routes (must be last to avoid conflicts with special routes)
 router
   .route("/:id")
   .get(fetchProductById)
@@ -36,5 +59,10 @@ router
   .delete(authenticate, authorizeVendor, removeProduct);
 
 router.route("/filtered-products").post(filterProducts);
+
+// Advanced search endpoints
+router.route("/search/advanced").get(searchLimiter, advancedSearch);
+router.route("/search/faceted").get(searchLimiter, facetedSearch);
+router.route("/search/suggestions").get(searchLimiter, getSearchSuggestions);
 
 export default router;

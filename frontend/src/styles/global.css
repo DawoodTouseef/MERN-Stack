@@ -1,0 +1,193 @@
+/* Global Responsive Typography and Layout Improvements */
+
+/* Ensure all components respect box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Root font size for better rem calculations */
+html {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Body styles for better consistency */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal scrolling */
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Responsive Typography Improvements */
+@media (max-width: 600px) {
+  .MuiTypography-h1 {
+    font-size: 2rem !important;
+  }
+  
+  .MuiTypography-h2 {
+    font-size: 1.75rem !important;
+  }
+  
+  .MuiTypography-h3 {
+    font-size: 1.5rem !important;
+  }
+  
+  .MuiTypography-h4 {
+    font-size: 1.25rem !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 1.125rem !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+}
+
+/* Better button touch targets on mobile */
+@media (max-width: 768px) {
+  .MuiButton-root {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+  
+  .MuiIconButton-root {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Improved spacing for form elements */
+.MuiTextField-root {
+  margin-bottom: 1rem;
+}
+
+/* Better focus states for accessibility */
+.MuiButton-root:focus-visible,
+.MuiIconButton-root:focus-visible,
+.MuiTextField-root:focus-within {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for interactive elements */
+.MuiButton-root,
+.MuiCard-root,
+.MuiPaper-root {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Prevent layout shift during loading */
+.MuiSkeleton-root {
+  transform: none;
+}
+
+/* Better responsive images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Improved scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Utility classes for common responsive patterns */
+.container-responsive {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 600px) {
+  .container-responsive {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 960px) {
+  .container-responsive {
+    padding: 0 32px;
+  }
+}
+
+.text-center-mobile {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .text-center-mobile {
+    text-align: left;
+  }
+}
+
+/* Improved spacing for grid layouts */
+.grid-responsive {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .grid-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+}
+
+@media (min-width: 960px) {
+  .grid-responsive {
+    gap: 32px;
+  }
+}
+
+/* Animation improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}

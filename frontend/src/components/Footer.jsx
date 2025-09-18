@@ -18,6 +18,7 @@ import { FaFacebook, FaTwitter, FaInstagram, FaGithub, FaComments, FaArrowUp } f
 import { useGetExchangeCodeMutation,useGetExchangeApiKeyQuery ,useGetExchangeRatesMutation} from "../redux/api/currencyApiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrency,setPrice } from "../redux/features/currency/currencySlice";
+
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -32,6 +33,7 @@ const Footer = () => {
 
   // Fetch currency codes using the API key
   const [fetchCurrencyCodes] = useGetExchangeCodeMutation();
+  
   useEffect(() => {
   const fetchCurrencyData = async () => {
     if (apiKey?.apikey) { // Use apiKey.apikey to access the API key
@@ -52,6 +54,7 @@ const Footer = () => {
       console.log(e.target.value);
   
   }
+  
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (!email) {
@@ -66,9 +69,11 @@ const Footer = () => {
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  
   const dispatch = useDispatch();
   const selectedCurrency = useSelector((state) => state.currency.selectedCurrency); 
   const prcie = useSelector((state)=>(state.currency.price));
+  
   const handleCurrencyChange = async(e) => {
     e.preventDefault()
     const newCurrency = e.target.value;
@@ -89,6 +94,7 @@ const Footer = () => {
     console.error("Error fetching exchange rate:", error);
   }
   };
+  
   return (
     <Box
       component="footer"
@@ -97,17 +103,20 @@ const Footer = () => {
         color: "#fff",
         pt: 6,
         pb: 2,
-        mt: 8,
-        position: "static",
+        // Use normal document flow instead of fixed positioning
+        width: "100%",
+        overflow: "hidden",
+        // Ensure footer stays at the bottom
+        marginTop: "auto",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={4}
           justifyContent="space-between"
-          alignItems="flex-start"
-          sx={{ pb: 4 }}
+          alignItems={{ xs: "center", md: "flex-start" }}
+          sx={{ pb: 4, textAlign: { xs: "center", md: "left" } }}
         >
           {/* Brand */}
           <Box>
@@ -161,6 +170,9 @@ const Footer = () => {
                 Home
               </Link>
               <Link href="/shop" underline="hover" color="#d1d5db">
+                Home
+              </Link>
+              <Link href="/shop" underline="hover" color="#d1d5db">
                 Shop
               </Link>
               <Link href="/cart" underline="hover" color="#d1d5db">
@@ -173,7 +185,7 @@ const Footer = () => {
           </Box>
 
           {/* Newsletter */}
-          <Box sx={{ minWidth: 250 }}>
+          <Box sx={{ minWidth: { xs: "100%", md: 250 }, maxWidth: { xs: "100%", md: 300 } }}>
             <Typography variant="subtitle1" fontWeight={600} mb={1}>
               Newsletter
             </Typography>
@@ -181,7 +193,7 @@ const Footer = () => {
               Sign up for exclusive offers and updates.
             </Typography>
             <form onSubmit={handleSubscribe}>
-              <Stack direction="row" spacing={1}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
                   size="small"
                   type="email"
@@ -223,7 +235,7 @@ const Footer = () => {
           </Box>
 
           {/* Language and Currency Switcher */}
-          <Box>
+          <Box sx={{ minWidth: { xs: "100%", md: "auto" } }}>
             <Typography variant="subtitle1" fontWeight={600} mb={1}>
               Preferences
             </Typography>
@@ -239,10 +251,11 @@ const Footer = () => {
                 <MenuItem value="es">Spanish</MenuItem>
               </Select>
               <Select
-                value={selectedCurrency}
+                value={currencyData.length > 0 ? selectedCurrency : ""}
                 size="small"
                 onChange={handleCurrencyChange}
                 sx={{ bgcolor: "#23232a", color: "#fff" }}
+                displayEmpty
               >
                 {currencyData.length > 0 ? (
                   currencyData.map(([code, name]) => (
@@ -251,7 +264,7 @@ const Footer = () => {
                     </MenuItem>
                   ))
                 ) : (
-                  <MenuItem disabled>No currencies available</MenuItem>
+                  <MenuItem value="" disabled>Loading currencies...</MenuItem>
                 )}
               </Select>
             </Stack>

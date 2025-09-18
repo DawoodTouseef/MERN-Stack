@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+
 import HeartIcon from "./HeartIcon";
 import {
   Box,
@@ -10,11 +10,32 @@ import {
   Fade,
   Stack,
   Tooltip,
+  Badge,
+  LinearProgress,
 } from "@mui/material";
-import { useState,useEffect } from "react";
+import {
+  LocalOffer,
+  TrendingUp,
+  FlashOn,
+  LocationOn,
+  Verified,
+  Star,
+  LocalShipping,
+} from "@mui/icons-material";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import {  useFetchOffersQuery } from "../../redux/api/offerApiSlice";
-const Product = ({ product }) => {
+import { Link } from "react-router-dom";
+import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
+
+const Product = ({ 
+  product, 
+  showDiscountBadge = false,
+  showPersonalizationScore = null,
+  showLocationBadge = false,
+  locationData = null,
+  showTrendingBadge = false,
+  trendingRank = null
+}) => {
   const [hovered, setHovered] = useState(false);
   const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -113,8 +134,9 @@ const Product = ({ product }) => {
     <Fade in timeout={600}>
       <Card
         sx={{
-          width: 480,
-          ml: 4,
+          width: "100%",
+          maxWidth: 320,
+          mx: "auto",
           p: 2,
           position: "relative",
           borderRadius: 3,
@@ -123,6 +145,9 @@ const Product = ({ product }) => {
           transition: "box-shadow 0.3s, transform 0.3s",
           bgcolor: "#fff",
           cursor: "pointer",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -136,7 +161,7 @@ const Product = ({ product }) => {
             sx={{
               width: "100%",
               borderRadius: 2,
-              height: 250,
+              height: { xs: 200, sm: 220, md: 250 },
               objectFit: "cover",
               filter: hovered ? "brightness(0.95) blur(0.5px)" : "none",
               transition: "filter 0.3s",
@@ -161,19 +186,94 @@ const Product = ({ product }) => {
             />
           )}
 
-          {offerpercent.percentage > 0 && offerpercent.end!==Date() && (
+          {/* Flash Sale Badge */}
+          {(showDiscountBadge || offerpercent.percentage > 0) && offerpercent.end !== Date() && (
             <Chip
+              icon={<FlashOn sx={{ fontSize: 16 }} />}
               label={`-${offerpercent.percentage}%`}
-              color="success"
+              color="error"
               sx={{
                 position: "absolute",
-                top: 50,
+                top: isOutOfStock ? 50 : 10,
                 left: 10,
                 fontWeight: 600,
                 fontSize: "0.95rem",
                 borderRadius: "999px",
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(1)' },
+                  '50%': { transform: 'scale(1.05)' },
+                  '100%': { transform: 'scale(1)' }
+                }
               }}
             />
+          )}
+
+          {/* Trending Badge */}
+          {showTrendingBadge && trendingRank && (
+            <Chip
+              icon={<TrendingUp sx={{ fontSize: 16 }} />}
+              label={`#${trendingRank} Trending`}
+              sx={{
+                position: "absolute",
+                top: 10,
+                right: 50,
+                bgcolor: '#ff5722',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                borderRadius: "999px",
+              }}
+            />
+          )}
+
+          {/* Location Badge */}
+          {showLocationBadge && locationData?.city && (
+            <Chip
+              icon={<LocationOn sx={{ fontSize: 16 }} />}
+              label={`Popular in ${locationData.city}`}
+              sx={{
+                position: "absolute",
+                bottom: 50,
+                left: 10,
+                bgcolor: '#4caf50',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                borderRadius: "999px",
+              }}
+            />
+          )}
+
+          {/* Personalization Score */}
+          {showPersonalizationScore && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 10,
+                right: 50,
+                bgcolor: 'rgba(103, 58, 183, 0.9)',
+                color: 'white',
+                p: 1,
+                borderRadius: 2,
+                minWidth: 80
+              }}
+            >
+              <Typography variant="caption" fontWeight="bold">
+                {Math.round(showPersonalizationScore * 100)}% Match
+              </Typography>
+              <LinearProgress 
+                variant="determinate" 
+                value={showPersonalizationScore * 100}
+                sx={{ 
+                  mt: 0.5, 
+                  bgcolor: 'rgba(255,255,255,0.3)',
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: 'white'
+                  }
+                }}
+              />
+            </Box>
           )}
 
           {defaultVariant?.images?.length > 1 && (
@@ -209,7 +309,7 @@ const Product = ({ product }) => {
           )}
         </Box>
 
-        <CardContent sx={{ p: 2 }}>
+        <CardContent sx={{ p: 2, flexGrow: 1, display: "flex", flexDirection: "column" }}>
           <Link to={`/product/${product._id}`} style={{ textDecoration: "none" }}>
             <Stack
               direction="row"

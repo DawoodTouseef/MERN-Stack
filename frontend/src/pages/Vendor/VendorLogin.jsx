@@ -62,7 +62,7 @@ const VendorLogin = () => {
     e.preventDefault();
     try {
       const res = await login({ email, password }).unwrap();
-      if (res.role !== "vendor" || res.role==="admin") {
+      if (res.role !== "vendor" && res.role !== "admin") {
         toast.error("Access denied. Vendors only.");
         handleLogout();
         return;

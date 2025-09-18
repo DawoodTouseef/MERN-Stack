@@ -39,6 +39,7 @@ import Order from "./pages/Orders/Order.jsx";
 import OrderList from "./pages/Seller/OrderList.jsx";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import Search from "./pages/Search.jsx"
+import AdvancedSearch from "./pages/AdvancedSearch.jsx";
 import UserOrder from "./pages/User/UserOrder.jsx";
 import Address from "./pages/Orders/Address.jsx";
 import AdminRegister from "./pages/Seller/SellerRegister.jsx";
@@ -73,6 +74,7 @@ const router = createBrowserRouter(
       <Route path="/cart" element={<Cart />} />
       <Route path={"/shop"} element={<Shop />} />
       <Route path="/search/:keyword" element={<Search />} />
+      <Route path="/search" element={<AdvancedSearch />} />
       <Route path="/address" element={<Address />} />
       <Route path="/shop/:id" element={<Shop />} />
       <Route path="/privacy-policy" element={<Privacy />} />

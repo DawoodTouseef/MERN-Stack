@@ -79,8 +79,7 @@ const ProductList = () => {
       setStock(Product?.countInStock || "");
       setQuantity(Product?.quantity || "");
       setPrice(Product?.price || "");
-      setImages(Product?.media || []);
-      setImages(Product?.media.map((image)=>image.url) || []);
+      setImages(Product?.media?.map((image) => image.url) || []);
       setTags(Product?.tags || []);
       setVariants(Product?.variant || []);
       setWarrantyPeriod(Product?.warrantyPeriod || "");

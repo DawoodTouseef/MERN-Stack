@@ -71,6 +71,7 @@ const Search = () => {
     if (searchText.trim() === "") {
       setFilteredProducts(products);
     } else {
+      const lower = searchText.toLowerCase();
       setFilteredProducts(
         products.filter(
           (p) =>
@@ -131,13 +132,19 @@ const Search = () => {
     <Box
       sx={{
         maxWidth: "100vw",
-        px: { xs: 1, md: 4 },
+        px: { xs: 2, sm: 3, md: 4 },
         py: 2,
         background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
         minHeight: "100vh",
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" } }}>
+      <Box sx={{ 
+        display: "flex", 
+        flexDirection: { xs: "column", md: "row" },
+        gap: { xs: 2, md: 4 },
+        position: "relative"
+      }}>
         {/* Sidebar Filters */}
         <Paper
           elevation={4}

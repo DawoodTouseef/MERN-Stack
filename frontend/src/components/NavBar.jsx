@@ -1,4 +1,4 @@
-import { useState,useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   AppBar,
@@ -101,7 +101,10 @@ const NavBar = ({
       dispatch(logout());
       navigate(api || '/login');
     } catch (error) {
-      // handle error
+      console.error('Logout error:', error);
+      // Even if logout API fails, clear local state
+      dispatch(logout());
+      navigate('/login');
     }
     setAnchorEl(null);
   };
@@ -182,9 +185,9 @@ const NavBar = ({
   };
   // Drawer content for mobile
   const drawerContent = (
-    <Box sx={{ width: 260, pt: 2 }}>
+    <Box sx={{ width: 280, pt: 2, pb: 2 }}>
       <List>
-        <ListItem>
+        <ListItem sx={{ mb: 1 }}>
           <Typography
             variant="h5"
             component={Link}
@@ -196,10 +199,40 @@ const NavBar = ({
               letterSpacing: 2,
               fontFamily: "Montserrat, sans-serif",
             }}
+            onClick={() => setDrawerOpen(false)}
           >
             Nexus
           </Typography>
         </ListItem>
+        
+        {/* Mobile Search Bar */}
+        <ListItem sx={{ px: 2, mb: 2 }}>
+          <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+            <TextField
+              fullWidth
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: "#f8fafc",
+                },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton type="submit" size="small">
+                      <SearchIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </form>
+        </ListItem>
+        
         <Divider sx={{ my: 1 }} />
         {userInfo && userInfo.role==="customer" && (
           <>
@@ -342,10 +375,15 @@ const NavBar = ({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-            minHeight: { xs: 60, md: 72 },
-            px: { xs: 1, md: 3 },
+            alignItems: "center",
+            gap: { xs: 1, md: 2 },
+            flexWrap: "nowrap",
+            minHeight: { xs: 64, md: 72 },
+            px: { xs: 2, md: 3 },
+            position: "relative",
+            width: "100%",
+            maxWidth: "1400px",
+            mx: "auto",
           }}
         >
           {/* Mobile Menu Icon */}
@@ -362,7 +400,7 @@ const NavBar = ({
           )}
 
           {/* Logo/Brand */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: { xs: 1, md: "0 0 200px" }, minWidth: { xs: "auto", md: "150px" } }}>
             <Typography
               variant="h5"
               component={Link}
@@ -384,81 +422,87 @@ const NavBar = ({
           </Box>
 
           {/* Search Bar */}
-          {!isMobile && (
-            <Box sx={{ flex: 2, display: "flex", justifyContent: "center" }}>
-              <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
-                <Autosuggest
-  suggestions={suggestions}
-  onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-  onSuggestionsClearRequested={onSuggestionsClearRequested}
-  onSuggestionSelected={handleSuggestionSelected}
-  getSuggestionValue={getSuggestionValue}
-  renderSuggestion={renderSuggestion}
-  inputProps={inputProps}
-  theme={{
-    container: {
-      position: "relative",
-      width: "100%",
-    },
-    input: {
-      width: "100%",
-      padding: "12px 20px",
-      fontSize: "16px",
-      borderRadius: "10px",
-      border: "2px solid #d1d5db",
-      backgroundColor: "#ffffff",
-      transition: "border 0.3s, box-shadow 0.3s",
-      outline: "none",
-    },
-    suggestionsContainer: {
-      position: "absolute",
-      top: "100%",
-      left: 0,
-      right: 0,
-      zIndex: 20,
-      backgroundColor: "#ffffff",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-      borderRadius: "12px",
-      marginTop: "8px",
-      overflow: "hidden",
-      maxHeight: "360px",
-      overflowY: "auto",
-      transition: "all 0.3s ease-in-out",
-    },
-    suggestionsList: {
-      listStyle: "none",
-      margin: 0,
-      padding: 0,
-    },
-    suggestion: {
-      padding: "14px 20px",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      transition: "background 0.3s ease-in-out",
-      fontSize: "15px",
-      borderBottom: "1px solid #f3f4f6",
-    },
-    suggestionHighlighted: {
-      backgroundColor: "#f0f9ff",
-    },
-  }}
-  className="transition-all"
-/>
-
-              </form>
-            </Box>
-          )}
+          <Box sx={{ 
+            flex: { xs: 0, md: 2 }, 
+            display: "flex", 
+            justifyContent: "center",
+            mx: { xs: 0, md: 2 },
+            maxWidth: { xs: 0, md: "600px" },
+            width: { xs: 0, md: "100%" },
+            ...(isMobile && { display: "none" })
+          }}>
+            <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
+              <Autosuggest
+                suggestions={suggestions}
+                onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+                onSuggestionsClearRequested={onSuggestionsClearRequested}
+                onSuggestionSelected={handleSuggestionSelected}
+                getSuggestionValue={getSuggestionValue}
+                renderSuggestion={renderSuggestion}
+                inputProps={inputProps}
+                theme={{
+                  container: {
+                    position: "relative",
+                    width: "100%",
+                  },
+                  input: {
+                    width: "100%",
+                    padding: "12px 20px",
+                    fontSize: "16px",
+                    borderRadius: "10px",
+                    border: "2px solid #d1d5db",
+                    backgroundColor: "#ffffff",
+                    transition: "border 0.3s, box-shadow 0.3s",
+                    outline: "none",
+                  },
+                  suggestionsContainer: {
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    borderRadius: "12px",
+                    marginTop: "8px",
+                    overflow: "hidden",
+                    maxHeight: "360px",
+                    overflowY: "auto",
+                    transition: "all 0.3s ease-in-out",
+                  },
+                  suggestionsList: {
+                    listStyle: "none",
+                    margin: 0,
+                    padding: 0,
+                  },
+                  suggestion: {
+                    padding: "14px 20px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    transition: "background 0.3s ease-in-out",
+                    fontSize: "15px",
+                    borderBottom: "1px solid #f3f4f6",
+                  },
+                  suggestionHighlighted: {
+                    backgroundColor: "#f0f9ff",
+                  },
+                }}
+                className="transition-all"
+              />
+            </form>
+          </Box>
 
           {/* Navigation & User Actions */}
           {!isMobile && (
             <Box
               sx={{
-                flex: 1,
+                flex: { xs: 1, md: "0 0 auto" },
                 display: "flex",
                 justifyContent: "flex-end",
                 alignItems: "center",
                 gap: 1,
+                minWidth: "200px",
               }}
             >
               {/* Show Shop, Cart, Favorites only if user is logged in and not admin */}

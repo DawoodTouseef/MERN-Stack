@@ -1,47 +1,45 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useGetFilteredProductsQuery } from "../redux/api/productApiSlice";
+import { useGetFilteredProductsQuery, useFacetedSearchQuery } from "../redux/api/productApiSlice";
 import { useFetchCategoriesQuery } from "../redux/api/categoryApiSlice";
 import {
   setCategories,
   setProducts,
   setChecked,
+  setSearchQuery,
 } from "../redux/features/shop/shopSlice";
 import Loader from "../components/Loader";
 import ProductCard from "./Products/ProductCard";
+import AdvancedFilterPanel from "../components/AdvancedFilterPanel";
+import SmartSearchSuggestions from "../components/SmartSearchSuggestions";
 import {
   Box,
   Typography,
-  Checkbox,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormGroup,
-  TextField,
   Button,
   Paper,
-  Divider,
   Chip,
   Stack,
   Fade,
   IconButton,
   Badge,
-  Slide,
+  Grid,
+  Container,
+  Alert,
+  Skeleton,
 } from "@mui/material";
 import { useParams } from "react-router-dom";
 import {
   FaFilter,
-  FaSyncAlt,
   FaTags,
-  FaChevronDown,
-  FaChevronUp,
+  FaThLarge,
+  FaBars,
 } from "react-icons/fa";
 import DocumentTitle from "react-document-title";
 
 const Shop = () => {
   const { id: categoriesId } = useParams() || {};
   const dispatch = useDispatch();
-  const { categories, products, checked, radio,searchQuery } = useSelector(
+  const { categories, products, checked, radio, searchQuery } = useSelector(
     (state) => state.shop
   );
 
@@ -49,397 +47,343 @@ const Shop = () => {
   const [priceFilter, setPriceFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [viewMode, setViewMode] = useState('grid');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
+  
+  // Advanced filtering state
+  const [advancedFilters, setAdvancedFilters] = useState({
+    category: [],
+    brand: [],
+    priceRange: 'all',
+    rating: 0,
+    availability: 'all',
+    delivery: 'all',
+    seller: 'all',
+    offers: [],
+    features: []
+  });
 
   const filteredProductsQuery = useGetFilteredProductsQuery({
     checked,
     radio,
   });
+  
+  // Faceted search query with comprehensive filtering
+  const {
+    data: facetedSearchData,
+    isLoading: isFacetedSearchLoading,
+    error: facetedSearchError,
+  } = useFacetedSearchQuery({
+    keyword: searchQuery,
+    category: advancedFilters.category.length > 0 ? advancedFilters.category : undefined,
+    brand: advancedFilters.brand.length > 0 ? advancedFilters.brand : undefined,
+    priceRange: advancedFilters.priceRange !== 'all' ? advancedFilters.priceRange : undefined,
+    rating: advancedFilters.rating > 0 ? advancedFilters.rating : undefined,
+    availability: advancedFilters.availability !== 'all' ? advancedFilters.availability : undefined,
+    delivery: advancedFilters.delivery !== 'all' ? advancedFilters.delivery : undefined,
+    seller: advancedFilters.seller !== 'all' ? advancedFilters.seller : undefined,
+    offers: advancedFilters.offers.length > 0 ? advancedFilters.offers : undefined,
+    features: advancedFilters.features.length > 0 ? advancedFilters.features : undefined,
+    sortBy: sortBy,
+    sortOrder: 'desc',
+    limit: 24
+  }, {
+    skip: !showAdvancedFilters
+  });
+
   useEffect(() => {
     if (!categoriesQuery.isLoading) {
       dispatch(setCategories(categoriesQuery.data));
     }
   }, [categoriesQuery.data, dispatch]);
+  
   useEffect(() => {
-    if (!checked.length || !radio.length) {
+    if (showAdvancedFilters && facetedSearchData) {
+      // Use faceted search results
+      dispatch(setProducts(facetedSearchData.products || []));
+      setFilteredProducts(facetedSearchData.products || []);
+    } else if (!checked.length || !radio.length) {
+      // Use traditional filtering
       if (!filteredProductsQuery.isLoading) {
-        const filteredProducts = filteredProductsQuery.data.filter(
+        const filteredProducts = filteredProductsQuery.data?.filter(
           (product) => {
             return (
               product.price.toString().includes(priceFilter) ||
               product.price === parseInt(priceFilter, 10)
             );
           }
-        );
+        ) || [];
         dispatch(setProducts(filteredProducts));
+        setFilteredProducts(filteredProducts);
       }
     }
-  }, [checked, radio, filteredProductsQuery.data, dispatch, priceFilter]);
+  }, [checked, radio, filteredProductsQuery.data, dispatch, priceFilter, facetedSearchData, showAdvancedFilters]);
   
-
   useEffect(() => {
-  // Filter products by search text
-  if (searchQuery.trim() === "") {
-    setFilteredProducts(products); // Reset to all products if search query is empty
-  } else {
-    setFilteredProducts(
-      products.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  }
-}, [searchQuery, products]);
-  const handleBrandClick = (brand) => {
-    const productsByBrand = filteredProductsQuery.data?.filter(
-      (product) => product.brand?.name === brand
-    );
-    dispatch(setProducts(productsByBrand));
+    // Filter products by search text
+    if (searchQuery.trim() === "") {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(
+        products.filter(
+          (p) =>
+            p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+  }, [searchQuery, products]);
+
+  // Advanced filter handlers
+  const handleAdvancedFilterChange = (newFilters) => {
+    setAdvancedFilters(newFilters);
+    setShowAdvancedFilters(true);
+  };
+  
+  const handleAdvancedFilterClear = () => {
+    setAdvancedFilters({
+      category: [],
+      brand: [],
+      priceRange: 'all',
+      rating: 0,
+      availability: 'all',
+      delivery: 'all',
+      seller: 'all',
+      offers: [],
+      features: []
+    });
+    setShowAdvancedFilters(false);
+  };
+  
+  const handleSearch = (query) => {
+    dispatch(setSearchQuery(query));
+  };
+  
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+  };
+  
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
   };
 
-  const handleCheck = (value, id) => {
-    const updatedChecked = value
-      ? [...checked, id]
-      : checked.filter((c) => c !== id);
-    dispatch(setChecked(updatedChecked));
-  };
-
-  const uniqueBrands = [
-    ...Array.from(
-      new Set(
-        filteredProductsQuery.data
-          ?.map((product) => product.brand?.name)
-          .filter((brand) => brand !== undefined)
-      )
-    ),
-  ];
-
-  const handlePriceChange = (e) => {
-    setPriceFilter(e.target.value);
-  };
-
-  // Responsive filter toggle for mobile
   const handleFilterToggle = () => setShowFilters((prev) => !prev);
 
   return (
     <>
       <DocumentTitle title="Shop Products" />
-      <Box
-        sx={{
-          maxWidth: "100vw",
-          px: { xs: 1, md: 4 },
-          py: 2,
-          background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-          minHeight: "100vh",
-        }}
-      >
-        {/* Header */}
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ mb: 2, mt: 1 }}
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        {/* Header with Search */}
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)"
+          }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <FaTags style={{ color: "#ec4899", fontSize: 28 }} />
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              sx={{
-                color: "#18181b",
-                letterSpacing: 0.5,
-                textShadow: "1px 1px 8px #e3eeff",
-              }}
-            >
-              Shop Products
-            </Typography>
-          </Stack>
-          <Badge
-            badgeContent={products.length}
-            color="secondary"
-            sx={{
-              "& .MuiBadge-badge": {
-                fontWeight: 700,
-                fontSize: "1rem",
-                background: "#ec4899",
-                color: "#fff",
-                boxShadow: "0 2px 8px #ec489955",
-              },
-            }}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={2}
+            sx={{ mb: 2 }}
           >
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<FaFilter />}
-              onClick={handleFilterToggle}
-              sx={{
-                display: { xs: "flex", md: "none" },
-                borderRadius: 2,
-                fontWeight: 600,
-                px: 2,
-                py: 1,
-                textTransform: "none",
-                bgcolor: "#fff",
-                boxShadow: "0 2px 8px #ec489933",
-              }}
-            >
-              Filters
-            </Button>
-          </Badge>
-        </Stack>
-
-        {/* Main Content */}
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" } }}>
-          {/* Sidebar Filters */}
-          <Slide
-            direction="down"
-            in={showFilters || window.innerWidth >= 900}
-            mountOnEnter
-            unmountOnExit
-          >
-            <Paper
-              elevation={4}
-              sx={{
-                bgcolor: "#18181b",
-                color: "#fff",
-                p: 3,
-                mt: 2,
-                mb: 2,
-                minWidth: { xs: "100%", md: 260 },
-                maxWidth: { xs: "100%", md: 300 },
-                mr: { md: 4 },
-                borderRadius: 4,
-                boxShadow: "0 4px 24px 0 rgba(0,0,0,0.12)",
-                display: { xs: showFilters ? "block" : "none", md: "block" },
-                zIndex: 10,
-                position: { xs: "absolute", md: "static" },
-                left: 0,
-                top: 70,
-              }}
-              className="shadow-lg"
-            >
-              {/* Filter by Categories */}
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography
-                  variant="h6"
-                  align="center"
-                  sx={{
-                    py: 1,
-                    bgcolor: "#000",
-                    borderRadius: 2,
-                    mb: 2,
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <FaTags style={{ color: "#ec4899", fontSize: 32 }} />
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                sx={{
+                  color: "#18181b",
+                  letterSpacing: 0.5,
+                  fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                }}
+              >
+                Shop Products
+              </Typography>
+              <Badge
+                badgeContent={filteredProducts.length}
+                color="secondary"
+                sx={{
+                  "& .MuiBadge-badge": {
                     fontWeight: 700,
-                    flex: 1,
-                  }}
-                >
-                  Filter by Categories
-                </Typography>
-                <IconButton
-                  onClick={handleFilterToggle}
-                  sx={{
-                    display: { xs: "flex", md: "none" },
+                    fontSize: "0.875rem",
+                    background: "#ec4899",
                     color: "#fff",
-                    ml: 1,
-                  }}
-                >
-                  {showFilters ? <FaChevronUp /> : <FaChevronDown />}
-                </IconButton>
-              </Stack>
-              <FormGroup sx={{ pl: 1 }}>
-                {categories?.map((c) => (
-                  <FormControlLabel
-                    key={c._id}
-                    control={
-                      <Checkbox
-                        checked={checked.includes(c._id)}
-                        onChange={(e) => handleCheck(e.target.checked, c._id)}
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": { color: "secondary.main" },
-                        }}
-                        className="transition-colors"
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" color="#fff" className="font-medium">
-                        {c.name}
-                      </Typography>
-                    }
-                  />
-                ))}
-              </FormGroup>
-
-              <Divider sx={{ my: 2, bgcolor: "#333" }} />
-
-              {/* Filter by Brands */}
-              <Typography
-                variant="h6"
-                align="center"
-                sx={{
-                  py: 1,
-                  bgcolor: "#000",
-                  borderRadius: 2,
-                  mb: 2,
-                  fontWeight: 700,
-                }}
-              >
-                Filter by Brands
-              </Typography>
-              <RadioGroup
-                name="brand"
-                onChange={(e) => handleBrandClick(e.target.value)}
-                sx={{ pl: 1 }}
-              >
-                {uniqueBrands?.map((brand) => (
-                  <FormControlLabel
-                    key={brand}
-                    value={brand}
-                    control={
-                      <Radio
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": { color: "secondary.main" },
-                        }}
-                        className="transition-colors"
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" color="#fff" className="font-medium">
-                        {brand}
-                      </Typography>
-                    }
-                  />
-                ))}
-              </RadioGroup>
-
-              <Divider sx={{ my: 2, bgcolor: "#333" }} />
-
-              {/* Filter by Price */}
-              <Typography
-                variant="h6"
-                align="center"
-                sx={{
-                  py: 1,
-                  bgcolor: "#000",
-                  borderRadius: 2,
-                  mb: 2,
-                  fontWeight: 700,
-                }}
-              >
-                Filter by Price
-              </Typography>
-              <TextField
-                fullWidth
-                variant="outlined"
-                size="small"
-                placeholder="Enter Price"
-                value={priceFilter}
-                onChange={handlePriceChange}
-                sx={{
-                  bgcolor: "#222",
-                  input: { color: "#fff" },
-                  mb: 2,
-                  borderRadius: 2,
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#444" },
-                    "&:hover fieldset": { borderColor: "secondary.main" },
-                    "&.Mui-focused fieldset": { borderColor: "secondary.main" },
                   },
                 }}
-                className="transition-all"
               />
-
+            </Stack>
+            
+            {/* View Mode and Sort Controls */}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton
+                onClick={() => handleViewModeChange('grid')}
+                color={viewMode === 'grid' ? 'primary' : 'default'}
+                sx={{ borderRadius: 2 }}
+              >
+                <FaThLarge />
+              </IconButton>
+              <IconButton
+                onClick={() => handleViewModeChange('list')}
+                color={viewMode === 'list' ? 'primary' : 'default'}
+                sx={{ borderRadius: 2 }}
+              >
+                <FaBars />
+              </IconButton>
+              
               <Button
-                fullWidth
                 variant="outlined"
                 color="secondary"
-                startIcon={<FaSyncAlt />}
+                startIcon={<FaFilter />}
+                onClick={handleFilterToggle}
                 sx={{
-                  my: 1,
+                  display: { xs: "flex", md: "none" },
                   borderRadius: 2,
                   fontWeight: 600,
-                  letterSpacing: 1,
-                  bgcolor: "#222",
-                  color: "#fff",
-                  "&:hover": {
-                    bgcolor: "#ec4899",
-                    color: "#fff",
-                    borderColor: "#ec4899",
-                  },
+                  textTransform: "none",
                 }}
-                className="hover:bg-secondary hover:text-white transition-colors"
-                onClick={() => window.location.reload()}
               >
-                Reset
+                Filters
               </Button>
-            </Paper>
-          </Slide>
-
+            </Stack>
+          </Stack>
+          
+          {/* Smart Search Box */}
+          <SmartSearchSuggestions
+            onSearch={handleSearch}
+            placeholder="Search products, brands, categories..."
+            size="medium"
+            sx={{ mb: 2 }}
+          />
+          
+          {/* Sort Options */}
+          <Stack direction="row" spacing={2} flexWrap="wrap">
+            {['newest', 'price', 'rating', 'popular', 'name'].map((sort) => (
+              <Chip
+                key={sort}
+                label={sort.charAt(0).toUpperCase() + sort.slice(1)}
+                onClick={() => handleSortChange(sort)}
+                color={sortBy === sort ? 'primary' : 'default'}
+                variant={sortBy === sort ? 'filled' : 'outlined'}
+                sx={{ 
+                  textTransform: 'capitalize',
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: 'primary.light' }
+                }}
+              />
+            ))}
+          </Stack>
+        </Paper>
+        
+        {/* Main Content Layout */}
+        <Grid container spacing={3}>
+          {/* Advanced Filter Panel */}
+          <Grid item xs={12} md={3}>
+            <Box sx={{ position: 'sticky', top: 20 }}>
+              <AdvancedFilterPanel
+                filters={advancedFilters}
+                onFiltersChange={handleAdvancedFilterChange}
+                onClearFilters={handleAdvancedFilterClear}
+                sx={{
+                  display: { xs: showFilters ? 'block' : 'none', md: 'block' },
+                }}
+              />
+            </Box>
+          </Grid>
+          
           {/* Products Section */}
-          <Box
-            sx={{
-              flexWrap: "wrap",
-              gap: 3,
-              p: 2,
-              justifyContent: { xs: "center", md: "flex-start" },
-              flex: 1,
-              minHeight: 600,
-              position: "relative",
-            }}
-          >
-            {filteredProducts.length === 0 ? (
-              <Loader />
-            ) : (
-              filteredProducts
-                .filter((p) => !categoriesId || p.category?._id === categoriesId)
-                .map((p) => (
-                  <Fade in key={p._id}>
-                    <Paper
-                      key={p._id}
-                      elevation={6}
-                      sx={{
-                        p: 2,
-                        borderRadius: 4,
-                        bgcolor: "#fff",
-                        minWidth: 260,
-                        maxWidth: 320,
-                        transition: "transform 0.2s, box-shadow 0.2s",
-                        "&:hover": {
-                          transform: "translateY(-8px) scale(1.03)",
-                          boxShadow: 10,
-                          borderColor: "secondary.main",
-                        },
-                        boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
-                      }}
-                      className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                    >
-                      <ProductCard product={p} />
-                      {p.countInStock === 0 && (
-                        <Chip
-                          label="Out of Stock"
-                          color="error"
-                          sx={{
-                            position: "absolute",
-                            top: 12,
-                            left: 12,
-                            fontWeight: 600,
-                            fontSize: "0.95rem",
-                            borderRadius: "999px",
-                            zIndex: 2,
-                            bgcolor: "#f87171",
-                            color: "#fff",
-                            boxShadow: "0 2px 8px #f8717166",
-                          }}
-                        />
-                      )}
-                    </Paper>
-                  </Fade>
-                ))
-            )}
-          </Box>
-        </Box>
-      </Box>
+          <Grid item xs={12} md={9}>
+            <Box sx={{ mb: 2 }}>
+              {/* Results summary */}
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="h6" color="text.primary">
+                  {(isFacetedSearchLoading || filteredProductsQuery.isLoading) ? (
+                    <Skeleton width={200} />
+                  ) : (
+                    `${filteredProducts.length} Products Found`
+                  )}
+                </Typography>
+                {facetedSearchError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    Search failed. Please try again.
+                  </Alert>
+                )}
+              </Stack>
+              
+              {/* Product Grid */}
+              {(isFacetedSearchLoading || filteredProductsQuery.isLoading) ? (
+                <Grid container spacing={2}>
+                  {[...Array(8)].map((_, index) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                      <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : filteredProducts.length === 0 ? (
+                <Paper sx={{ p: 4, textAlign: 'center', mt: 4 }}>
+                  <Typography variant="h6" color="text.secondary">
+                    No products found matching your criteria
+                  </Typography>
+                  <Button 
+                    onClick={handleAdvancedFilterClear} 
+                    sx={{ mt: 2 }}
+                    variant="outlined"
+                  >
+                    Clear Filters
+                  </Button>
+                </Paper>
+              ) : (
+                <Grid container spacing={3}>
+                  {filteredProducts
+                    .filter((p) => !categoriesId || p.category?._id === categoriesId)
+                    .map((p) => (
+                      <Grid item xs={12} sm={6} md={viewMode === 'list' ? 12 : 4} lg={viewMode === 'list' ? 12 : 3} key={p._id}>
+                        <Fade in>
+                          <Paper
+                            elevation={3}
+                            sx={{
+                              borderRadius: 3,
+                              overflow: 'hidden',
+                              transition: "transform 0.2s, box-shadow 0.2s",
+                              "&:hover": {
+                                transform: "translateY(-4px)",
+                                boxShadow: 6,
+                              },
+                              height: viewMode === 'list' ? 'auto' : 400,
+                              position: 'relative'
+                            }}
+                          >
+                            <ProductCard product={p} viewMode={viewMode} />
+                            {p.countInStock === 0 && (
+                              <Chip
+                                label="Out of Stock"
+                                color="error"
+                                size="small"
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  zIndex: 2,
+                                  fontWeight: 600
+                                }}
+                              />
+                            )}
+                          </Paper>
+                        </Fade>
+                      </Grid>
+                    ))
+                  }
+                </Grid>
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
     </>
   );
 };

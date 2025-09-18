@@ -19,6 +19,7 @@ import {
 import DocumentTitle from "react-document-title";
 import { useMemo } from "react";
 import {useFetchOffersQuery} from "../redux/api/offerApiSlice";
+import CartRecommendations from "../components/CartRecommendations";
 
 
 const Cart = () => {
@@ -324,6 +325,11 @@ const Cart = () => {
                   </Paper>
                 </Grid>
               </Grid>
+            )}
+
+            {/* Cart Recommendations */}
+            {cartItems.length > 0 && (
+              <CartRecommendations cartItems={cartItems} limit={6} />
             )}
           </Paper>
         </Box>

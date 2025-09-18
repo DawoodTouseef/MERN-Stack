@@ -3,40 +3,31 @@ import { Link } from "react-router-dom";
 import { useGetTopProductsQuery } from "../../redux/api/productApiSlice";
 import SmallProduct from "./SmallProduct";
 import Loader from "../../components/Loader";
-import ReviewForm from "./ReviewForm";
+import EnhancedReviewForm from "../../components/reviews/EnhancedReviewForm";
+import EnhancedReviewsList from "../../components/reviews/EnhancedReviewsList";
 import {
   Box,
   Tabs,
   Tab,
   Typography,
   Paper,
-  Avatar,
-  Stack,
-  Divider,
   Grid,
-  Rating,
-  Chip,
-  Tooltip,
 } from "@mui/material";
-import { FaUserCircle } from "react-icons/fa";
 import { useSelector } from "react-redux";
+
 const ProductTabs = ({
-  loadingProductReview,
-  userInfo,
-  submitHandler,
-  rating,
-  setRating,
-  comment,
-  setComment,
   product,
-  images,
-  setImages,
+  userInfo,
 }) => {
   const { data: relatedProducts, isLoading } = useGetTopProductsQuery();
   const [activeTab, setActiveTab] = useState(1); // Default to All Reviews
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleReviewSubmitted = () => {
+    setActiveTab(1); // Switch to reviews tab after submission
   };
 
   return (
@@ -92,16 +83,10 @@ const ProductTabs = ({
             boxShadow: "0 2px 12px #ec489933",
           }}
         >
-          <ReviewForm
+          <EnhancedReviewForm
+            product={product}
             userInfo={userInfo}
-            submitHandler={submitHandler}
-            rating={rating}
-            setRating={setRating}
-            comment={comment}
-            setComment={setComment}
-            images={images}
-            setImages={setImages}
-            loadingProductReview={loadingProductReview}
+            onReviewSubmitted={handleReviewSubmitted}
           />
         </Paper>
       )}
@@ -117,90 +102,10 @@ const ProductTabs = ({
             boxShadow: "0 2px 12px #ec489933",
           }}
         >
-          {product.reviews.length === 0 ? (
-            <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-              No reviews yet. Be the first to review this product!
-            </Typography>
-          ) : (
-            <Box>
-              {product.reviews.map((review) => (
-                <Box key={review._id} sx={{ mb: 4 }}>
-                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: "#ec4899",
-                        fontWeight: 700,
-                        width: 48,
-                        height: 48,
-                        fontSize: 24,
-                        boxShadow: "0 2px 8px #ec489955",
-                      }}
-                    >
-                      {review.name ? review.name[0].toUpperCase() : <FaUserCircle />}
-                    </Avatar>
-                    <Box>
-                      <Typography fontWeight="bold" color="text.primary" sx={{ fontSize: "1.1rem" }}>
-                        {review.name}
-                        {review.isVerified && (
-                          <Chip
-                            label="Verified Purchase"
-                            size="small"
-                            sx={{
-                              ml: 1,
-                              bgcolor: "#c8e6c9",
-                              color: "#388e3c",
-                              fontWeight: 600,
-                              fontSize: "0.8rem",
-                              borderRadius: "999px",
-                            }}
-                          />
-                        )}
-                      </Typography>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Rating value={Number(review.rating)} readOnly size="small" sx={{ color: "#ec4899" }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </Typography>
-                      </Stack>
-                    </Box>
-                    {review.images && review.images.length > 0 && (
-                      <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
-                        {review.images.map((img, idx) => (
-                          <Tooltip title="Review Image" key={idx}>
-                            <Avatar
-                              src={img}
-                              alt={`review-img-${idx}`}
-                              sx={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 2,
-                                border: "2px solid #ec4899",
-                                boxShadow: "0 2px 8px #ec489955",
-                              }}
-                              variant="rounded"
-                            />
-                          </Tooltip>
-                        ))}
-                      </Stack>
-                    )}
-                  </Stack>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{
-                      mb: 1,
-                      fontSize: "1.05rem",
-                      letterSpacing: 0.1,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {review.comment}
-                  </Typography>
-                  <Divider sx={{ my: 2, bgcolor: "#e3eeff" }} />
-                </Box>
-              ))}
-            </Box>
-          )}
+          <EnhancedReviewsList
+            product={product}
+            userInfo={userInfo}
+          />
         </Paper>
       )}
 

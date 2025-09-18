@@ -35,6 +35,7 @@ import { FaShoppingCart } from "react-icons/fa";
 import {useFetchOffersQuery} from "../../redux/api/offerApiSlice"
 import HeartIcon from "./HeartIcon";
 import ProductTabs from "./ProductTabs";
+import SimilarProducts from "../../components/SimilarProducts";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import DocumentTitle from "react-document-title";
 
@@ -100,16 +101,6 @@ const ProductDetails = () => {
           return currency; // fallback if currency code is invalid
         }
       };
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    try {
-      await createReview({ productId, rating, comment }).unwrap();
-      refetch();
-      toast.success("Review created successfully");
-    } catch (error) {
-      toast.error(error?.data || error.message);
-    }
-  };
 
   const addToCartHandler = () => {
     dispatch(addToCart({ ...product, qty, variant }));
@@ -491,18 +482,17 @@ const ProductDetails = () => {
                 {/* Product Reviews */}
                 <Grid item xs={12}>
                   <ProductTabs
-                    loadingProductReview={loadingProductReview}
                     userInfo={userInfo}
-                    submitHandler={submitHandler}
-                    rating={rating}
-                    setRating={setRating}
-                    comment={comment}
-                    setComment={setComment}
                     product={product}
                   />
                 </Grid>
               </Grid>
             </Paper>
+          )}
+
+          {/* Similar Products */}
+          {!isLoading && !error && product && (
+            <SimilarProducts productId={productId} limit={6} />
           )}
         </Box>
       </Box>

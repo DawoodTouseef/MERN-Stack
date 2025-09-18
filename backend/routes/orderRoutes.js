@@ -13,6 +13,14 @@ import {
   markOrderAsPaid,
   markOrderAsDelivered,
   deleteOrder,
+  // Enhanced tracking functions
+  updateOrderStatus,
+  getOrderTracking,
+  trackOrderByNumber,
+  addTrackingEvent,
+  updateDeliveryPreferences,
+  getOrdersWithFilters,
+  submitOrderFeedback
 } from "../controllers/orderController.js";
 
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
@@ -49,5 +57,16 @@ router.route("/:id/deliver").put(authenticate, authorizeVendor, markOrderAsDeliv
 
 // Delete order (admin only)
 router.route("/:id").delete(authenticate, authorizeVendor, deleteOrder);
+
+// Enhanced tracking routes
+router.route("/advanced/filters").get(authenticate, authorizeVendor, getOrdersWithFilters);
+router.route("/:id/status").put(authenticate, authorizeVendor, updateOrderStatus);
+router.route("/:id/tracking").get(authenticate, getOrderTracking);
+router.route("/:id/tracking/events").post(authenticate, authorizeVendor, addTrackingEvent);
+router.route("/:id/delivery-preferences").put(authenticate, updateDeliveryPreferences);
+router.route("/:id/feedback").post(authenticate, submitOrderFeedback);
+
+// Public tracking route (no authentication required)
+router.route("/track/:orderNumber").get(trackOrderByNumber);
 
 export default router;
