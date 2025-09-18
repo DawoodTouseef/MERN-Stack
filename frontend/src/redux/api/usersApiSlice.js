@@ -73,6 +73,21 @@ export const userApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
       invalidatesTags: ["User"],
+    }),
+    // Vendor verification endpoints
+    verifyVendor: builder.mutation({
+      query: (userId) => ({
+        url: `${USERS_URL}/${userId}/verify-vendor`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["User"],
+    }),
+    rejectVendor: builder.mutation({
+      query: (userId) => ({
+        url: `${USERS_URL}/${userId}/reject-vendor`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["User"],
     })
   }),
 });
@@ -87,5 +102,7 @@ export const {
   useUpdateUserMutation,
   useGetUserDetailsQuery,
   useRequestPasswordMutation,
-  useChangePasswordMutation
+  useChangePasswordMutation,
+  useVerifyVendorMutation,
+  useRejectVendorMutation
 } = userApiSlice;

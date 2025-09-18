@@ -84,6 +84,10 @@ const vendorSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
   rating: {
     type: Number,
     min: 0,
@@ -93,6 +97,11 @@ const vendorSchema = new mongoose.Schema({
   notes: {
     type: String,
     maxlength: [500, 'Notes cannot exceed 500 characters']
+  },
+  // Reference to the user account
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true,
@@ -104,6 +113,8 @@ const vendorSchema = new mongoose.Schema({
 vendorSchema.index({ email: 1 });
 vendorSchema.index({ name: 1 });
 vendorSchema.index({ isActive: 1 });
+vendorSchema.index({ isVerified: 1 });
+vendorSchema.index({ user: 1 });
 
 // Virtual for full address
 vendorSchema.virtual('fullAddress').get(function() {
@@ -123,9 +134,25 @@ vendorSchema.statics.findActiveVendors = function() {
   return this.find({ isActive: true }).sort({ name: 1 });
 };
 
+// Static method to find verified vendors
+vendorSchema.statics.findVerifiedVendors = function() {
+  return this.find({ isVerified: true, isActive: true }).sort({ name: 1 });
+};
+
+// Static method to find pending verification vendors
+vendorSchema.statics.findPendingVendors = function() {
+  return this.find({ isVerified: false }).sort({ createdAt: -1 });
+};
+
 // Instance method to deactivate vendor
 vendorSchema.methods.deactivate = function() {
   this.isActive = false;
+  return this.save();
+};
+
+// Instance method to verify vendor
+vendorSchema.methods.verify = function() {
+  this.isVerified = true;
   return this.save();
 };
 

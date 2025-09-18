@@ -125,7 +125,10 @@ const userSchema = mongoose.Schema({
     ip: String,
     userAgent: String,
     timestamp: { type: Date, default: Date.now }
-  }]
+  }],
+
+  // Vendor verification
+  vendorVerified: { type: Boolean, default: false }
 
 }, { timestamps: true });
 
@@ -193,6 +196,7 @@ userSchema.index({ status: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ passwordResetToken: 1 });
+userSchema.index({ vendorVerified: 1 });
 
 const User = mongoose.model("User", userSchema);
 export default User;

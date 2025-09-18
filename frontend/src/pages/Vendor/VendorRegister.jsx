@@ -34,7 +34,6 @@ import {
   Person,
 } from "@mui/icons-material";
 
-// filepath: e:\Intern\MERN-E-Commerce-Store\frontend\src\pages\Vendor\VendorRegister.jsx
 const VendorRegister = () => {
   // Stepper state
   const [activeStep, setActiveStep] = useState(0);

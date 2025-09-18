@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import Vendor from "../models/vendorModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import createToken from "../utils/createToken.js";
@@ -17,6 +18,7 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist,
     recentlyViewed,
     newsletterSubscribed,
+    VendorProfile
   } = req.body;
 
   if (!username || !email || !password) {
@@ -34,7 +36,7 @@ const createUser = asyncHandler(async (req, res) => {
   // Hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  let default_status = "active" || status ;
+  let default_status = "active";
   if (role === "vendor") {
     default_status = "inactive"; 
   }
@@ -50,13 +52,40 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist: Array.isArray(wishlist) ? wishlist : [],
     recentlyViewed: Array.isArray(recentlyViewed) ? recentlyViewed : [],
     newsletterSubscribed: newsletterSubscribed === true,
+    ...(role === "vendor" && { vendorVerified: false }) // Vendors are unverified by default
   });
 
   // Save user and create token cookie
-  await newUser.save();
-  createToken(res, newUser._id);
+  const savedUser = await newUser.save();
+  
+  // If user is a vendor, create a vendor profile
+  if (role === "vendor" && VendorProfile) {
+    const vendor = new Vendor({
+      name: VendorProfile.companyName || username,
+      email: email,
+      phone: VendorProfile.phone || "",
+      address: {
+        street: VendorProfile.address || "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "USA"
+      },
+      businessType: "Individual",
+      taxId: VendorProfile.taxId || "",
+      contactPerson: {
+        name: username,
+        email: email
+      },
+      user: savedUser._id // Link to the user account
+    });
+    
+    await vendor.save();
+  }
+  
+  createToken(res, savedUser._id);
 
-  res.status(201).json(newUser);
+  res.status(201).json(savedUser);
 });
 
 // Login user
@@ -81,6 +110,12 @@ const loginUser = asyncHandler(async (req, res) => {
     // Optionally, increment loginAttempts here and lock account after threshold
     res.status(401);
     throw new Error("Invalid password");
+  }
+
+  // For vendors, check if they are verified
+  if (user.role === "vendor" && !user.vendorVerified) {
+    res.status(401);
+    throw new Error("Vendor account is not verified yet. Please contact admin.");
   }
 
   // Update last login and reset login attempts on successful login
@@ -172,6 +207,11 @@ const deleteUserById = asyncHandler(async (req, res) => {
     throw new Error("Cannot delete admin user");
   }
 
+  // If user is a vendor, also delete the vendor profile
+  if (user.role === "vendor") {
+    await Vendor.deleteOne({ user: user._id });
+  }
+
   await User.deleteOne({ _id: user._id });
 
   res.json({ message: "User removed" });
@@ -209,6 +249,11 @@ const updateUserById = asyncHandler(async (req, res) => {
     user.status = req.body.status;
   }
 
+  // Only admin can update vendor verification status
+  if (req.body.vendorVerified !== undefined) {
+    user.vendorVerified = req.body.vendorVerified;
+  }
+
   // Only admin can update newsletter subscription
   if (req.body.newsletterSubscribed !== undefined) {
     user.newsletterSubscribed = req.body.newsletterSubscribed;
@@ -224,6 +269,53 @@ const updateUserById = asyncHandler(async (req, res) => {
   res.json(updatedUser);
 });
 
+// Verify vendor (admin only)
+const verifyVendor = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (user.role !== "vendor") {
+    res.status(400);
+    throw new Error("User is not a vendor");
+  }
+
+  user.vendorVerified = true;
+  user.status = "active"; // Activate the vendor account when verified
+  const updatedUser = await user.save();
+
+  // Also verify the vendor profile
+  await Vendor.updateOne({ user: user._id }, { isVerified: true, isActive: true });
+
+  res.json({ message: "Vendor verified successfully", user: updatedUser });
+});
+
+// Reject vendor (admin only)
+const rejectVendor = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (user.role !== "vendor") {
+    res.status(400);
+    throw new Error("User is not a vendor");
+  }
+
+  user.vendorVerified = false;
+  user.status = "banned"; // Ban the vendor account when rejected
+  const updatedUser = await user.save();
+
+  // Also reject the vendor profile
+  await Vendor.updateOne({ user: user._id }, { isVerified: false, isActive: false });
+
+  res.json({ message: "Vendor rejected successfully", user: updatedUser });
+});
 
 const bcryptSalt = 10;
 
@@ -301,6 +393,8 @@ export {
   deleteUserById,
   getUserById,
   updateUserById,
+  verifyVendor,
+  rejectVendor,
   requestPasswordReset,
   changePassword
 };

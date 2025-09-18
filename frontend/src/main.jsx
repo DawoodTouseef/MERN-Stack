@@ -57,6 +57,8 @@ import AdminBannerCarousels from './pages/Admin/BannerCarousels.jsx'
 import Pages from "./pages/Admin/Pages.jsx";
 import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 import UserEditPage from "./pages/Admin/Users.jsx";
+import UserManagement from "./pages/Admin/UserManagement.jsx";
+import VendorManagement from "./pages/Admin/VendorManagement.jsx";
 import { LazyAdmin } from "./router/optimizedRoutes.jsx";
 
 const router = createBrowserRouter(
@@ -105,13 +107,14 @@ const router = createBrowserRouter(
       </Route>
       <Route path="/admin" element={<AdminRoute/>}>
           <Route path="userlist" element={<UserList />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="vendors" element={<VendorManagement />} />
           <Route path="settings" element={<AdminSettings/>}/>
           <Route path="banner" element={<AdminBannerCarousels/>}/>
           <Route path="pages" element={<Pages/>}/>
           <Route path="offer" element={<AdminOffer/>}/>
           <Route path="categorylist" element={<CategoryList />} />
           <Route path="user/edit/:id" element={<UserEditPage />} />
-          <Route path="vendors" element={<LazyAdmin.VendorManagement />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
         <Route path="brand" element={<Brand />} />

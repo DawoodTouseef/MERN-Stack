@@ -90,6 +90,23 @@ export const vendorApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Vendors'],
     }),
+    
+    // Admin vendor verification endpoints
+    verifyVendor: builder.mutation({
+      query: (vendorId) => ({
+        url: `${VENDORS_URL}/${vendorId}/verify`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Vendors'],
+    }),
+    
+    rejectVendor: builder.mutation({
+      query: (vendorId) => ({
+        url: `${VENDORS_URL}/${vendorId}/reject`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Vendors'],
+    }),
   }),
 });
 
@@ -104,4 +121,6 @@ export const {
   useCreateVendorMutation,
   useUpdateVendorMutation,
   useDeleteVendorMutation,
+  useVerifyVendorMutation,
+  useRejectVendorMutation,
 } = vendorApiSlice;

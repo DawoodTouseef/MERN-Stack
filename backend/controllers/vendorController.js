@@ -16,6 +16,7 @@ export const getVendors = asyncHandler(async (req, res) => {
 
     const count = await Vendor.countDocuments();
     const vendors = await Vendor.find()
+      .populate('user', 'username email status vendorVerified') // Populate user info
       .limit(pageSize)
       .skip(pageSize * (page - 1))
       .sort({ createdAt: -1 });
@@ -36,7 +37,7 @@ export const getVendors = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const getVendorById = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).populate('user', 'username email status vendorVerified');
     
     if (vendor) {
       res.json(vendor);
@@ -132,6 +133,45 @@ export const deleteVendor = asyncHandler(async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete vendor', error: error.message });
+  }
+});
+
+// @desc    Verify vendor
+// @route   PUT /api/vendors/:id/verify
+// @access  Private/Admin
+export const verifyVendor = asyncHandler(async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+
+    if (vendor) {
+      vendor.isVerified = true;
+      const updatedVendor = await vendor.save();
+      res.json({ message: 'Vendor verified successfully', vendor: updatedVendor });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to verify vendor', error: error.message });
+  }
+});
+
+// @desc    Reject vendor
+// @route   PUT /api/vendors/:id/reject
+// @access  Private/Admin
+export const rejectVendor = asyncHandler(async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+
+    if (vendor) {
+      vendor.isVerified = false;
+      vendor.isActive = false;
+      const updatedVendor = await vendor.save();
+      res.json({ message: 'Vendor rejected successfully', vendor: updatedVendor });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to reject vendor', error: error.message });
   }
 });
 
@@ -543,6 +583,8 @@ export default {
   createVendor,
   updateVendor,
   deleteVendor,
+  verifyVendor,
+  rejectVendor,
   getVendorDashboard,
   getVendorSalesAnalytics,
   getVendorProductAnalytics,

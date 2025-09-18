@@ -9,7 +9,9 @@ import {
   getVendorSalesAnalytics,
   getVendorProductAnalytics,
   getVendorCustomerAnalytics,
-  getVendorInventoryAnalytics
+  getVendorInventoryAnalytics,
+  verifyVendor,
+  rejectVendor
 } from '../controllers/vendorController.js';
 import { authenticate, authorizeVendor, IsAdmin } from '../middlewares/authMiddleware.js';
 
@@ -43,5 +45,12 @@ router.route('/:id')
   .get(authenticate, IsAdmin, getVendorById)
   .put(authenticate, IsAdmin, updateVendor)
   .delete(authenticate, IsAdmin, deleteVendor);
+
+// Admin verification routes
+router.route('/:id/verify')
+  .put(authenticate, IsAdmin, verifyVendor);
+
+router.route('/:id/reject')
+  .put(authenticate, IsAdmin, rejectVendor);
 
 export default router;

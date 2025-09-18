@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Alert } from '@mui/material';
-import { useGetVendorsQuery, useCreateVendorMutation, useUpdateVendorMutation, useDeleteVendorMutation } from '../../redux/api/vendorApiSlice';
+import { Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Alert, Tooltip } from '@mui/material';
+import { useGetVendorsQuery, useCreateVendorMutation, useUpdateVendorMutation, useDeleteVendorMutation, useVerifyVendorMutation, useRejectVendorMutation } from '../../redux/api/vendorApiSlice';
 import { DataGrid } from '@mui/x-data-grid';
-import { Add, Edit, Delete, Visibility } from '@mui/icons-material';
+import { Add, Edit, Delete, Visibility, CheckCircle, Cancel, VerifiedUser } from '@mui/icons-material';
 import Loader from '../../components/Loader';
 import { useTheme } from '@mui/material/styles';
 
@@ -22,6 +22,8 @@ const VendorManagement = () => {
   const [createVendor, { isLoading: isCreating }] = useCreateVendorMutation();
   const [updateVendor, { isLoading: isUpdating }] = useUpdateVendorMutation();
   const [deleteVendor, { isLoading: isDeleting }] = useDeleteVendorMutation();
+  const [verifyVendor, { isLoading: isVerifying }] = useVerifyVendorMutation();
+  const [rejectVendor, { isLoading: isRejecting }] = useRejectVendorMutation();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -221,15 +223,40 @@ const VendorManagement = () => {
     }
   };
 
+  const handleVerify = async (vendorId) => {
+    try {
+      await verifyVendor(vendorId).unwrap();
+      refetch();
+    } catch (err) {
+      alert('Failed to verify vendor: ' + (err.data?.message || 'Unknown error'));
+    }
+  };
+
+  const handleReject = async (vendorId) => {
+    if (window.confirm('Are you sure you want to reject this vendor? This will also deactivate their account.')) {
+      try {
+        await rejectVendor(vendorId).unwrap();
+        refetch();
+      } catch (err) {
+        alert('Failed to reject vendor: ' + (err.data?.message || 'Unknown error'));
+      }
+    }
+  };
+
   const columns = [
     { 
       field: 'name', 
       headerName: 'Vendor Name', 
-      flex: 1,
+      flex: 1.5,
       renderCell: (params) => (
         <Box>
           <Typography variant="body2" fontWeight="bold">{params.row.name}</Typography>
           <Typography variant="caption" color="textSecondary">{params.row.email}</Typography>
+          {params.row.user && (
+            <Typography variant="caption" display="block">
+              User: {params.row.user.username} ({params.row.user.email})
+            </Typography>
+          )}
         </Box>
       )
     },
@@ -261,6 +288,37 @@ const VendorManagement = () => {
       )
     },
     { 
+      field: 'verificationStatus', 
+      headerName: 'Verification', 
+      width: 150,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {params.row.isVerified ? (
+            <Chip 
+              icon={<VerifiedUser />}
+              label="Verified" 
+              size="small" 
+              color="success" 
+            />
+          ) : (
+            <Chip 
+              label="Pending" 
+              size="small" 
+              color="warning" 
+            />
+          )}
+          {params.row.user && params.row.user.vendorVerified && (
+            <Chip 
+              label="User Verified" 
+              size="small" 
+              color="success" 
+              variant="outlined"
+            />
+          )}
+        </Box>
+      )
+    },
+    { 
       field: 'isActive', 
       headerName: 'Status', 
       width: 100,
@@ -273,25 +331,82 @@ const VendorManagement = () => {
       )
     },
     {
+      field: 'userStatus',
+      headerName: 'User Status',
+      width: 120,
+      renderCell: (params) => (
+        params.row.user ? (
+          <Chip 
+            label={params.row.user.status} 
+            size="small" 
+            color={
+              params.row.user.status === 'active' ? 'success' : 
+              params.row.user.status === 'inactive' ? 'warning' : 'error'
+            } 
+          />
+        ) : (
+          <Typography variant="body2" color="textSecondary">N/A</Typography>
+        )
+      )
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
-      width: 150,
+      width: 200,
       renderCell: (params) => (
-        <Box>
-          <IconButton 
-            size="small" 
-            onClick={() => handleOpenEdit(params.row)}
-            sx={{ mr: 1 }}
-          >
-            <Edit fontSize="small" />
-          </IconButton>
-          <IconButton 
-            size="small" 
-            onClick={() => handleDelete(params.row._id)}
-            color="error"
-          >
-            <Delete fontSize="small" />
-          </IconButton>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {!params.row.isVerified ? (
+            <>
+              <Tooltip title="Verify Vendor">
+                <IconButton 
+                  size="small" 
+                  onClick={() => handleVerify(params.row._id)}
+                  color="success"
+                  disabled={isVerifying}
+                >
+                  <CheckCircle fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Reject Vendor">
+                <IconButton 
+                  size="small" 
+                  onClick={() => handleReject(params.row._id)}
+                  color="error"
+                  disabled={isRejecting}
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : (
+            <Tooltip title="View Details">
+              <IconButton 
+                size="small" 
+                onClick={() => handleOpenEdit(params.row)}
+                sx={{ mr: 1 }}
+              >
+                <Visibility fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Edit Vendor">
+            <IconButton 
+              size="small" 
+              onClick={() => handleOpenEdit(params.row)}
+              sx={{ mr: 1 }}
+            >
+              <Edit fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Vendor">
+            <IconButton 
+              size="small" 
+              onClick={() => handleDelete(params.row._id)}
+              color="error"
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       )
     }
@@ -328,7 +443,7 @@ const VendorManagement = () => {
         </Button>
       </Box>
 
-      <Paper sx={{ p: 2, borderRadius: 2 }}>
+      <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
         <DataGrid
           rows={vendorsData?.vendors || []}
           columns={columns}
@@ -342,6 +457,18 @@ const VendorManagement = () => {
           loading={isLoading}
           autoHeight
           disableSelectionOnClick
+          sx={{
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: theme.palette.grey[100],
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-cell': {
+              borderBottom: `1px solid ${theme.palette.grey[200]}`,
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: theme.palette.grey[50],
+            },
+          }}
         />
       </Paper>
 

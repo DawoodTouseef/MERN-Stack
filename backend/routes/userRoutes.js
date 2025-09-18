@@ -9,6 +9,8 @@ import {
   deleteUserById,
   getUserById,
   updateUserById,
+  verifyVendor,
+  rejectVendor,
   requestPasswordReset,
   changePassword
 } from "../controllers/userController.js";
@@ -20,7 +22,7 @@ const router = express.Router();
 router
   .route("/")
   .post(createUser)
-  .get(authenticate, authorizeVendor, getAllUsers);
+  .get(authenticate, IsAdmin, getAllUsers);
 
 router.post("/auth", loginUser);
 router.post("/logout", logoutCurrentUser);
@@ -33,9 +35,19 @@ router
 // ADMIN ROUTES 👇
 router
   .route("/:id")
-  .delete(authenticate, authorizeVendor, deleteUserById)
-  .get(authenticate, authorizeVendor, getUserById)
-  .put(authenticate, authorizeVendor, updateUserById);
+  .delete(authenticate, IsAdmin, deleteUserById)
+  .get(authenticate, IsAdmin, getUserById)
+  .put(authenticate, IsAdmin, updateUserById);
+
+// Vendor verification routes (admin only)
+router
+  .route("/:id/verify-vendor")
+  .put(authenticate, IsAdmin, verifyVendor);
+
+router
+  .route("/:id/reject-vendor")
+  .put(authenticate, IsAdmin, rejectVendor);
+
 router
 .route("/request-password")
 .post(requestPasswordReset)
