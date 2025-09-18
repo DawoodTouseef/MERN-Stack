@@ -8,7 +8,7 @@ import {
 } from "../../redux/api/productApiSlice";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
-import ProductTabs from "./Tabs";
+import ProductTabs from "./ProductTabs";
 import HeartIcon from "./HeartIcon";
 import {
   Box,
