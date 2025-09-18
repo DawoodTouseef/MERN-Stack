@@ -164,6 +164,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
       performance
     });
   } catch (error) {
+    console.error('Vendor dashboard error:', error);
     res.status(500).json({ message: 'Failed to fetch dashboard data', error: error.message });
   }
 });
@@ -179,12 +180,25 @@ export const getVendorSalesAnalytics = asyncHandler(async (req, res) => {
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
     
+    // Validate date parameters
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+    
+    // Check if dates are valid
+    if (startDate && isNaN(start.getTime())) {
+      return res.status(400).json({ message: 'Invalid startDate parameter' });
+    }
+    
+    if (endDate && isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid endDate parameter' });
+    }
+    
     const matchStage = {
       'orderItems.product': { $in: products.map(p => p._id) },
       isPaid: true,
       createdAt: {
-        $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        $lte: endDate ? new Date(endDate) : new Date()
+        $gte: start,
+        $lte: end
       }
     };
 
@@ -226,11 +240,12 @@ export const getVendorSalesAnalytics = asyncHandler(async (req, res) => {
     }), { totalSales: 0, totalOrders: 0, totalQuantity: 0 });
 
     res.json({
-      period: { startDate, endDate, groupBy },
+      period: { startDate: start, endDate: end, groupBy },
       data: salesData,
       summary: totals
     });
   } catch (error) {
+    console.error('Vendor sales analytics error:', error);
     res.status(500).json({ message: 'Failed to fetch sales analytics', error: error.message });
   }
 });
@@ -242,18 +257,38 @@ export const getVendorProductAnalytics = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
     const { startDate, endDate, limit = 20, sortBy = 'revenue' } = req.query;
+    
+    // Validate limit parameter
+    const parsedLimit = Math.min(parseInt(limit) || 20, 100); // Max 100 items
+    
+    // Validate sortBy parameter
+    const validSortFields = ['revenue', 'totalQuantitySold', 'totalOrders', 'averagePrice'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'revenue';
 
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
     
+    // Validate date parameters
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+    
+    // Check if dates are valid
+    if (startDate && isNaN(start.getTime())) {
+      return res.status(400).json({ message: 'Invalid startDate parameter' });
+    }
+    
+    if (endDate && isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid endDate parameter' });
+    }
+
     const pipeline = [
       {
         $match: {
           'orderItems.product': { $in: products.map(p => p._id) },
           isPaid: true,
           createdAt: {
-            $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            $lte: endDate ? new Date(endDate) : new Date()
+            $gte: start,
+            $lte: end
           }
         }
       },
@@ -295,22 +330,23 @@ export const getVendorProductAnalytics = asyncHandler(async (req, res) => {
           currentStock: '$productDetails.countInStock'
         }
       },
-      { $sort: { [sortBy]: -1 } },
-      { $limit: parseInt(limit) }
+      { $sort: { [sortField]: -1 } },
+      { $limit: parsedLimit }
     ];
 
     const productAnalytics = await Order.aggregate(pipeline);
 
     res.json({
-      period: { startDate, endDate },
+      period: { startDate: start, endDate: end },
       topProducts: productAnalytics,
       metrics: {
         totalProducts: productAnalytics.length,
-        totalRevenue: productAnalytics.reduce((sum, p) => sum + p.totalRevenue, 0),
-        totalQuantitySold: productAnalytics.reduce((sum, p) => sum + p.totalQuantitySold, 0)
+        totalRevenue: productAnalytics.reduce((sum, p) => sum + (p.totalRevenue || 0), 0),
+        totalQuantitySold: productAnalytics.reduce((sum, p) => sum + (p.totalQuantitySold || 0), 0)
       }
     });
   } catch (error) {
+    console.error('Vendor product analytics error:', error);
     res.status(500).json({ message: 'Failed to fetch product analytics', error: error.message });
   }
 });
@@ -326,12 +362,25 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
     
+    // Validate date parameters
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+    
+    // Check if dates are valid
+    if (startDate && isNaN(start.getTime())) {
+      return res.status(400).json({ message: 'Invalid startDate parameter' });
+    }
+    
+    if (endDate && isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid endDate parameter' });
+    }
+
     const matchStage = {
       'orderItems.product': { $in: products.map(p => p._id) },
       isPaid: true,
       createdAt: {
-        $gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        $lte: endDate ? new Date(endDate) : new Date()
+        $gte: start,
+        $lte: end
       }
     };
 
@@ -431,16 +480,17 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
     ]);
 
     res.json({
-      period: { startDate, endDate },
+      period: { startDate: start, endDate: end },
       customerData: customerData.slice(0, 100), // Limit for performance
       segmentSummary,
       metrics: {
         totalCustomers: customerData.length,
         averageLifetimeValue: customerData.length > 0 ? 
-          customerData.reduce((sum, c) => sum + c.totalSpent, 0) / customerData.length : 0
+          customerData.reduce((sum, c) => sum + (c.totalSpent || 0), 0) / customerData.length : 0
       }
     });
   } catch (error) {
+    console.error('Vendor customer analytics error:', error);
     res.status(500).json({ message: 'Failed to fetch customer analytics', error: error.message });
   }
 });
@@ -482,6 +532,7 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
       inventoryAnalysis
     });
   } catch (error) {
+    console.error('Vendor inventory analytics error:', error);
     res.status(500).json({ message: 'Failed to fetch inventory analytics', error: error.message });
   }
 });

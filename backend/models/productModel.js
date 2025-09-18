@@ -136,7 +136,11 @@ const productSchema = mongoose.Schema({
   countryOfOrigin: { type: String }, // Optional: for international rules
 
   user: { type: ObjectId, required: true, ref: "User" },
+  vendor: { type: ObjectId, ref: "Vendor" }, // Add vendor reference
 }, { timestamps: true });
+
+// Add index for vendor field
+productSchema.index({ vendor: 1 });
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;
