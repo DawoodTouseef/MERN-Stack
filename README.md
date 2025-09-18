@@ -181,7 +181,7 @@ npm run frontend
 
 ### 5. Access the Application
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:5000
+- **Backend API**: http://localhost:5500
 - **Admin Panel**: Login with admin credentials
 
 ## 📱 User Roles & Access

@@ -141,11 +141,23 @@ export const deleteVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const verifyVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).populate('user');
 
     if (vendor) {
       vendor.isVerified = true;
+      vendor.isActive = true;
       const updatedVendor = await vendor.save();
+      
+      // Also verify the user account if it exists
+      if (vendor.user) {
+        const user = await User.findById(vendor.user._id);
+        if (user && user.role === 'vendor') {
+          user.vendorVerified = true;
+          user.status = 'active';
+          await user.save();
+        }
+      }
+      
       res.json({ message: 'Vendor verified successfully', vendor: updatedVendor });
     } else {
       res.status(404).json({ message: 'Vendor not found' });
@@ -160,12 +172,23 @@ export const verifyVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const rejectVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).populate('user');
 
     if (vendor) {
       vendor.isVerified = false;
       vendor.isActive = false;
       const updatedVendor = await vendor.save();
+      
+      // Also reject the user account if it exists
+      if (vendor.user) {
+        const user = await User.findById(vendor.user._id);
+        if (user && user.role === 'vendor') {
+          user.vendorVerified = false;
+          user.status = 'banned';
+          await user.save();
+        }
+      }
+      
       res.json({ message: 'Vendor rejected successfully', vendor: updatedVendor });
     } else {
       res.status(404).json({ message: 'Vendor not found' });

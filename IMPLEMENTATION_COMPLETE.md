@@ -166,7 +166,7 @@ Successfully completed the comprehensive enhancement of the Nexus Mart MERN Stac
 ## 🚀 **Application Status: PRODUCTION READY**
 
 ✅ **Frontend**: http://localhost:5174 (Running)  
-✅ **Backend**: http://localhost:5000 (Running)  
+✅ **Backend**: http://localhost:5500 (Running)  
 ✅ **Database**: MongoDB Connected  
 ✅ **All Services**: Operational  
 

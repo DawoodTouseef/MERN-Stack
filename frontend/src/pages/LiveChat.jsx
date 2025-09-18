@@ -33,7 +33,7 @@ const LiveChat = () => {
   const userName = userInfo?.name
 
   // Initialize Socket.IO client
-  const socketUrl = "http://localhost:5000" || process.env.VITE_API_URL; // Empty string defaults to current host
+  const socketUrl = "http://localhost:5500" || process.env.VITE_API_URL; // Empty string defaults to current host
   const socket = io(socketUrl, {
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,

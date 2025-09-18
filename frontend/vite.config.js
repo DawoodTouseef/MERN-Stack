@@ -7,12 +7,12 @@ export default defineConfig({
   server: {
   proxy: {
     "/api": {
-      target: process.env.VITE_API_URL || "http://localhost:5000",
+      target: import.meta.env.VITE_API_URL || "http://localhost:5500",
       changeOrigin: true,
       secure: false,
     },
     "/uploads": {
-      target: process.env.VITE_API_URL || "http://localhost:5000",
+      target: import.meta.env.VITE_API_URL || "http://localhost:5500",
       changeOrigin: true,
       secure: false,
     },

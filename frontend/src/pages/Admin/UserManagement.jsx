@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Paper, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Alert, Tooltip } from '@mui/material';
+import { Box, Typography, Button, Paper, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Alert, Tooltip, Avatar, Divider, Badge } from '@mui/material';
 import { useGetUsersQuery, useDeleteUserMutation, useUpdateUserMutation, useVerifyVendorMutation, useRejectVendorMutation } from '../../redux/api/usersApiSlice';
 import { DataGrid } from '@mui/x-data-grid';
-import { Edit, Delete, CheckCircle, Cancel, VerifiedUser } from '@mui/icons-material';
+import { Edit, Delete, CheckCircle, Cancel, VerifiedUser, Person, Warning, Info } from '@mui/icons-material';
 import Loader from '../../components/Loader';
 import { useTheme } from '@mui/material/styles';
 
@@ -11,6 +11,7 @@ const UserManagement = () => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
+  const [verificationDialog, setVerificationDialog] = useState({ open: false, user: null, action: '' }); // For verification confirmation
   const [currentUserId, setCurrentUserId] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
@@ -110,23 +111,30 @@ const UserManagement = () => {
     }
   };
 
-  const handleVerifyVendor = async (userId) => {
-    try {
-      await verifyVendor(userId).unwrap();
-      refetch();
-    } catch (err) {
-      alert('Failed to verify vendor: ' + (err.data?.message || 'Unknown error'));
-    }
+  // Open verification confirmation dialog
+  const openVerificationDialog = (user, action) => {
+    setVerificationDialog({ open: true, user, action });
   };
 
-  const handleRejectVendor = async (userId) => {
-    if (window.confirm('Are you sure you want to reject this vendor? This will ban their account.')) {
-      try {
-        await rejectVendor(userId).unwrap();
-        refetch();
-      } catch (err) {
-        alert('Failed to reject vendor: ' + (err.data?.message || 'Unknown error'));
+  // Close verification confirmation dialog
+  const closeVerificationDialog = () => {
+    setVerificationDialog({ open: false, user: null, action: '' });
+  };
+
+  // Handle verification/rejection
+  const handleVerificationAction = async () => {
+    try {
+      if (verificationDialog.action === 'verify') {
+        await verifyVendor(verificationDialog.user._id).unwrap();
+        alert('Vendor verified successfully!');
+      } else if (verificationDialog.action === 'reject') {
+        await rejectVendor(verificationDialog.user._id).unwrap();
+        alert('Vendor rejected successfully!');
       }
+      refetch();
+      closeVerificationDialog();
+    } catch (err) {
+      alert(`Failed to ${verificationDialog.action} vendor: ` + (err.data?.message || 'Unknown error'));
     }
   };
 
@@ -134,11 +142,28 @@ const UserManagement = () => {
     { 
       field: 'username', 
       headerName: 'Username', 
-      flex: 1,
+      flex: 1.5,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="bold">{params.row.username}</Typography>
-          <Typography variant="caption" color="textSecondary">{params.row.email}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            badgeContent={
+              params.row.role === 'vendor' && params.row.vendorVerified ? (
+                <VerifiedUser sx={{ width: 16, height: 16, color: 'success.main' }} />
+              ) : params.row.role === 'vendor' && !params.row.vendorVerified ? (
+                <Warning sx={{ width: 16, height: 16, color: 'warning.main' }} />
+              ) : null
+            }
+          >
+            <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+              <Person />
+            </Avatar>
+          </Badge>
+          <Box>
+            <Typography variant="body2" fontWeight="bold">{params.row.username}</Typography>
+            <Typography variant="caption" color="textSecondary">{params.row.email}</Typography>
+          </Box>
         </Box>
       )
     },
@@ -185,6 +210,7 @@ const UserManagement = () => {
               />
             ) : (
               <Chip 
+                icon={<Warning />}
                 label="Pending" 
                 size="small" 
                 color="warning" 
@@ -199,25 +225,25 @@ const UserManagement = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 250,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           {params.row.role === 'vendor' && !params.row.vendorVerified && (
             <>
-              <Tooltip title="Verify Vendor">
+              <Tooltip title="Verify Vendor - Approve this vendor to allow them to sell products">
                 <IconButton 
                   size="small" 
-                  onClick={() => handleVerifyVendor(params.row._id)}
+                  onClick={() => openVerificationDialog(params.row, 'verify')}
                   color="success"
                   disabled={isVerifying}
                 >
                   <CheckCircle fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Reject Vendor">
+              <Tooltip title="Reject Vendor - Reject this vendor and ban their account">
                 <IconButton 
                   size="small" 
-                  onClick={() => handleRejectVendor(params.row._id)}
+                  onClick={() => openVerificationDialog(params.row, 'reject')}
                   color="error"
                   disabled={isRejecting}
                 >
@@ -393,6 +419,95 @@ const UserManagement = () => {
             disabled={isUpdating}
           >
             {isUpdating ? <Loader size={20} /> : 'Update'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Verification Confirmation Dialog */}
+      <Dialog open={verificationDialog.open} onClose={closeVerificationDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {verificationDialog.action === 'verify' ? 'Verify Vendor' : 'Reject Vendor'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ py: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              {verificationDialog.action === 'verify' 
+                ? `Are you sure you want to verify ${verificationDialog.user?.username}?` 
+                : `Are you sure you want to reject ${verificationDialog.user?.username}? This will ${verificationDialog.action === 'reject' ? 'ban their account' : 'deactivate their account'}.`}
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Badge
+                overlap="circular"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                badgeContent={
+                  verificationDialog.user?.vendorVerified ? (
+                    <VerifiedUser sx={{ width: 16, height: 16, color: 'success.main' }} />
+                  ) : (
+                    <Warning sx={{ width: 16, height: 16, color: 'warning.main' }} />
+                  )
+                }
+              >
+                <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main' }}>
+                  <Person />
+                </Avatar>
+              </Badge>
+              <Box>
+                <Typography variant="h6" fontWeight="bold">
+                  {verificationDialog.user?.username}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {verificationDialog.user?.email}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  <Chip 
+                    label={verificationDialog.user?.role} 
+                    size="small" 
+                    color={verificationDialog.user?.role === 'admin' ? 'error' : verificationDialog.user?.role === 'vendor' ? 'primary' : 'default'} 
+                  />
+                  <Chip 
+                    label={verificationDialog.user?.status} 
+                    size="small" 
+                    color={
+                      verificationDialog.user?.status === 'active' ? 'success' : 
+                      verificationDialog.user?.status === 'inactive' ? 'warning' : 'error'
+                    } 
+                  />
+                </Box>
+              </Box>
+            </Box>
+            
+            <Box sx={{ bgcolor: theme.palette.grey[100], p: 2, borderRadius: 1, mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Info fontSize="small" color="primary" />
+                {verificationDialog.action === 'verify' ? 'Verification Effects' : 'Rejection Effects'}
+              </Typography>
+              <Typography variant="body2">
+                {verificationDialog.action === 'verify' 
+                  ? 'This will activate the vendor account and allow them to list products for sale.'
+                  : 'This will ban the vendor account and prevent them from accessing the platform.'}
+              </Typography>
+              {verificationDialog.user?.role === 'vendor' && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  The vendor's associated profile will also be {verificationDialog.action === 'verify' ? 'activated' : 'deactivated'}.
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeVerificationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleVerificationAction} 
+            variant="contained"
+            color={verificationDialog.action === 'verify' ? 'success' : 'error'}
+            disabled={isVerifying || isRejecting}
+            startIcon={verificationDialog.action === 'verify' ? <CheckCircle /> : <Cancel />}
+          >
+            {isVerifying || isRejecting ? <Loader size={20} /> : 
+             verificationDialog.action === 'verify' ? 'Verify Vendor' : 'Reject Vendor'}
           </Button>
         </DialogActions>
       </Dialog>

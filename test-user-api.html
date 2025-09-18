@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test User API</title>
+</head>
+<body>
+    <h1>Test User API</h1>
+    <button onclick="testAPI()">Test User Search API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            try {
+                // First, login to get a token
+                const loginResponse = await fetch('http://localhost:5502/api/users/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@nexusmart.com',
+                        password: 'NexusAdmin2024!'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
+                
+                if (!loginResponse.ok) {
+                    throw new Error(loginData.message || 'Login failed');
+                }
+                
+                const token = loginData.token;
+                document.getElementById('result').innerHTML += '<p>Login successful, token received</p>';
+                
+                // Now test the user search and filter endpoint
+                const response = await fetch('http://localhost:5502/api/users?search=admin&role=admin&status=active', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('User search response:', data);
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'API request failed');
+                }
+                
+                document.getElementById('result').innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('Error testing API:', error);
+                document.getElementById('result').innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

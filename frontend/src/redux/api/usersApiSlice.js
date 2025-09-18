@@ -31,9 +31,26 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     getUsers: builder.query({
-      query: () => ({
-        url: USERS_URL,
-      }),
+      query: (params) => {
+        const { search, role, status, sortBy, sortOrder, page, limit } = params || {};
+        let url = USERS_URL;
+        
+        // Build query string
+        const queryParams = new URLSearchParams();
+        if (search) queryParams.append('search', search);
+        if (role && role !== 'all') queryParams.append('role', role);
+        if (status && status !== 'all') queryParams.append('status', status);
+        if (sortBy) queryParams.append('sortBy', sortBy);
+        if (sortOrder) queryParams.append('sortOrder', sortOrder);
+        if (page) queryParams.append('page', page);
+        if (limit) queryParams.append('limit', limit);
+        
+        if (queryParams.toString()) {
+          url += `?${queryParams.toString()}`;
+        }
+        
+        return { url };
+      },
       providesTags: ["User"],
       keepUnusedDataFor: 5,
     }),
@@ -54,7 +71,6 @@ export const userApiSlice = apiSlice.injectEndpoints({
     getUserDetails: builder.query({
       query: (id) => ({
         url: `${USERS_URL}/${id}`,
-      
       }),
       keepUnusedDataFor: 5,
     }),

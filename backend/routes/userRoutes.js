@@ -55,4 +55,5 @@ router
 router
 .route('/reset-password')
 .post(changePassword)
+
 export default router;

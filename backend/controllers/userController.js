@@ -59,6 +59,7 @@ const createUser = asyncHandler(async (req, res) => {
   const savedUser = await newUser.save();
   
   // If user is a vendor, create a vendor profile
+  let vendorProfile = null;
   if (role === "vendor" && VendorProfile) {
     const vendor = new Vendor({
       name: VendorProfile.companyName || username,
@@ -80,12 +81,22 @@ const createUser = asyncHandler(async (req, res) => {
       user: savedUser._id // Link to the user account
     });
     
-    await vendor.save();
+    vendorProfile = await vendor.save();
   }
   
   createToken(res, savedUser._id);
 
-  res.status(201).json(savedUser);
+  // Include vendor profile in response if it exists
+  const responseUser = savedUser.toObject();
+  if (vendorProfile) {
+    responseUser.vendorProfile = {
+      _id: vendorProfile._id,
+      isVerified: vendorProfile.isVerified,
+      isActive: vendorProfile.isActive
+    };
+  }
+
+  res.status(201).json(responseUser);
 });
 
 // Login user
@@ -141,8 +152,68 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
 
 // Get all users (admin only)
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({}).select("-password");
-  res.json(users);
+  // Get query parameters for search and filtering
+  const { search, role, status, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
+  
+  // Build filter object
+  let filter = {};
+  
+  // Search by username or email
+  if (search) {
+    filter.$or = [
+      { username: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } }
+    ];
+  }
+  
+  // Filter by role
+  if (role && role !== 'all') {
+    filter.role = role;
+  }
+  
+  // Filter by status
+  if (status && status !== 'all') {
+    filter.status = status;
+  }
+  
+  // Pagination
+  const skip = (page - 1) * limit;
+  
+  // Sorting
+  const sort = {};
+  sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+  
+  const users = await User.find(filter)
+    .select("-password")
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
+    
+  const totalUsers = await User.countDocuments(filter);
+  
+  // For vendors, also fetch their vendor profile information
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].role === 'vendor') {
+      const vendorProfile = await Vendor.findOne({ user: users[i]._id });
+      if (vendorProfile) {
+        users[i].vendorProfile = {
+          isVerified: vendorProfile.isVerified,
+          isActive: vendorProfile.isActive
+        };
+      }
+    }
+  }
+  
+  res.json({
+    users,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalUsers / limit),
+      totalUsers,
+      hasNext: page < Math.ceil(totalUsers / limit),
+      hasPrev: page > 1
+    }
+  });
 });
 
 // Get current logged-in user profile

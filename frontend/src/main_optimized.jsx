@@ -105,7 +105,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <PayPalScriptProvider
       options={{
-        "client-id": process.env.REACT_APP_PAYPAL_CLIENT_ID || "test",
+        "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
         currency: "USD",
         intent: "capture"
       }}

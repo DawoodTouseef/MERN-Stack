@@ -175,7 +175,7 @@ export default defineConfig({
     // Proxy configuration for API calls
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5500',
         changeOrigin: true,
         secure: false
       }

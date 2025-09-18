@@ -54,7 +54,7 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 }
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5502;
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY || '';
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
 const EXCHANGE_API_DOMAIN = process.env.EXCHANGE_API_DOMAIN || '';

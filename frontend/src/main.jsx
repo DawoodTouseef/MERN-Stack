@@ -49,6 +49,8 @@ import Brand from "./pages/Admin/Brand.jsx";
 import SellerLogin from "./pages/Seller/SellerLogin.jsx";
 import VendorLogin from "./pages/Vendor/VendorLogin.jsx";
 import VendorRegister from "./pages/Vendor/VendorRegister.jsx";
+// Vendor Dashboard
+import SellerDashBoard from "./pages/Vendor/vendorDashboard.jsx";
 // Admin
 import AdminRoute from "./pages/Admin/AdminRoute"
 import AdminLogin from "./pages/Admin/AdminLogin"
@@ -117,6 +119,7 @@ const router = createBrowserRouter(
           <Route path="user/edit/:id" element={<UserEditPage />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
+        <Route path="dashboard" element={<SellerDashBoard />} />
         <Route path="brand" element={<Brand />} />
         <Route path="productlist" element={<ProductList />} />
         <Route path="allproductslist" element={<AllProducts />} />
