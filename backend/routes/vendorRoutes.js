@@ -10,6 +10,7 @@ import {
   getVendorProductAnalytics,
   getVendorCustomerAnalytics,
   getVendorInventoryAnalytics,
+  checkVendorProducts,
   verifyVendor,
   rejectVendor
 } from '../controllers/vendorController.js';
@@ -35,6 +36,10 @@ router.route('/analytics/customers')
 
 router.route('/analytics/inventory')
   .get(authenticate, authorizeVendor, getVendorInventoryAnalytics);
+
+// Debug routes
+router.route('/debug/products')
+  .get(authenticate, authorizeVendor, checkVendorProducts);
 
 // Admin routes (admin access)
 router.route('/')

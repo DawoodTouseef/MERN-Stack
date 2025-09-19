@@ -159,6 +159,15 @@ const ResponsiveProductGrid = ({
                   display: 'flex',
                   flexDirection: 'column'
                 }}
+                // Add touch-friendly attributes
+                onTouchStart={(e) => {
+                  // Add visual feedback for touch devices
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onTouchEnd={(e) => {
+                  // Reset visual feedback
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
               >
                 {child}
               </GridItem>
@@ -240,6 +249,15 @@ export const ResponsiveAutoGrid = ({
               height: '100%',
               display: 'flex',
               flexDirection: 'column'
+            }}
+            // Add touch-friendly attributes
+            onTouchStart={(e) => {
+              // Add visual feedback for touch devices
+              e.currentTarget.style.transform = 'scale(0.98)';
+            }}
+            onTouchEnd={(e) => {
+              // Reset visual feedback
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             {child}

@@ -108,6 +108,13 @@ const productSchema = mongoose.Schema({
   category: { type: ObjectId, ref: "Category", required: true },
   description: { type: String, required: true },
   price:{type:Number,required:true},
+  // Multi-currency pricing
+  currency: { type: String, default: "USD" },
+  prices: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
   variants: [
     {
       sku: String,
@@ -115,6 +122,11 @@ const productSchema = mongoose.Schema({
       size: String,
       storage: String,
       price: Number,
+      prices: {
+        type: Map,
+        of: Number,
+        default: {}
+      },
       countInStock: Number,
       images: [String]
     }
@@ -134,6 +146,19 @@ const productSchema = mongoose.Schema({
   numReviews: { type: Number, default: 0 },
   taxProductCode: { type: String }, // e.g., "MOB123" for tax classification
   countryOfOrigin: { type: String }, // Optional: for international rules
+
+  // New fields for tax and shipping
+  sku: { type: String },
+  isTaxable: { type: Boolean, default: true },
+  taxCategory: { type: String },
+  taxExempt: { type: Boolean, default: false },
+  
+  // Shipping information
+  shippingWeight: { type: Number },
+  shippingLength: { type: Number },
+  shippingWidth: { type: Number },
+  shippingHeight: { type: Number },
+  shippingClass: { type: String },
 
   user: { type: ObjectId, required: true, ref: "User" },
   vendor: { type: ObjectId, ref: "Vendor" }, // Add vendor reference

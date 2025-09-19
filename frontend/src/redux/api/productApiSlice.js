@@ -48,11 +48,15 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     uploadProductImage: builder.mutation({
-      query: (data) => ({
-        url: `${UPLOAD_URL}`,
-        method: "POST",
-        body: data,
-      }),
+      query: (data) => {
+        // For FormData, we need to let the browser set the Content-Type
+        // RTK Query will automatically detect FormData and set the correct headers
+        return {
+          url: `${UPLOAD_URL}`,
+          method: "POST",
+          body: data,
+        };
+      },
     }),
     deleteProductImage: builder.mutation({
       query: (data) => ({

@@ -90,7 +90,7 @@ const AllProducts = () => {
         {userInfo?.role === "vendor" ? (
           <Button
           component={Link}
-          to="/vendor/productlist" 
+          to="/vendor/product/add" 
           variant="contained"
           color="secondary"
           startIcon={<IoAdd />}
@@ -115,7 +115,7 @@ const AllProducts = () => {
         ):(
           <Button
           component={Link}
-          to="/seller/productlist" 
+          to="/seller/product/add" 
           variant="contained"
           color="secondary"
           startIcon={<IoAdd />}

@@ -66,7 +66,7 @@ const AppPerformanceWrapper = ({ children }) => {
   const [showMetrics, setShowMetrics] = useState(false);
 
   // Show performance metrics in development
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
 
   return (
     <ErrorBoundary>
@@ -107,7 +107,7 @@ const AppPerformanceWrapper = ({ children }) => {
  * Service Worker registration for caching and performance
  */
 export const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+  if ('serviceWorker' in navigator && (import.meta.env.PROD || import.meta.env.NODE_ENV === 'production')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
@@ -206,6 +206,11 @@ export const PWAInstallBanner = () => {
  * Resource preloader for critical assets
  */
 export const preloadCriticalResources = () => {
+  // Skip preloading in development to avoid 404 errors
+  if (import.meta.env.DEV || import.meta.env.NODE_ENV === 'development') {
+    return;
+  }
+  
   const criticalImages = [
     '/images/logo.png',
     '/images/banner-1.jpg',
@@ -224,6 +229,8 @@ export const preloadCriticalResources = () => {
     link.rel = 'preload';
     link.as = 'image';
     link.href = src;
+    // Add error handling
+    link.onerror = () => console.warn(`Failed to preload image: ${src}`);
     document.head.appendChild(link);
   });
 
@@ -235,6 +242,8 @@ export const preloadCriticalResources = () => {
     link.type = 'font/woff2';
     link.crossOrigin = 'anonymous';
     link.href = href;
+    // Add error handling
+    link.onerror = () => console.warn(`Failed to preload font: ${href}`);
     document.head.appendChild(link);
   });
 };

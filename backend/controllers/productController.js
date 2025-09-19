@@ -5,7 +5,7 @@ import Product from "../models/productModel.js";
 const addProduct = asyncHandler(async (req, res) => {
   try {
 
-    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock } = req.fields;
+    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock, sku, shippingWeight, shippingLength, shippingWidth, shippingHeight, shippingClass, taxProductCode, isTaxable, taxCategory, taxExempt, currency, prices } = req.fields;
 
     // Validation
     switch (true) {
@@ -72,14 +72,25 @@ const addProduct = asyncHandler(async (req, res) => {
       variants: variantsArray.filter(item => item && Object.keys(item).length > 0), // Ensure valid variants
       user: req.fields.user,
       countInStock: Number(countInStock),
+      sku,
+      currency: currency || 'USD',
+      prices: prices ? JSON.parse(prices) : {},
+      shippingWeight: shippingWeight ? Number(shippingWeight) : undefined,
+      shippingLength: shippingLength ? Number(shippingLength) : undefined,
+      shippingWidth: shippingWidth ? Number(shippingWidth) : undefined,
+      shippingHeight: shippingHeight ? Number(shippingHeight) : undefined,
+      shippingClass,
+      taxProductCode,
+      isTaxable: isTaxable === 'true',
+      taxCategory,
+      taxExempt: taxExempt === 'true',
     };
 
 
     const product = new Product(productData)
-    .populate("category")
-    .populate('brand');
     await product.save();
-    res.json(product);
+    const products = await Product.findById(product._id).populate("category").populate("brand");
+    res.json(products);
   } catch (error) {
     console.error("Error:", error);
     res.status(400).json(error.message);
@@ -99,6 +110,18 @@ const updateProductDetails = asyncHandler(async (req, res) => {
       warrantyPeriod,
       returnPolicy,
       countInStock,
+      sku,
+      shippingWeight,
+      shippingLength,
+      shippingWidth,
+      shippingHeight,
+      shippingClass,
+      taxProductCode,
+      isTaxable,
+      taxCategory,
+      taxExempt,
+      currency,
+      prices,
     } = req.fields;
 
     // Validate product ID
@@ -165,6 +188,18 @@ const updateProductDetails = asyncHandler(async (req, res) => {
       specifications: Object.keys(specifications).length > 0 ? specifications : existingProduct.specifications,
       variants: variantsArray.length > 0 ? variantsArray : existingProduct.variants,
       countInStock: countInStock !== undefined ? Number(countInStock) : existingProduct.countInStock,
+      sku: sku || existingProduct.sku,
+      currency: currency || existingProduct.currency || 'USD',
+      prices: prices ? JSON.parse(prices) : existingProduct.prices || {},
+      shippingWeight: shippingWeight !== undefined ? Number(shippingWeight) : existingProduct.shippingWeight,
+      shippingLength: shippingLength !== undefined ? Number(shippingLength) : existingProduct.shippingLength,
+      shippingWidth: shippingWidth !== undefined ? Number(shippingWidth) : existingProduct.shippingWidth,
+      shippingHeight: shippingHeight !== undefined ? Number(shippingHeight) : existingProduct.shippingHeight,
+      shippingClass: shippingClass || existingProduct.shippingClass,
+      taxProductCode: taxProductCode || existingProduct.taxProductCode,
+      isTaxable: isTaxable !== undefined ? isTaxable === 'true' : existingProduct.isTaxable,
+      taxCategory: taxCategory || existingProduct.taxCategory,
+      taxExempt: taxExempt !== undefined ? taxExempt === 'true' : existingProduct.taxExempt,
     };
     // Update the product
     const updatedProduct = await Product.findByIdAndUpdate(productId, updatedProductData, { new: true })
@@ -709,7 +744,7 @@ const facetedSearch = asyncHandler(async (req, res) => {
         offerConditions.push({ bulkDiscount: { $exists: true } });
       }
       if (offersArray.includes('cashback')) {
-        offerConditions.push({ cashbackOffer: { $exists: true } });
+        offerConditions.push({ cashbackOffer: { $ne: null } });
       }
       if (offersArray.includes('no_cost_emi')) {
         offerConditions.push({ emiAvailable: true });
@@ -892,7 +927,7 @@ const facetedSearch = asyncHandler(async (req, res) => {
                 },
                 cashback: {
                   $sum: {
-                    $cond: [{ $exists: ['$cashbackOffer'] }, 1, 0]
+                    $cond: [{ $gt: [{ $size: { $ifNull: ['$cashbackOffer', []] } }, 0] }, 1, 0]
                   }
                 },
                 emi: {
@@ -1514,8 +1549,9 @@ const getFlashSales = asyncHandler(async (req, res) => {
     const currentTime = new Date();
     let flashSaleProducts = [];
     
-    // Find products with active flash sale offers
-    const Offer = (await import('../models/offerModel.js')).default;
+    // Import Offer model dynamically
+    const Offer = (await import('../models/offersModel.js')).default;
+    
     const flashOffers = await Offer.find({
       offerType: 'flash',
       ...(active === 'true' && {
@@ -1528,7 +1564,11 @@ const getFlashSales = asyncHandler(async (req, res) => {
     for (const offer of flashOffers) {
       // Add products directly in the offer
       if (offer.products && offer.products.length > 0) {
-        flashSaleProducts.push(...offer.products.map(product => ({
+        const populatedProducts = await Product.find({
+          _id: { $in: offer.products.map(p => p._id) }
+        }).populate('category brand');
+        
+        flashSaleProducts.push(...populatedProducts.map(product => ({
           ...product.toObject(),
           flashOffer: {
             discount: offer.discountValue,
@@ -1566,6 +1606,7 @@ const getFlashSales = asyncHandler(async (req, res) => {
     
     res.json(uniqueProducts.slice(0, parseInt(limit)));
   } catch (error) {
+    console.error('Flash sales error:', error);
     res.status(500).json({ message: error.message });
   }
 });

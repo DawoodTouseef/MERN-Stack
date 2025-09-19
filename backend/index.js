@@ -32,11 +32,12 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import dynamicPricingRoutes from './routes/dynamicPricingRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
+import currencyRoutes from './routes/currencyRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import notificationManager from './services/notificationService.js';
 import taxServiceManager from './services/thirdPartyTaxService.js';
 import socketService from './services/socketService.js';
-
+import { authenticate, authorizeVendor } from './middlewares/authMiddleware.js';
 dotenv.config();
 
 // Validate critical environment variables
@@ -54,7 +55,7 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 }
-const port = process.env.PORT || 5502;
+const port = process.env.PORT || 5501;
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY || '';
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
 const EXCHANGE_API_DOMAIN = process.env.EXCHANGE_API_DOMAIN || '';
@@ -113,6 +114,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/pricing', dynamicPricingRoutes);
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/currencies', currencyRoutes);
 // app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
 
 // Security headers for config endpoints
@@ -122,6 +124,33 @@ app.get("/api/config/paypal", (req, res) => {
 
 app.get('/api/config/exchange', (req, res) => {
   res.json({ apikey: process.env.EXCHANGE_API_KEY });
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    message: 'Vendor dashboard API is running'
+  });
+});
+
+// Vendor health check endpoint
+app.get('/api/vendors/health', authenticate, authorizeVendor, (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    user: {
+      id: req.user._id,
+      username: req.user.username,
+      role: req.user.role,
+      vendorVerified: req.user.vendorVerified,
+      status: req.user.status
+    },
+    timestamp: new Date().toISOString(),
+    message: 'Vendor API access is working correctly'
+  });
 });
 
 // Serve static files securely
@@ -135,6 +164,17 @@ app.use("/uploads", express.static(path.join(__dirname + "/uploads"), {
     res.setHeader('X-Frame-Options', 'DENY');
   }
 }));
+
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(frontendBuildPath));
+  
+  // Serve index.html for all routes to support client-side routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(frontendBuildPath, 'index.html'));
+  });
+}
 
 // Error handling middleware (must be last)
 app.use(notFound);

@@ -10,7 +10,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert
+  Alert,
+  Button,
+  CircularProgress
 } from '@mui/material';
 import { 
   BarChart, 
@@ -28,45 +30,81 @@ import {
   Cell
 } from 'recharts';
 import { useGetVendorDashboardQuery, useGetVendorSalesAnalyticsQuery } from '../../redux/api/vendorApiSlice';
-import Loader from '../Loader';
 
 const VendorAnalyticsDashboard = () => {
   const theme = useTheme();
   const [period, setPeriod] = useState('30d');
+  const [forceRefresh, setForceRefresh] = useState(false);
   
-  // Test recharts import
-  const testRechartsImport = () => {
-    try {
-      // This is just to verify the import works
-      console.log('Recharts import successful');
-    } catch (error) {
-      console.error('Recharts import failed:', error);
-    }
-  };
-  
-  useEffect(() => {
-    testRechartsImport();
-  }, []);
-
-  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = 
-    useGetVendorDashboardQuery();
+  const { 
+    data: dashboardData, 
+    isLoading: isDashboardLoading, 
+    error: dashboardError,
+    refetch: refetchDashboard,
+    isFetching: isDashboardFetching
+  } = useGetVendorDashboardQuery(undefined, { 
+    refetchOnMountOrArgChange: true
+  });
     
-  const { data: salesData, isLoading: isSalesLoading, error: salesError } = 
-    useGetVendorSalesAnalyticsQuery({ 
-      startDate: new Date(Date.now() - parseInt(period) * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: new Date().toISOString(),
-      groupBy: 'day'
-    });
+  const { 
+    data: salesData, 
+    isLoading: isSalesLoading, 
+    error: salesError,
+    refetch: refetchSales,
+    isFetching: isSalesFetching
+  } = useGetVendorSalesAnalyticsQuery({ 
+    startDate: new Date(Date.now() - parseInt(period) * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date().toISOString(),
+    groupBy: 'day'
+  }, {
+    refetchOnMountOrArgChange: true
+  });
+
+  // Log API responses for debugging
+  useEffect(() => {
+    console.log('=== Vendor Dashboard Component Debug ===');
+    console.log('Dashboard Loading:', isDashboardLoading);
+    console.log('Dashboard Fetching:', isDashboardFetching);
+    console.log('Sales Loading:', isSalesLoading);
+    console.log('Sales Fetching:', isSalesFetching);
+    console.log('Dashboard Data:', dashboardData);
+    console.log('Sales Data:', salesData);
+    console.log('Dashboard Error:', dashboardError);
+    console.log('Sales Error:', salesError);
+    
+    // Log detailed error information
+    if (dashboardError) {
+      console.log('Dashboard Error Details:', {
+        status: dashboardError?.status,
+        data: dashboardError?.data,
+        error: dashboardError?.error
+      });
+    }
+    
+    if (salesError) {
+      console.log('Sales Error Details:', {
+        status: salesError?.status,
+        data: salesError?.data,
+        error: salesError?.error
+      });
+    }
+    
+    // Log product count specifically
+    if (dashboardData) {
+      console.log('Product Count:', dashboardData.products);
+      console.log('Product Count Type:', typeof dashboardData.products);
+    }
+  }, [isDashboardLoading, isDashboardFetching, isSalesLoading, isSalesFetching, dashboardData, salesData, dashboardError, salesError]);
 
   // Format data for charts
   const formatSalesData = () => {
-    if (!salesData?.data) return [];
+    if (!salesData || !Array.isArray(salesData.data)) return [];
     
     return salesData.data.map(item => ({
-      date: item._id,
-      revenue: item.totalSales,
-      orders: item.totalOrders,
-      quantity: item.totalQuantity
+      date: item._id || '',
+      revenue: item.totalSales || 0,
+      orders: item.totalOrders || 0,
+      quantity: item.totalQuantity || 0
     }));
   };
 
@@ -75,7 +113,7 @@ const VendorAnalyticsDashboard = () => {
     
     return Object.entries(dashboardData.performance.customers.segments).map(([name, value]) => ({
       name,
-      value
+      value: value || 0
     }));
   };
 
@@ -83,23 +121,167 @@ const VendorAnalyticsDashboard = () => {
     if (!dashboardData?.performance?.inventory) return [];
     
     return [
-      { name: 'In Stock', value: dashboardData.performance.inventory.inStock },
-      { name: 'Low Stock', value: dashboardData.performance.inventory.lowStock },
-      { name: 'Out of Stock', value: dashboardData.performance.inventory.outOfStock }
+      { name: 'In Stock', value: dashboardData.performance.inventory.inStock || 0 },
+      { name: 'Low Stock', value: dashboardData.performance.inventory.lowStock || 0 },
+      { name: 'Out of Stock', value: dashboardData.performance.inventory.outOfStock || 0 }
     ];
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-  if (isDashboardLoading || isSalesLoading) {
-    return <Loader />;
+  // Handle force refresh
+  const handleRefresh = () => {
+    setForceRefresh(true);
+    refetchDashboard();
+    refetchSales();
+    // Reset force refresh after a short delay
+    setTimeout(() => setForceRefresh(false), 1000);
+  };
+
+  // Show loading state with more detailed information
+  if ((isDashboardLoading || isSalesLoading || forceRefresh) && !dashboardData) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', p: 3 }}>
+        <CircularProgress size={60} thickness={4} />
+        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+          Loading Vendor Dashboard
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          {isDashboardLoading ? 'Loading dashboard data...' : ''}
+          {isSalesLoading ? 'Loading sales analytics...' : ''}
+        </Typography>
+        <Button 
+          variant="outlined" 
+          onClick={handleRefresh}
+          sx={{ mt: 2 }}
+          disabled={forceRefresh}
+        >
+          {forceRefresh ? 'Refreshing...' : 'Force Refresh'}
+        </Button>
+      </Box>
+    );
   }
 
+  // Handle errors with more detailed information
   if (dashboardError || salesError) {
     return (
-      <Alert severity="error">
-        Error loading dashboard data: {dashboardError?.data?.message || salesError?.data?.message}
-      </Alert>
+      <Box sx={{ p: 3 }}>
+        <Alert 
+          severity="error"
+          action={
+            <Button 
+              color="inherit" 
+              size="small"
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
+          }
+        >
+          <Typography variant="h6" gutterBottom>
+            Error loading dashboard data
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {dashboardError ? `Dashboard Error: ${dashboardError?.data?.message || dashboardError?.error || dashboardError?.status || 'Unknown error'}` : ''}
+            {salesError ? `Sales Error: ${salesError?.data?.message || salesError?.error || salesError?.status || 'Unknown error'}` : ''}
+          </Typography>
+          <Typography variant="body2">
+            Status: {dashboardError?.status || salesError?.status || 'Unknown'}
+          </Typography>
+          {(dashboardError?.data || salesError?.data) && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Details: {JSON.stringify(dashboardError?.data || salesError?.data)}
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Please try again or contact support if the problem persists.
+          </Typography>
+        </Alert>
+        
+        {/* Show raw error details for debugging */}
+        {(dashboardError || salesError) && (
+          <details style={{ marginTop: '20px' }}>
+            <summary>Debug Information</summary>
+            <pre style={{ 
+              backgroundColor: '#f5f5f5', 
+              padding: '10px', 
+              borderRadius: '4px',
+              maxHeight: '200px',
+              overflow: 'auto',
+              marginTop: '10px'
+            }}>
+              {JSON.stringify({ dashboardError, salesError }, null, 2)}
+            </pre>
+          </details>
+        )}
+      </Box>
+    );
+  }
+
+  // Check if we have dashboard data
+  if (!dashboardData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert 
+          severity="info"
+          action={
+            <Button 
+              color="inherit" 
+              size="small"
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
+          }
+        >
+          <Typography variant="h6" gutterBottom>
+            No dashboard data available
+          </Typography>
+          <Typography variant="body2">
+            It seems you don't have any vendor data yet. Start by adding products to your store.
+          </Typography>
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Check if vendor has products - with additional debugging
+  const productCount = dashboardData?.products || 0;
+  console.log('Checking product count:', productCount, typeof productCount);
+  
+  // Additional check to ensure productCount is a valid number
+  const validProductCount = (typeof productCount === 'number' && !isNaN(productCount)) ? productCount : 0;
+  
+  if (validProductCount === 0) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert 
+          severity="info"
+          action={
+            <Button 
+              color="inherit" 
+              size="small"
+              onClick={handleRefresh}
+            >
+              Refresh
+            </Button>
+          }
+        >
+          <Typography variant="h6" gutterBottom>
+            No Products Found
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            You haven't added any products to your store yet. Sales analytics will appear once you have products and orders.
+          </Typography>
+          <Button 
+            variant="contained" 
+            href="/vendor/productlist"
+            sx={{ mt: 1 }}
+          >
+            Add Products
+          </Button>
+        </Alert>
+      </Box>
     );
   }
 
@@ -119,18 +301,32 @@ const VendorAnalyticsDashboard = () => {
         <Typography variant="h4" fontWeight="bold" color="primary.main">
           Vendor Dashboard
         </Typography>
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Period</InputLabel>
-          <Select
-            value={period}
-            label="Period"
-            onChange={(e) => setPeriod(e.target.value)}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Button 
+            variant="outlined" 
+            size="small"
+            onClick={handleRefresh}
+            disabled={isDashboardFetching || isSalesFetching}
           >
-            <MenuItem value="7d">Last 7 Days</MenuItem>
-            <MenuItem value="30d">Last 30 Days</MenuItem>
-            <MenuItem value="90d">Last 90 Days</MenuItem>
-          </Select>
-        </FormControl>
+            {isDashboardFetching || isSalesFetching ? <CircularProgress size={20} /> : 'Refresh'}
+          </Button>
+          <FormControl sx={{ minWidth: 120 }} size="small">
+            <InputLabel>Period</InputLabel>
+            <Select
+              value={period}
+              label="Period"
+              onChange={(e) => {
+                setPeriod(e.target.value);
+                // Refetch sales data when period changes
+                setTimeout(() => refetchSales(), 100);
+              }}
+            >
+              <MenuItem value="7d">Last 7 Days</MenuItem>
+              <MenuItem value="30d">Last 30 Days</MenuItem>
+              <MenuItem value="90d">Last 90 Days</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
       </Box>
 
       {/* Key Metrics */}
@@ -142,11 +338,11 @@ const VendorAnalyticsDashboard = () => {
                 Total Revenue
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                ${sales.totalRevenue?.toFixed(2) || '0.00'}
+                ${typeof sales.totalRevenue === 'number' ? sales.totalRevenue.toFixed(2) : '0.00'}
               </Typography>
               <Typography variant="body2">
-                {performance.sales?.growth?.revenueGrowth >= 0 ? '+' : ''}
-                {performance.sales?.growth?.revenueGrowth?.toFixed(2) || '0.00'}% from last period
+                {typeof performance.sales?.growth?.revenueGrowth === 'number' && performance.sales?.growth?.revenueGrowth >= 0 ? '+' : ''}
+                {typeof performance.sales?.growth?.revenueGrowth === 'number' ? performance.sales?.growth?.revenueGrowth.toFixed(2) : '0.00'}% from last period
               </Typography>
             </CardContent>
           </Card>
@@ -159,11 +355,11 @@ const VendorAnalyticsDashboard = () => {
                 Total Orders
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                {sales.totalOrders || 0}
+                {typeof sales.totalOrders === 'number' ? sales.totalOrders : 0}
               </Typography>
               <Typography variant="body2">
-                {performance.sales?.growth?.orderGrowth >= 0 ? '+' : ''}
-                {performance.sales?.growth?.orderGrowth?.toFixed(2) || '0.00'}% from last period
+                {typeof performance.sales?.growth?.orderGrowth === 'number' && performance.sales?.growth?.orderGrowth >= 0 ? '+' : ''}
+                {typeof performance.sales?.growth?.orderGrowth === 'number' ? performance.sales?.growth?.orderGrowth.toFixed(2) : '0.00'}% from last period
               </Typography>
             </CardContent>
           </Card>
@@ -176,10 +372,10 @@ const VendorAnalyticsDashboard = () => {
                 Products
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                {products.totalProducts || 0}
+                {typeof products.totalProducts === 'number' ? products.totalProducts : validProductCount}
               </Typography>
               <Typography variant="body2">
-                {products.activeProducts || 0} active products
+                {typeof products.activeProducts === 'number' ? products.activeProducts : 0} active products
               </Typography>
             </CardContent>
           </Card>
@@ -192,17 +388,17 @@ const VendorAnalyticsDashboard = () => {
                 Customers
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                {customers.total || 0}
+                {typeof customers.total === 'number' ? customers.total : 0}
               </Typography>
               <Typography variant="body2">
-                Avg. value: ${(customers.averageValue || 0).toFixed(2)}
+                Avg. value: ${typeof customers.averageValue === 'number' ? customers.averageValue.toFixed(2) : '0.00'}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Charts */}
+      {/* Charts - Only show if data is available */}
       <Grid container spacing={3}>
         {/* Sales Trend Chart */}
         <Grid item xs={12} lg={8}>
@@ -211,7 +407,7 @@ const VendorAnalyticsDashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Sales Trend
               </Typography>
-              {salesChartData.length > 0 ? (
+              {salesChartData && salesChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={salesChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -236,7 +432,10 @@ const VendorAnalyticsDashboard = () => {
                 </ResponsiveContainer>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Typography>No sales data available</Typography>
+                  <Typography>No sales data available for the selected period</Typography>
+                  {(isSalesLoading || isSalesFetching) && (
+                    <CircularProgress sx={{ mt: 2 }} />
+                  )}
                 </Box>
               )}
             </CardContent>
@@ -250,7 +449,7 @@ const VendorAnalyticsDashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Customer Segments
               </Typography>
-              {customerSegments.length > 0 ? (
+              {customerSegments && customerSegments.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -286,7 +485,7 @@ const VendorAnalyticsDashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Inventory Status
               </Typography>
-              {inventoryData.length > 0 ? (
+              {inventoryData && inventoryData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={inventoryData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -312,15 +511,15 @@ const VendorAnalyticsDashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Top Selling Products
               </Typography>
-              {products.topProducts?.length > 0 ? (
+              {products.topProducts && products.topProducts.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart
                     data={products.topProducts.map(product => ({
-                      name: product.productName.length > 15 ? 
+                      name: product.productName && product.productName.length > 15 ? 
                         `${product.productName.substring(0, 15)}...` : 
-                        product.productName,
-                      revenue: product.totalRevenue,
-                      quantity: product.totalQuantity
+                        product.productName || 'Unknown Product',
+                      revenue: product.totalRevenue || 0,
+                      quantity: product.totalQuantity || 0
                     }))}
                     layout="vertical"
                   >
@@ -336,6 +535,9 @@ const VendorAnalyticsDashboard = () => {
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
                   <Typography>No product data available</Typography>
+                  {isDashboardLoading && (
+                    <CircularProgress sx={{ mt: 2 }} />
+                  )}
                 </Box>
               )}
             </CardContent>

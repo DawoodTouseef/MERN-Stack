@@ -23,46 +23,53 @@ import {
   ListItemIcon,
   ListItemText,
   Slide,
+  alpha,
+  useTheme,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import PersonIcon from "@mui/icons-material/Person";
+import LoginIcon from "@mui/icons-material/Login";
+import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import CategoryIcon from "@mui/icons-material/Category";
+import PeopleIcon from "@mui/icons-material/People";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import StoreIcon from "@mui/icons-material/Store";
+import SellIcon from "@mui/icons-material/Sell";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/features/auth/authSlice";
 import { useLogoutMutation } from "../redux/api/usersApiSlice";
-import {
-  AiOutlineShopping,
-  AiOutlineLogin,
-  AiOutlineShoppingCart,
-  AiOutlineHeart,
-  AiOutlineUserAdd,
-  AiOutlineDashboard,
-  AiOutlineProfile,
-} from "react-icons/ai";
-import { MdProductionQuantityLimits } from "react-icons/md";
-import { FaUsers, FaList } from "react-icons/fa";
-import { IoIosLogOut } from "react-icons/io";
-import { FaTag} from 'react-icons/fa';
-import {setSearchQuery} from "../redux/features/shop/shopSlice"
+import { setSearchQuery } from "../redux/features/shop/shopSlice";
 import { useAllProductsQuery } from "../redux/api/productApiSlice";
 import Autosuggest from 'react-autosuggest';
 import debounce from "lodash.debounce";
+import HeaderCurrencySelector from "./HeaderCurrencySelector";
 
 const NavBar = ({
   placeholder = "Search products...",
   initialValue = "",
   onSearch,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { data: products = [], isLoading } = useAllProductsQuery();
   const [suggestions, setSuggestions] = useState([]);
-  const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
-  const { cart } = useSelector((state) => state.shop);
   const [logoutApiCall] = useLogoutMutation();
 
   const handleSubmit = (e) => {
@@ -71,10 +78,10 @@ const NavBar = ({
     if (onSearch) {
       onSearch(trimmedSearchTerm);
     } else {
-      dispatch(setSearchQuery(trimmedSearchTerm)); // Update search query in Redux
-      navigate("/shop")
-
+      dispatch(setSearchQuery(trimmedSearchTerm));
+      navigate("/shop");
     }
+    if (isMobile) setMobileSearchOpen(false);
   };
 
   const handleAvatarClick = (event) => {
@@ -87,22 +94,20 @@ const NavBar = ({
 
   const handleLogout = async () => {
     try {
-      let api;
-      if (userInfo.role==="seller"){
-          api="/seller/login"
+      let redirectPath = '/login';
+      if (userInfo.role === "seller") {
+        redirectPath = "/seller/login";
+      } else if (userInfo.role === "admin") {
+        redirectPath = "/admin/login";
+      } else if (userInfo.role === "vendor") {
+        redirectPath = "/vendor/login";
       }
-      if (userInfo.role==="admin"){
-          api="/admin/login"
-      }
-      if (userInfo.role==="vendor"){
-          api="/vendor/login"
-      }
+      
       await logoutApiCall().unwrap();
       dispatch(logout());
-      navigate(api || '/login');
+      navigate(redirectPath);
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout API fails, clear local state
       dispatch(logout());
       navigate('/login');
     }
@@ -119,6 +124,7 @@ const NavBar = ({
           : `${parts[0][0]}`.toUpperCase(),
     };
   }
+
   const getSuggestions = useMemo(
     () =>
       debounce((value, callback) => {
@@ -149,31 +155,38 @@ const NavBar = ({
 
   const handleSuggestionSelected = (_, { suggestion }) => {
     navigate(`/product/${suggestion._id}`);
+    if (isMobile) setMobileSearchOpen(false);
   };
 
   const renderSuggestion = (suggestion, { query }) => {
-  const regex = new RegExp(`(${query})`, "gi");
-  const highlightedName = suggestion.name.replace(
-    regex,
-    (match) => `<span style="color:#2563eb; font-weight:bold;">${match}</span>`
-  );
-  
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-      <img
-        src={suggestion.media?.[0]?.url || "/placeholder.png"}
-        alt={suggestion.name}
-        style={{ width: 45, height: 45, borderRadius: 8, objectFit: "cover" }}
-      />
-      <Typography
-        variant="body2"
-        sx={{ fontSize: 15 }}
-        dangerouslySetInnerHTML={{ __html: highlightedName }}
-      />
-    </Box>
-  );
-};
-
+    const regex = new RegExp(`(${query})`, "gi");
+    const highlightedName = suggestion.name.replace(
+      regex,
+      (match) => `<span style="color:${theme.palette.primary.main}; font-weight:bold;">${match}</span>`
+    );
+    
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 1 }}>
+        <Box
+          component="img"
+          src={suggestion.media?.[0]?.url || "/placeholder.png"}
+          alt={suggestion.name}
+          sx={{ 
+            width: 45, 
+            height: 45, 
+            borderRadius: 2, 
+            objectFit: "cover",
+            border: `1px solid ${theme.palette.divider}`
+          }}
+        />
+        <Typography
+          variant="body2"
+          sx={{ fontSize: 15 }}
+          dangerouslySetInnerHTML={{ __html: highlightedName }}
+        />
+      </Box>
+    );
+  };
 
   const inputProps = {
     placeholder,
@@ -183,175 +196,201 @@ const NavBar = ({
       if (e.key === "Enter") handleSubmit(e);
     },
   };
+
+  // Navigation items based on user role
+  const getNavItems = () => {
+    if (userInfo) {
+      if (userInfo.role === "admin") {
+        return [
+          { label: "Dashboard", icon: <DashboardIcon />, path: "/admin/settings" },
+          { label: "Users", icon: <PeopleIcon />, path: "/admin/userlist" },
+          { label: "Categories", icon: <CategoryIcon />, path: "/admin/categorylist" },
+          { label: "Products", icon: <InventoryIcon />, path: "/admin/productlist" },
+          { label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" },
+          { label: "Banners", icon: <StoreIcon />, path: "/admin/banner" },
+        ];
+    }
+
+    if (userInfo.role === "seller") {
+      return [
+        { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
+        { label: "Products", icon: <InventoryIcon />, path: "/seller/allproductslist" },
+        { label: "Orders", icon: <ReceiptIcon />, path: "/seller/orderlist" },
+      ];
+    }
+
+    if (userInfo.role === "vendor") {
+      return [
+        { label: "Brand", icon: <SellIcon />, path: "/vendor/brand" },
+      ];
+    }
+
+    // Customer role
+    return [
+      { label: "Shop", icon: <StoreIcon />, path: "/shop" },
+      { label: "Cart", icon: <ShoppingCartIcon />, path: "/cart" },
+      { label: "Favorites", icon: <FavoriteIcon />, path: "/favorite" },
+    ];
+    }
+  };
+
+  const getUserMenuItems = () => {
+    if (!userInfo) return [];
+    
+    const baseItems = [
+      { label: "Profile", icon: <PersonIcon />, path: "/profile" },
+      { label: "Orders", icon: <ReceiptIcon />, path: "/orders" },
+    ];
+    
+    if (userInfo.role === "admin") {
+      baseItems.unshift({ label: "Admin Dashboard", icon: <DashboardIcon />, path: "/admin/settings" });
+    } else if (userInfo.role === "seller") {
+      baseItems.unshift({ label: "Seller Dashboard", icon: <DashboardIcon />, path: "/" });
+    } else if (userInfo.role === "vendor") {
+      baseItems.unshift({ label: "Vendor Dashboard", icon: <DashboardIcon />, path: "/vendor/dashboard" });
+    }
+    
+    baseItems.push({ label: "Logout", icon: <LogoutIcon />, action: handleLogout });
+    
+    return baseItems;
+  };
+
   // Drawer content for mobile
   const drawerContent = (
-    <Box sx={{ width: 280, pt: 2, pb: 2 }}>
-      <List>
-        <ListItem sx={{ mb: 1 }}>
-          <Typography
-            variant="h5"
-            component={Link}
-            to="/"
+    <Box sx={{ width: { xs: 280, sm: 320 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Drawer Header */}
+      <Box sx={{ 
+        p: 2, 
+        bgcolor: 'primary.main', 
+        color: 'white',
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          Nexus Mart
+        </Typography>
+        <IconButton 
+          onClick={() => setDrawerOpen(false)} 
+          sx={{ color: 'white' }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      
+      {/* Mobile Search */}
+      <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
             sx={{
-              color: "primary.main",
-              textDecoration: "none",
-              fontWeight: "bold",
-              letterSpacing: 2,
-              fontFamily: "Montserrat, sans-serif",
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                bgcolor: theme.palette.background.paper,
+              },
             }}
-            onClick={() => setDrawerOpen(false)}
-          >
-            Nexus
-          </Typography>
-        </ListItem>
-        
-        {/* Mobile Search Bar */}
-        <ListItem sx={{ px: 2, mb: 2 }}>
-          <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-            <TextField
-              fullWidth
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              size="small"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  bgcolor: "#f8fafc",
-                },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton type="submit" size="small">
-                      <SearchIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </form>
-        </ListItem>
-        
-        <Divider sx={{ my: 1 }} />
-        {userInfo && userInfo.role==="customer" && (
-          <>
-            <ListItem button component={Link} to="/shop" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineShopping size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Shop" />
-            </ListItem>
-            <ListItem button component={Link} to="/cart" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <Badge badgeContent={cartItems.length} color="secondary">
-                  <AiOutlineShoppingCart size={22} />
-                </Badge>
-              </ListItemIcon>
-              <ListItemText primary="Cart" />
-            </ListItem>
-            <ListItem button component={Link} to="/favorite" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineHeart size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Favorites" />
-            </ListItem>
-          </>
-        )}
-        { userInfo && userInfo.role==="vendor" && (
-          <>
-            <ListItem button component={Link} to="/vendor/brand" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <FaTag size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Brand" />
-            </ListItem>
-          </> 
-        )}
-        {userInfo && userInfo.role==="admin" && (
-          <>
-            <ListItem button component={Link} to="/admin/settings" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineDashboard size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
-            <ListItem button component={Link} to="/admin/banner" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineShoppingCart size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Banner" />
-            </ListItem>
-            <ListItem button component={Link} to="/admin/userlist" onClick={() => setDrawerOpen(false)}>  
-              <ListItemIcon>
-                <FaUsers size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Users" />
-            </ListItem>
-            <ListItem button component={Link} to="/admin/categorylist" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineShopping size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Category" />
-            </ListItem>
-          </>
-        )}
-        {userInfo && userInfo.role==="seller" && (
-          <>
-          <ListItem button component={Link} to="/" onClick={() => setDrawerOpen(false)}>
-                  <ListItemIcon>
-                    <AiOutlineDashboard size={22} />
-                  </ListItemIcon>
-                  <ListItemText primary="Dashboard" />
-                </ListItem>
-                <ListItem button component={Link} to="/seller/allproductslist" onClick={() => setDrawerOpen(false)}>
-                  <ListItemIcon>
-                    <MdProductionQuantityLimits size={22} />
-                  </ListItemIcon>
-                  <ListItemText primary="Products" />
-                </ListItem>
-                <ListItem button component={Link} to="/seller/orderlist" onClick={() => setDrawerOpen(false)}>
-                  <ListItemIcon>
-                    <FaList size={22} />
-                  </ListItemIcon>
-                  <ListItemText primary="Orders" />
-                </ListItem>
-          </>)}
-        <Divider sx={{ my: 1 }} />
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton type="submit" size="small">
+                    <SearchIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </form>
+      </Box>
+      {/* User Section */}
+      <Divider />
+      <List>
         {userInfo ? (
           <>
-            <ListItem button component={Link} to="/profile" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineProfile size={22} />
+            <ListItem 
+              button 
+              component={Link} 
+              to="/profile" 
+              onClick={() => setDrawerOpen(false)}
+              sx={{ 
+                borderRadius: 2, 
+                mb: 0.5,
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <Avatar 
+                  {...stringAvatar(userInfo.username)} 
+                  sx={{ width: 24, height: 24, fontSize: 12 }} 
+                />
               </ListItemIcon>
-              <ListItemText primary="Profile" />
+              <ListItemText 
+                primary={userInfo.username} 
+                secondary={userInfo.email}
+                primaryTypographyProps={{ fontWeight: 500 }}
+                secondaryTypographyProps={{ fontSize: 12 }}
+              />
             </ListItem>
-            <ListItem button component={Link} to="/orders" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <FaList size={22} />
+            <ListItem 
+              button 
+              onClick={handleLogout}
+              sx={{ 
+                borderRadius: 2, 
+                mb: 0.5,
+                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+                <LogoutIcon />
               </ListItemIcon>
-              <ListItemText primary="Orders" />
-            </ListItem>
-            <ListItem button onClick={handleLogout}>
-              <ListItemIcon>
-                <IoIosLogOut size={22} />
-              </ListItemIcon>
-              <ListItemText primary="Logout" />
+              <ListItemText 
+                primary="Logout" 
+                primaryTypographyProps={{ fontWeight: 500, color: 'error.main' }} 
+              />
             </ListItem>
           </>
         ) : (
           <>
-            <ListItem button component={Link} to="/login" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineLogin size={22} />
+            <ListItem 
+              button 
+              component={Link} 
+              to="/login" 
+              onClick={() => setDrawerOpen(false)}
+              sx={{ 
+                borderRadius: 2, 
+                mb: 0.5,
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
+                <LoginIcon />
               </ListItemIcon>
-              <ListItemText primary="Login" />
+              <ListItemText 
+                primary="Login" 
+                primaryTypographyProps={{ fontWeight: 500 }} 
+              />
             </ListItem>
-            <ListItem button component={Link} to="/register" onClick={() => setDrawerOpen(false)}>
-              <ListItemIcon>
-                <AiOutlineUserAdd size={22} />
+            <ListItem 
+              button 
+              component={Link} 
+              to="/register" 
+              onClick={() => setDrawerOpen(false)}
+              sx={{ 
+                borderRadius: 2, 
+                mb: 0.5,
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
+                <AppRegistrationIcon />
               </ListItemIcon>
-              <ListItemText primary="Register" />
+              <ListItemText 
+                primary="Register" 
+                primaryTypographyProps={{ fontWeight: 500 }} 
+              />
             </ListItem>
           </>
         )}
@@ -362,13 +401,13 @@ const NavBar = ({
   return (
     <Slide in direction="down">
       <AppBar
-        position="static"
+        position="sticky"
         sx={{
-          bgcolor: "#fff",
-          color: "#222",
-          boxShadow: "0 2px 16px rgba(0,0,0,0.13)",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          borderBottom: "3px solid #ec4899",
+          bgcolor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          boxShadow: '0 2px 24px rgba(0,0,0,0.08)',
+          borderBottom: `3px solid ${theme.palette.primary.main}`,
+          py: { xs: 0, md: 0.5 },
         }}
       >
         <Toolbar
@@ -378,8 +417,8 @@ const NavBar = ({
             alignItems: "center",
             gap: { xs: 1, md: 2 },
             flexWrap: "nowrap",
-            minHeight: { xs: 64, md: 72 },
-            px: { xs: 2, md: 3 },
+            minHeight: { xs: 56, sm: 64, md: 72 },
+            px: { xs: 1, sm: 2, md: 3 },
             position: "relative",
             width: "100%",
             maxWidth: "1400px",
@@ -393,7 +432,11 @@ const NavBar = ({
               color="primary"
               aria-label="menu"
               onClick={() => setDrawerOpen(true)}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                width: { xs: 40, sm: 44 },
+                height: { xs: 40, sm: 44 }
+              }}
             >
               <MenuIcon fontSize="large" />
             </IconButton>
@@ -408,90 +451,163 @@ const NavBar = ({
               sx={{
                 color: "primary.main",
                 textDecoration: "none",
-                fontWeight: "bold",
-                letterSpacing: 2,
-                fontFamily: "Montserrat, sans-serif",
-                transition: "color 0.2s",
-                "&:hover": { color: "secondary.main" },
-                fontSize: { xs: "1.3rem", md: "2rem" },
+                fontWeight: "800",
+                letterSpacing: 1,
+                fontFamily: "'Poppins', sans-serif",
+                transition: "all 0.3s ease",
+                "&:hover": { 
+                  color: "secondary.main",
+                  transform: "scale(1.02)"
+                },
+                fontSize: { xs: "1.4rem", sm: "1.6rem", md: "1.8rem" },
               }}
-              className="tracking-wider"
             >
-              Nexus
+              NexusMart
             </Typography>
           </Box>
 
-          {/* Search Bar */}
-          <Box sx={{ 
-            flex: { xs: 0, md: 2 }, 
-            display: "flex", 
-            justifyContent: "center",
-            mx: { xs: 0, md: 2 },
-            maxWidth: { xs: 0, md: "600px" },
-            width: { xs: 0, md: "100%" },
-            ...(isMobile && { display: "none" })
-          }}>
-            <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
-              <Autosuggest
-                suggestions={suggestions}
-                onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-                onSuggestionsClearRequested={onSuggestionsClearRequested}
-                onSuggestionSelected={handleSuggestionSelected}
-                getSuggestionValue={getSuggestionValue}
-                renderSuggestion={renderSuggestion}
-                inputProps={inputProps}
-                theme={{
-                  container: {
-                    position: "relative",
-                    width: "100%",
-                  },
-                  input: {
-                    width: "100%",
-                    padding: "12px 20px",
-                    fontSize: "16px",
-                    borderRadius: "10px",
-                    border: "2px solid #d1d5db",
-                    backgroundColor: "#ffffff",
-                    transition: "border 0.3s, box-shadow 0.3s",
-                    outline: "none",
-                  },
-                  suggestionsContainer: {
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    right: 0,
-                    zIndex: 20,
-                    backgroundColor: "#ffffff",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                    borderRadius: "12px",
-                    marginTop: "8px",
-                    overflow: "hidden",
-                    maxHeight: "360px",
-                    overflowY: "auto",
-                    transition: "all 0.3s ease-in-out",
-                  },
-                  suggestionsList: {
-                    listStyle: "none",
-                    margin: 0,
-                    padding: 0,
-                  },
-                  suggestion: {
-                    padding: "14px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    transition: "background 0.3s ease-in-out",
-                    fontSize: "15px",
-                    borderBottom: "1px solid #f3f4f6",
-                  },
-                  suggestionHighlighted: {
-                    backgroundColor: "#f0f9ff",
-                  },
-                }}
-                className="transition-all"
-              />
-            </form>
-          </Box>
+          {/* Search Bar - Desktop */}
+          {!isMobile && (
+            <Box sx={{ 
+              flex: { md: 2 }, 
+              display: "flex", 
+              justifyContent: "center",
+              mx: { xs: 0, md: 2 },
+              maxWidth: { md: "600px" },
+              width: { md: "100%" },
+            }}>
+              <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
+                <Autosuggest
+                  suggestions={suggestions}
+                  onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+                  onSuggestionsClearRequested={onSuggestionsClearRequested}
+                  onSuggestionSelected={handleSuggestionSelected}
+                  getSuggestionValue={getSuggestionValue}
+                  renderSuggestion={renderSuggestion}
+                  inputProps={inputProps}
+                  theme={{
+                    container: {
+                      position: "relative",
+                      width: "100%",
+                    },
+                    input: {
+                      width: "100%",
+                      padding: "12px 20px",
+                      fontSize: "16px",
+                      borderRadius: "50px",
+                      border: `2px solid ${theme.palette.divider}`,
+                      backgroundColor: theme.palette.background.paper,
+                      transition: "all 0.3s ease",
+                      outline: "none",
+                      height: { xs: "40px", sm: "44px", md: "48px" },
+                      '&:focus': {
+                        borderColor: theme.palette.primary.main,
+                        boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
+                      }
+                    },
+                    suggestionsContainer: {
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      zIndex: 20,
+                      backgroundColor: theme.palette.background.paper,
+                      boxShadow: theme.shadows[4],
+                      borderRadius: "16px",
+                      marginTop: "8px",
+                      overflow: "hidden",
+                      maxHeight: "360px",
+                      overflowY: "auto",
+                    },
+                    suggestionsList: {
+                      listStyle: "none",
+                      margin: 0,
+                      padding: 0,
+                    },
+                    suggestion: {
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      transition: "background 0.2s ease",
+                      fontSize: "15px",
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                      '&:last-child': {
+                        borderBottom: 'none'
+                      },
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                      }
+                    },
+                    suggestionHighlighted: {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    },
+                  }}
+                />
+              </form>
+            </Box>
+          )}
+
+          {/* Mobile Search Icon */}
+          {isMobile && !mobileSearchOpen && (
+            <IconButton
+              onClick={() => setMobileSearchOpen(true)}
+              sx={{ 
+                color: 'primary.main',
+                width: { xs: 40, sm: 44 },
+                height: { xs: 40, sm: 44 }
+              }}
+            >
+              <SearchIcon fontSize="large" />
+            </IconButton>
+          )}
+
+          {/* Mobile Search Bar */}
+          {isMobile && mobileSearchOpen && (
+            <Box sx={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: 'background.paper',
+              p: 1,
+              display: 'flex',
+              alignItems: 'center',
+              zIndex: 100
+            }}>
+              <form onSubmit={handleSubmit} style={{ width: "100%", display: 'flex' }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "50px 0 0 50px",
+                      height: 44,
+                    },
+                  }}
+                />
+                <Button 
+                  type="submit"
+                  variant="contained"
+                  sx={{ 
+                    borderRadius: "0 50px 50px 0",
+                    minWidth: 60,
+                    height: 44
+                  }}
+                >
+                  <SearchIcon />
+                </Button>
+              </form>
+              <IconButton
+                onClick={() => setMobileSearchOpen(false)}
+                sx={{ ml: 1 }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          )}
 
           {/* Navigation & User Actions */}
           {!isMobile && (
@@ -501,93 +617,69 @@ const NavBar = ({
                 display: "flex",
                 justifyContent: "flex-end",
                 alignItems: "center",
-                gap: 1,
+                gap: { xs: 0.5, sm: 1 },
                 minWidth: "200px",
               }}
             >
-              {/* Show Shop, Cart, Favorites only if user is logged in and not admin */}
-              {userInfo && (userInfo.isAdmin === false || userInfo.role==="customer") && (
-                <>
-                  <Tooltip title="Shop">
-                    <Button
-                      component={Link}
-                      to="/shop"
-                      color="inherit"
-                      sx={{
-                        fontWeight: "bold",
-                        mr: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        borderRadius: 2,
-                        transition: "background 0.2s, color 0.2s",
-                        "&:hover": { bgcolor: "secondary.main", color: "#fff" },
-                      }}
-                      startIcon={<AiOutlineShopping size={28} />}
-                    >
-                      Shop
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Cart">
-                    <Button
-                      component={Link}
-                      to="/cart"
-                      color="inherit"
-                      sx={{
-                        fontWeight: "bold",
-                        mr: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        borderRadius: 2,
-                        transition: "background 0.2s, color 0.2s",
-                        "&:hover": { bgcolor: "secondary.main", color: "#fff" },
-                      }}
-                      startIcon={
-                        <Badge
-                          badgeContent={cartItems.length}
-                          color="secondary"
-                          overlap="circular"
-                          sx={{
-                            "& .MuiBadge-badge": {
-                              fontSize: "0.75rem",
-                              minWidth: 18,
-                              height: 18,
-                            },
-                          }}
-                        >
-                          <AiOutlineShoppingCart size={28} />
-                        </Badge>
-                      }
-                    >
-                      Cart
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Favorites">
-                    <Button
-                      component={Link}
-                      to="/favorite"
-                      color="inherit"
-                      sx={{
-                        fontWeight: "bold",
-                        mr: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        borderRadius: 2,
-                        transition: "background 0.2s, color 0.2s",
-                        "&:hover": { bgcolor: "secondary.main", color: "#fff" },
-                      }}
-                      startIcon={<AiOutlineHeart size={28} />}
-                    >
-                      Favorites
-                    </Button>
-                  </Tooltip>
-                </>
-              )}
-
+              {/* Currency Selector */}
+              <HeaderCurrencySelector />
+              
+              {/* Navigation Items */}
+              {userInfo && getNavItems().map((item, index) => (
+                <Tooltip key={index} title={item.label}>
+                  <Button
+                    component={Link}
+                    to={item.path}
+                    color="inherit"
+                    sx={{
+                      fontWeight: 600,
+                      mr: { xs: 0.5, sm: 1 },
+                      display: "flex",
+                      alignItems: "center",
+                      borderRadius: 3,
+                      transition: "all 0.3s ease",
+                      "&:hover": { 
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        transform: "translateY(-2px)"
+                      },
+                      px: { xs: 1, sm: 2 },
+                      py: { xs: 0.5, sm: 1 },
+                      minWidth: { xs: 40, sm: 60 }
+                    }}
+                    startIcon={item.icon}
+                  >
+                    <Box sx={{ display: { xs: "none", sm: "block" } }}>{item.label}</Box>
+                  </Button>
+                </Tooltip>
+              ))}
+              {/* User Menu */}
               {userInfo ? (
                 <>
                   <Tooltip title={userInfo.username}>
-                    <IconButton onClick={handleAvatarClick} sx={{ ml: 2 }}>
-                      <Avatar {...stringAvatar(userInfo.username)} />
+                    <IconButton 
+                      onClick={handleAvatarClick} 
+                      sx={{ 
+                        ml: 2, 
+                        width: 44, 
+                        height: 44,
+                        border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          borderColor: theme.palette.primary.main,
+                          boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`
+                        }
+                      }}
+                    >
+                      <Avatar 
+                        {...stringAvatar(userInfo.username)} 
+                        sx={{ 
+                          width: 36, 
+                          height: 36,
+                          bgcolor: 'primary.main',
+                          color: 'white'
+                        }} 
+                      />
                     </IconButton>
                   </Tooltip>
                   <Menu
@@ -602,74 +694,52 @@ const NavBar = ({
                       vertical: "top",
                       horizontal: "right",
                     }}
+                    PaperProps={{
+                      sx: {
+                        minWidth: { xs: 200, sm: 280 },
+                        mt: 1.5,
+                        borderRadius: 3,
+                        boxShadow: theme.shadows[8],
+                        border: `1px solid ${theme.palette.divider}`
+                      }
+                    }}
                   >
-                    {userInfo.role==="seller" ? (
-                      <>
-                        <MenuItem component={Link} to="/" onClick={handleMenuClose}>
-                          <AiOutlineDashboard size={28} style={{ marginRight: 4 }} />
-                          Dashboard
-                        </MenuItem>
-                        <MenuItem component={Link} to="/seller/allproductslist" onClick={handleMenuClose}>
-                          <MdProductionQuantityLimits size={28} style={{ marginRight: 4 }} />
-                          Products
-                        </MenuItem>
-                        <MenuItem component={Link} to="/seller/orderlist" onClick={handleMenuClose}>
-                          <FaList size={28} style={{ marginRight: 4 }} />
-                          Orders
-                        </MenuItem>
-                      </>
-                    ):(
-                      <>
-                      {userInfo.role === "admin"  && (
-                        <>
-                        <MenuItem component={Link} to="/admin/categorylist" onClick={handleMenuClose}>
-                          <AiOutlineShoppingCart size={28} style={{ marginRight: 4 }} />
-                          Category
-                        </MenuItem>
-                
-                        <MenuItem component={Link} to="/admin/userlist" onClick={handleMenuClose}>
-                          <FaUsers size={28} style={{ marginRight: 4 }} />
-                          Users
-                        </MenuItem>
-                        
-                        <MenuItem component={Link} to="/admin/banner" onClick={handleMenuClose}>
-                          <AiOutlineShopping size={28} style={{ marginRight: 4 }} />
-                          Banner
-                        </MenuItem>
-                        <MenuItem component={Link} to="/admin/settings" onClick={handleMenuClose}>
-                          <AiOutlineDashboard size={28} style={{ marginRight: 4 }} />
-                          Settings
-                        </MenuItem>
-                        <MenuItem component={Link} to="/admin/offer" onClick={handleMenuClose}>
-                          <FaTag size={28} style={{ marginRight: 4 }} />
-                          Offer
-                        </MenuItem>
-                        <MenuItem component={Link} to="/admin/pages" onClick={handleMenuClose}>
-                          <AiOutlineShopping size={28} style={{ marginRight: 4 }} />
-                          Pages
-                        </MenuItem>
-
-                        </>
-                        )}
-                        {userInfo.role === "vendor" && (
-                          <MenuItem component={Link} to="/vendor/brand" onClick={handleMenuClose}>
-                            <FaTag size={28} style={{ marginRight: 4 }} />
-                            Brand
-                          </MenuItem>
-
-                        )}
-
-                        <Divider />
-                      </>
-                    )}
-                    <MenuItem component={Link} to="/profile" onClick={handleMenuClose}>
-                      <AiOutlineProfile size={28} style={{ marginRight: 4 }} />
-                      Profile
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>
-                      <IoIosLogOut size={28} style={{ marginRight: 4 }} />
-                      Logout
-                    </MenuItem>
+                    {getUserMenuItems().map((item, index) => (
+                      <MenuItem 
+                        key={index}
+                        component={item.path ? Link : undefined}
+                        to={item.path}
+                        onClick={item.action || handleMenuClose}
+                        sx={{ 
+                          py: 1.5, 
+                          px: 2,
+                          borderRadius: 2,
+                          mx: 1,
+                          mb: 0.5,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            bgcolor: alpha(
+                              item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main, 
+                              0.1
+                            )
+                          }
+                        }}
+                      >
+                        <ListItemIcon sx={{ 
+                          minWidth: 36,
+                          color: item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main
+                        }}>
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={item.label} 
+                          primaryTypographyProps={{ 
+                            fontWeight: 600,
+                            color: item.label === "Logout" ? theme.palette.error.main : 'inherit'
+                          }} 
+                        />
+                      </MenuItem>
+                    ))}
                   </Menu>
                 </>
               ) : (
@@ -678,34 +748,49 @@ const NavBar = ({
                     <Button
                       component={Link}
                       to="/login"
-                      color="primary"
+                      variant="outlined"
                       sx={{
-                        fontWeight: "bold",
-                        ml: 2,
-                        borderRadius: 2,
-                        transition: "background 0.2s, color 0.2s",
-                        "&:hover": { bgcolor: "secondary.main", color: "#fff" },
+                        fontWeight: 600,
+                        ml: { xs: 0.5, sm: 1 },
+                        borderRadius: 3,
+                        transition: "all 0.3s ease",
+                        "&:hover": { 
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          transform: "translateY(-2px)"
+                        },
+                        px: { xs: 1, sm: 2 },
+                        py: { xs: 0.5, sm: 1 },
+                        minWidth: { xs: 40, sm: 60 },
+                        borderColor: alpha(theme.palette.primary.main, 0.5),
+                        color: theme.palette.primary.main
                       }}
-                      startIcon={<AiOutlineLogin size={28} />}
+                      startIcon={<LoginIcon />}
                     >
-                      Login
+                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Login</Box>
                     </Button>
                   </Tooltip>
                   <Tooltip title="Register">
                     <Button
                       component={Link}
                       to="/register"
-                      color="primary"
+                      variant="contained"
                       sx={{
-                        fontWeight: "bold",
-                        ml: 1,
-                        borderRadius: 2,
-                        transition: "background 0.2s, color 0.2s",
-                        "&:hover": { bgcolor: "secondary.main", color: "#fff" },
+                        fontWeight: 600,
+                        ml: { xs: 0.5, sm: 1 },
+                        borderRadius: 3,
+                        transition: "all 0.3s ease",
+                        "&:hover": { 
+                          transform: "translateY(-2px)",
+                          boxShadow: theme.shadows[4]
+                        },
+                        px: { xs: 1, sm: 2 },
+                        py: { xs: 0.5, sm: 1 },
+                        minWidth: { xs: 40, sm: 60 },
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
                       }}
-                      startIcon={<AiOutlineUserAdd size={28} />}
+                      startIcon={<AppRegistrationIcon />}
                     >
-                      Register
+                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Register</Box>
                     </Button>
                   </Tooltip>
                 </>
@@ -713,6 +798,7 @@ const NavBar = ({
             </Box>
           )}
         </Toolbar>
+        
         {/* Drawer for mobile */}
         <Drawer
           anchor="left"
@@ -720,10 +806,10 @@ const NavBar = ({
           onClose={() => setDrawerOpen(false)}
           PaperProps={{
             sx: {
-              bgcolor: "#fff",
-              borderTopRightRadius: 24,
-              borderBottomRightRadius: 24,
-              boxShadow: "0 8px 32px 0 rgba(236,72,153,0.10)",
+              bgcolor: theme.palette.background.paper,
+              width: { xs: 280, sm: 320 },
+              height: '100%',
+              boxShadow: theme.shadows[10]
             },
           }}
         >

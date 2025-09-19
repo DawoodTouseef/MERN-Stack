@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -8,6 +8,7 @@ import {
 } from "../../redux/api/productApiSlice";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
+import MultiCurrencyPriceDisplay from "../../components/MultiCurrencyPriceDisplay";
 import {
   Box,
   Grid,
@@ -29,10 +30,9 @@ import {
   TableBody,
   TableCell,
   TableRow,
-
 } from "@mui/material";
 import { FaShoppingCart } from "react-icons/fa";
-import {useFetchOffersQuery} from "../../redux/api/offerApiSlice"
+import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
 import HeartIcon from "./HeartIcon";
 import ProductTabs from "./ProductTabs";
 import SimilarProducts from "../../components/SimilarProducts";
@@ -52,97 +52,84 @@ const ProductDetails = () => {
   const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
   
   const [offerpercent, setofferpercent] = useState({
-      percentage:"",
-      end:""
-    })
-    
+    percentage: "",
+    end: ""
+  });
+  
   const { userInfo } = useSelector((state) => state.auth);
+  
   useEffect(() => {
-  if (offers && product) {
-    offers.forEach((offer) => {
-      if (
-        offer.products &&
-        offer.categories &&
-        offer.brand &&
-        product._id &&
-        product.category &&
-        product.brand
-      ) {
-        const isProductInOffer =
-          offer.products.some((p) => p._id === product._id) ||
-          offer.categories.some((c) => c._id === product.category) ||
-          (offer.brand && offer.brand._id === product.brand);
+    if (offers && product) {
+      offers.forEach((offer) => {
+        if (
+          offer.products &&
+          offer.categories &&
+          offer.brand &&
+          product._id &&
+          product.category &&
+          product.brand
+        ) {
+          const isProductInOffer =
+            offer.products.some((p) => p._id === product._id) ||
+            offer.categories.some((c) => c._id === product.category) ||
+            (offer.brand && offer.brand._id === product.brand);
 
-        if (isProductInOffer && offer.discountUnit === "percent") {
-          setofferpercent({
-            percentage: offer.discountValue,
-            end: offer.endTime,
-          });
+          if (isProductInOffer && offer.discountUnit === "percent") {
+            setofferpercent({
+              percentage: offer.discountValue,
+              end: offer.endTime,
+            });
+          }
         }
-      }
-    });
-  }
-}, [offers, product]);
+      });
+    }
+  }, [offers, product]);
+  
   const [createReview, { isLoading: loadingProductReview }] = useCreateReviewMutation();
-  const currency = useSelector((state) => state.currency.selectedCurrency);
-  const price = useSelector((state) => state.currency.price);
-  const getCurrencySymbol = () => {
-        try {
-          const formatter = new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency: currency,
-            currencyDisplay: 'symbol',
-          });
-    
-          const parts = formatter.formatToParts(1);
-          const symbol = parts.find(part => part.type === 'currency')?.value;
-          return symbol || currency;
-        } catch (err) {
-          return currency; // fallback if currency code is invalid
-        }
-      };
 
   const addToCartHandler = () => {
     dispatch(addToCart({ ...product, qty, variant }));
     toast.success("Added to cart!", { autoClose: 1800 });
     navigate("/cart");
   };
+  
   const addToShippingHandler = () => {
-    
     dispatch(addToCart({ ...product, qty, variant }));
     navigate("/shipping");
   };
+  
   const calculateDiscountedPrice = (product, offers) => {
-  if (!product || !product.price) return 0; // Return 0 if product or price is undefined
-  if (!offers || offers.length === 0) return product.price * price; // Return original price if no offers
+    if (!product || !product.price) return 0; // Return 0 if product or price is undefined
+    if (!offers || offers.length === 0) return product.price; // Return original price if no offers
 
-  let discountedPrice = product.price;
+    let discountedPrice = product.price;
 
-  // Iterate through all offers to find applicable discounts
-  offers.forEach((offer) => {
-    const isProductInOffer =
-      offer.products.some((p) => p._id === product._id) ||
-      offer.categories.some((c) => c._id === product.category) ||
-      (offer.brand && offer.brand._id === product.brand);
+    // Iterate through all offers to find applicable discounts
+    offers.forEach((offer) => {
+      const isProductInOffer =
+        offer.products.some((p) => p._id === product._id) ||
+        offer.categories.some((c) => c._id === product.category) ||
+        (offer.brand && offer.brand._id === product.brand);
 
-    if (isProductInOffer) {
-      if (offer.discountUnit === "percent" && offer.endTime !== Date()) {
-        discountedPrice = Math.min(
-          discountedPrice,
-          product.price - product.price * (offer.discountValue / 100)
-        );
-      } else if (offer.discountUnit === "flat") {
-        discountedPrice = Math.min(
-          discountedPrice,
-          product.price - offer.discountValue
-        );
+      if (isProductInOffer) {
+        if (offer.discountUnit === "percent" && offer.endTime !== Date()) {
+          discountedPrice = Math.min(
+            discountedPrice,
+            product.price - product.price * (offer.discountValue / 100)
+          );
+        } else if (offer.discountUnit === "flat") {
+          discountedPrice = Math.min(
+            discountedPrice,
+            product.price - offer.discountValue
+          );
+        }
       }
-    }
-  });
+    });
 
-  return discountedPrice * price;
-};
-  let  discountedPrice = calculateDiscountedPrice(product, offers).toFixed(2);
+    return discountedPrice;
+  };
+  
+  let discountedPrice = calculateDiscountedPrice(product, offers).toFixed(2);
   
   return (
     <DocumentTitle title={`${product?.name || "Product"} - Details`}>
@@ -320,28 +307,18 @@ const ProductDetails = () => {
                       {product.description}
                     </Typography>
                     <Divider sx={{ my: 2 }} />
-                    <Typography
-                      variant="h4"
-                      color="primary"
-                      fontWeight="bold"
-                      sx={{
-                        mb: 2,
-                        letterSpacing: 1,
-                        textShadow: "1px 1px 8px #e3eeff",
-                      }}
-                    >
-                      {getCurrencySymbol()} {discountedPrice}
-                    </Typography>
-                    {product.discount?.percentage > 0 && (
+                    <MultiCurrencyPriceDisplay product={product} />
+                    {offerpercent.percentage > 0 && (
                       <Typography
                         variant="body2"
                         sx={{
                           color: "#ef4444",
                           fontWeight: 500,
                           textDecoration: "line-through",
+                          mt: 1,
                         }}
                       >
-                        Original Price: {getCurrencySymbol()}{product.price*price}
+                        Original Price: <MultiCurrencyPriceDisplay product={{...product, price: product.price}} showConversion={false} />
                       </Typography>
                     )}
                   </Paper>
@@ -362,10 +339,8 @@ const ProductDetails = () => {
                       <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
                         Buy Now
                       </Typography>
-                      <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                        {getCurrencySymbol()}{discountedPrice}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 2 }}>
+                      <MultiCurrencyPriceDisplay product={{...product, price: discountedPrice}} />
+                      <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
                         {product.countInStock > 0 ? (
                           <span style={{ color: "#22c55e" }}>In Stock</span>
                         ) : (
@@ -439,43 +414,43 @@ const ProductDetails = () => {
                 </Grid>
 
                 {/* Product Specifications */}
-                {product.specifications &&(
+                {product.specifications && (
                   <>
-                  <Grid item xs={12} sx={{ mt: 4 }}>
-                  <Paper
-                    sx={{
-                      p: 4,
-                      mb: 4,
-                      borderRadius: 3,
-                      bgcolor: "#fafafa",
-                      boxShadow: "0 2px 12px #ec489933",
-                    }}
-                  >
-                    <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
-                      Specifications
-                    </Typography>
-                    <Table>
-                      <TableBody>
-                        {product.specifications &&
-                          Object.entries(product.specifications).map(
-                            ([key, value]) => (
-                              <TableRow key={key}>
-                                <TableCell
-                                  sx={{
-                                    fontWeight: "bold",
-                                    textTransform: "capitalize",
-                                  }}
-                                >
-                                  {key}
-                                </TableCell>
-                                <TableCell>{value}</TableCell>
-                              </TableRow>
-                            )
-                          )}
-                      </TableBody>
-                    </Table>
-                  </Paper>
-                </Grid>
+                    <Grid item xs={12} sx={{ mt: 4 }}>
+                      <Paper
+                        sx={{
+                          p: 4,
+                          mb: 4,
+                          borderRadius: 3,
+                          bgcolor: "#fafafa",
+                          boxShadow: "0 2px 12px #ec489933",
+                        }}
+                      >
+                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
+                          Specifications
+                        </Typography>
+                        <Table>
+                          <TableBody>
+                            {product.specifications &&
+                              Object.entries(product.specifications).map(
+                                ([key, value]) => (
+                                  <TableRow key={key}>
+                                    <TableCell
+                                      sx={{
+                                        fontWeight: "bold",
+                                        textTransform: "capitalize",
+                                      }}
+                                    >
+                                      {key}
+                                    </TableCell>
+                                    <TableCell>{value}</TableCell>
+                                  </TableRow>
+                                )
+                              )}
+                          </TableBody>
+                        </Table>
+                      </Paper>
+                    </Grid>
                   </>
                 )}
 

@@ -5,6 +5,9 @@ import { Provider } from "react-redux";
 import store from "./redux/store";
 import { Route, RouterProvider, createRoutesFromElements } from "react-router";
 import { createBrowserRouter } from "react-router-dom";
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 
 import PrivateRoute from "./components/PrivateRoute";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -23,6 +26,7 @@ import CategoryList from "./pages/Admin/CategoryList";
 import ProductList from "./pages/Seller/ProductList";
 import AllProducts from "./pages/Seller/AllProducts";
 import ProductUpdate from "./pages/Seller/ProductUpdate";
+import AddProduct from "./pages/Seller/AddProduct";
 
 import Home from "./pages/Home.jsx";
 import Favorites from "./pages/Products/Favorites.jsx";
@@ -51,6 +55,14 @@ import VendorLogin from "./pages/Vendor/VendorLogin.jsx";
 import VendorRegister from "./pages/Vendor/VendorRegister.jsx";
 // Vendor Dashboard
 import SellerDashBoard from "./pages/Vendor/vendorDashboard.jsx";
+// New pages
+import Returns from "./pages/returns.jsx";
+import TrackOrder from "./pages/trackOrder.jsx";
+import SizeGuide from "./pages/sizeGuide.jsx";
+import Deals from "./pages/deals.jsx";
+import NewArrivals from "./pages/newArrivals.jsx";
+import Brands from "./pages/brands.jsx";
+import Blog from "./pages/blog.jsx";
 // Admin
 import AdminRoute from "./pages/Admin/AdminRoute"
 import AdminLogin from "./pages/Admin/AdminLogin"
@@ -61,7 +73,8 @@ import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 import UserEditPage from "./pages/Admin/Users.jsx";
 import UserManagement from "./pages/Admin/UserManagement.jsx";
 import VendorManagement from "./pages/Admin/VendorManagement.jsx";
-import { LazyAdmin } from "./router/optimizedRoutes.jsx";
+import TestVendorAPIPage from "./pages/Vendor/TestVendorAPIPage.jsx";
+import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -89,7 +102,14 @@ const router = createBrowserRouter(
       <Route path="/flash-sale" element={<FlashSale/>}/>
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
       <Route path="/passwordReset" element={<RequestPassword/>}/>
-      
+      {/* New pages */}
+      <Route path="/returns" element={<Returns />} />
+      <Route path="/track-order" element={<TrackOrder />} />
+      <Route path="/size-guide" element={<SizeGuide />} />
+      <Route path="/deals" element={<Deals />} />
+      <Route path="/new-arrivals" element={<NewArrivals />} />
+      <Route path="/brands" element={<Brands />} />
+      <Route path="/blog" element={<Blog />} />
       {/* Registered users */}
       <Route path="" element={<PrivateRoute />}>
         <Route path="/profile" element={<Profile />} />
@@ -105,6 +125,7 @@ const router = createBrowserRouter(
         <Route path="allproductslist" element={<AllProducts />} />
         <Route path="productlist/:pageNumber" element={<ProductList />} />
         <Route path="product/update/:_id" element={<ProductUpdate />} />
+        <Route path="product/add" element={<AddProduct />} />
         <Route path="orderlist" element={<OrderList />} />
       </Route>
       <Route path="/admin" element={<AdminRoute/>}>
@@ -117,14 +138,17 @@ const router = createBrowserRouter(
           <Route path="offer" element={<AdminOffer/>}/>
           <Route path="categorylist" element={<CategoryList />} />
           <Route path="user/edit/:id" element={<UserEditPage />} />
+          <Route path="currencies" element={<CurrencyManagement />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
         <Route path="dashboard" element={<SellerDashBoard />} />
+        <Route path="test-api" element={<TestVendorAPIPage />} />
         <Route path="brand" element={<Brand />} />
         <Route path="productlist" element={<ProductList />} />
         <Route path="allproductslist" element={<AllProducts />} />
         <Route path="productlist/:pageNumber" element={<ProductList />} />
         <Route path="product/update/:_id" element={<ProductUpdate />} />
+        <Route path="product/add" element={<AddProduct />} />
       </Route>
     </Route>
   )
@@ -132,8 +156,11 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <PayPalScriptProvider>
-      <RouterProvider router={router} />
-    </PayPalScriptProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <PayPalScriptProvider>
+        <RouterProvider router={router} />
+      </PayPalScriptProvider>
+    </ThemeProvider>
   </Provider>
 );

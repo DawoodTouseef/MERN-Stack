@@ -205,13 +205,20 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
     
+    // Get vendor products
+    const products = await Product.find({ vendor: vendorId });
+    
+    console.log('Vendor products count:', products.length);
+    console.log('Vendor products:', products.map(p => ({
+      id: p._id,
+      name: p.name,
+      vendor: p.vendor
+    })));
+    
     // Get comprehensive vendor performance metrics
     const performance = await VendorAnalyticsService.getVendorPerformance(vendorId, {
       period: '30d'
     });
-    
-    // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
     
     // Get recent orders for vendor's products
     const recentOrders = await Order.find({
@@ -597,6 +604,32 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Vendor inventory analytics error:', error);
     res.status(500).json({ message: 'Failed to fetch inventory analytics', error: error.message });
+  }
+});
+
+// @desc    Check if vendor has products (debug endpoint)
+// @route   GET /api/vendors/debug/products
+// @access  Private/Vendor
+export const checkVendorProducts = asyncHandler(async (req, res) => {
+  try {
+    const vendorId = req.user._id;
+    
+    // Get vendor products
+    const products = await Product.find({ vendor: vendorId });
+    
+    res.json({
+      vendorId,
+      productCount: products.length,
+      products: products.map(p => ({
+        id: p._id,
+        name: p.name,
+        price: p.price,
+        countInStock: p.countInStock
+      }))
+    });
+  } catch (error) {
+    console.error('Vendor products check error:', error);
+    res.status(500).json({ message: 'Failed to check vendor products', error: error.message });
   }
 });
 

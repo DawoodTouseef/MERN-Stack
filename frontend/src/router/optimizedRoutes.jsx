@@ -67,6 +67,10 @@ const LazyAdmin = {
     React.lazy(() => import('../pages/Admin/VendorManagement')),
     <div>Failed to load vendor management. Please refresh and try again.</div>
   ),
+  CurrencyManagement: withErrorBoundary(
+    React.lazy(() => import('../pages/Admin/CurrencyManagement')),
+    <div>Failed to load currency management. Please refresh and try again.</div>
+  ),
 };
 
 const LazySeller = {

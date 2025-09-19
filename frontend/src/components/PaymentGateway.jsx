@@ -36,7 +36,7 @@ import { useCreatePaymentIntentMutation, useGetPaymentMethodsQuery } from '../re
 import { toast } from 'react-toastify';
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const PaymentMethodCard = ({ method, selected, onSelect, fraudScore }) => {
   const theme = useTheme();
@@ -224,7 +224,7 @@ const RazorpayPaymentForm = ({ onSuccess, onError, paymentData }) => {
     
     try {
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: paymentData.amount * 100,
         currency: paymentData.currency,
         name: 'Nexus Mart',

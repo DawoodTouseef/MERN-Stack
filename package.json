@@ -7,7 +7,10 @@
   "scripts": {
     "backend": "nodemon backend/index.js",
     "frontend": "cd frontend && npm install && npm run dev",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend"
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node backend/index.js",
+    "render-build": "npm run build && npm install"
   },
   "keywords": [],
   "author": "Dawood Touseef",

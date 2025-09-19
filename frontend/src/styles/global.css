@@ -9,6 +9,9 @@
 html {
   font-size: 16px;
   line-height: 1.6;
+  /* Add font smoothing for better text rendering on high-DPI screens */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Body styles for better consistency */
@@ -19,6 +22,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  /* Add background for better contrast on high-resolution screens */
+  background-color: #f8fafc;
 }
 
 /* Prevent horizontal scrolling */
@@ -53,6 +58,14 @@ body {
   .MuiTypography-h6 {
     font-size: 1rem !important;
   }
+  
+  .MuiTypography-body1 {
+    font-size: 0.875rem !important;
+  }
+  
+  .MuiTypography-body2 {
+    font-size: 0.75rem !important;
+  }
 }
 
 /* Better button touch targets on mobile */
@@ -65,6 +78,10 @@ body {
   .MuiIconButton-root {
     min-width: 44px;
     min-height: 44px;
+  }
+  
+  .MuiChip-root {
+    min-height: 32px;
   }
 }
 
@@ -84,7 +101,8 @@ body {
 /* Smooth transitions for interactive elements */
 .MuiButton-root,
 .MuiCard-root,
-.MuiPaper-root {
+.MuiPaper-root,
+.MuiChip-root {
   transition: all 0.2s ease-in-out;
 }
 
@@ -97,6 +115,10 @@ body {
 img {
   max-width: 100%;
   height: auto;
+  display: block;
+  /* Optimize image rendering for high-DPI screens */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 /* Improved scrollbar styling for webkit browsers */
@@ -190,4 +212,361 @@ img {
     box-shadow: none !important;
     text-shadow: none !important;
   }
+}
+
+/* Visual hierarchy improvements */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible utility */
+.focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Touch target improvements */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Consistent border radius */
+.rounded-sm {
+  border-radius: 4px;
+}
+
+.rounded-md {
+  border-radius: 8px;
+}
+
+.rounded-lg {
+  border-radius: 12px;
+}
+
+.rounded-xl {
+  border-radius: 16px;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+/* Shadow utilities */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Flex utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Spacing utilities */
+.mt-auto {
+  margin-top: auto;
+}
+
+.mb-auto {
+  margin-bottom: auto;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+.mr-auto {
+  margin-right: auto;
+}
+
+/* Responsive padding utilities */
+.p-responsive {
+  padding: 1rem;
+}
+
+@media (min-width: 600px) {
+  .p-responsive {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .p-responsive {
+    padding: 2rem;
+  }
+}
+
+/* Responsive margin utilities */
+.m-responsive {
+  margin: 1rem;
+}
+
+@media (min-width: 600px) {
+  .m-responsive {
+    margin: 1.5rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .m-responsive {
+    margin: 2rem;
+  }
+}
+
+/* High-resolution screen optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper borders on high-DPI screens */
+  * {
+    border-width: 0.5px;
+  }
+  
+  /* Improve text rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Sharper images */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+  
+  #root {
+    background-color: #0f172a;
+  }
+}
+
+/* Container queries support */
+@supports (container-type: inline-size) {
+  .container-query {
+    container-type: inline-size;
+  }
+  
+  @container (min-width: 400px) {
+    .card {
+      padding: 1.5rem;
+    }
+  }
+  
+  @container (min-width: 600px) {
+    .card {
+      padding: 2rem;
+    }
+  }
+}
+
+/* CSS Grid improvements */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Aspect ratio utilities */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-auto {
+  aspect-ratio: auto;
+}
+
+/* Object fit utilities */
+.object-contain {
+  object-fit: contain;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.object-fill {
+  object-fit: fill;
+}
+
+.object-scale-down {
+  object-fit: scale-down;
+}
+
+.object-none {
+  object-fit: none;
+}
+
+/* Transform utilities */
+.transform-scale-95 {
+  transform: scale(0.95);
+}
+
+.transform-scale-100 {
+  transform: scale(1);
+}
+
+.transform-scale-105 {
+  transform: scale(1.05);
+}
+
+/* Transition utilities */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Backdrop filter utilities */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-lg {
+  backdrop-filter: blur(24px);
+}
+
+/* Will-change utilities for performance */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-scroll {
+  will-change: scroll-position;
+}
+
+.will-change-contents {
+  will-change: contents;
+}
+
+/* Contain utilities for performance */
+.contain-layout {
+  contain: layout;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+.contain-size {
+  contain: size;
+}
+
+.contain-style {
+  contain: style;
+}
+
+/* Overscroll behavior utilities */
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
+.overscroll-none {
+  overscroll-behavior: none;
+}
+
+.overscroll-auto {
+  overscroll-behavior: auto;
 }

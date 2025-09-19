@@ -6,13 +6,26 @@ import fs from "fs";
 const router = express.Router();
 const __dirname = path.resolve();
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "uploads");
+const productsDir = path.join(uploadsDir, "products");
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+if (!fs.existsSync(productsDir)) {
+  fs.mkdirSync(productsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "uploads"));
+    cb(null, productsDir);
   },
   filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const extname = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${Date.now()}${extname}`);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${extname}`);
   },
 });
 
@@ -30,7 +43,14 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Accept up to 5 images
-const uploadMultiple = multer({ storage, fileFilter }).array("image", 5);
+const uploadMultiple = multer({ 
+  storage, 
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5 // Maximum 5 files
+  }
+}).array("image", 5);
 
 // Upload Route
 router.post("/", (req, res) => {
@@ -38,6 +58,9 @@ router.post("/", (req, res) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_UNEXPECTED_FILE" || err.code === "LIMIT_FILE_COUNT") {
         return res.status(400).json({ message: "You can upload a maximum of 5 images." });
+      }
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ message: "File size too large. Maximum size is 5MB." });
       }
       return res.status(400).json({ message: err.message });
     } else if (err) {
@@ -48,7 +71,7 @@ router.post("/", (req, res) => {
       return res.status(400).json({ message: "No image files provided" });
     }
 
-    const imagePaths = req.files.map((file) => `/uploads/${file.filename}`);
+    const imagePaths = req.files.map((file) => `/uploads/products/${file.filename}`);
     return res.status(200).json({
       message: "Images uploaded successfully",
       images: imagePaths,
@@ -62,6 +85,11 @@ router.delete("/", (req, res) => {
   
   if (!imagePath) {
     return res.status(400).json({ message: "Image path is required" });
+  }
+
+  // Security check: ensure the path is within uploads/products
+  if (!imagePath.startsWith("/uploads/products/")) {
+    return res.status(400).json({ message: "Invalid image path" });
   }
 
   const imageFullPath = path.join(__dirname, imagePath.replace("/uploads", "uploads"));

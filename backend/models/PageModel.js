@@ -10,6 +10,8 @@ const pageSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     publishDate: { type: Date, default: Date.now },
     expiryDate: { type: Date },
+    category: { type: String }, // Category for blog posts
+    tags: [{ type: String }],   // Tags for blog posts
   },
   { timestamps: true }
 );

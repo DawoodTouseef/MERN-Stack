@@ -24,6 +24,11 @@ import {
   FormControl,
   FormLabel,
   Grid,
+  useTheme,
+  alpha,
+  Tooltip,
+  Skeleton,
+  Collapse,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -32,6 +37,7 @@ import {
   Search as SearchIcon,
   Sort as SortIcon,
   TuneRounded as TuneIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdvancedSearchQuery } from '../redux/api/productApiSlice';
@@ -46,12 +52,13 @@ const AdvancedFilterPanel = ({
   isVisible = true,
   appliedFiltersCount = 0 
 }) => {
+  const theme = useTheme();
   const [localFilters, setLocalFilters] = useState(filters);
   const [expandedPanels, setExpandedPanels] = useState(new Set(['price', 'rating']));
 
   // API queries
-  const { data: categories } = useFetchCategoriesQuery();
-  const { data: brands } = useGetBrandsQuery();
+  const { data: categories, isLoading: categoriesLoading } = useFetchCategoriesQuery();
+  const { data: brands, isLoading: brandsLoading } = useGetBrandsQuery();
 
   // Debounced filter updates
   const debouncedFilters = useDebounce(localFilters, 300);
@@ -81,8 +88,8 @@ const AdvancedFilterPanel = ({
 
   const handleClearAll = () => {
     const clearedFilters = {
-      category: '',
-      brand: '',
+      category: [],
+      brand: [],
       minPrice: 0,
       maxPrice: 10000,
       rating: 0,
@@ -146,23 +153,38 @@ const AdvancedFilterPanel = ({
       sx={{ 
         boxShadow: 'none',
         '&:before': { display: 'none' },
-        borderRadius: 1,
-        mb: 1
+        borderRadius: 2,
+        mb: 1,
+        border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+        '&.Mui-expanded': {
+          margin: '8px 0',
+        },
+        '&:last-of-type': {
+          marginBottom: 0
+        }
       }}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
         sx={{ 
           minHeight: 48,
-          '& .MuiAccordionSummary-content': { margin: '8px 0' }
+          '& .MuiAccordionSummary-content': { margin: '8px 0' },
+          bgcolor: alpha(theme.palette.primary.main, 0.03),
+          borderRadius: '8px 8px 0 0',
+          '&.Mui-expanded': {
+            borderRadius: '8px 8px 0 0',
+          },
+          px: 2
         }}
       >
-        <Typography variant="subtitle2" fontWeight="bold">
+        <Typography variant="subtitle2" fontWeight="600" sx={{ color: theme.palette.primary.main, fontSize: '0.95rem' }}>
           {title}
         </Typography>
       </AccordionSummary>
-      <AccordionDetails sx={{ pt: 0 }}>
-        {children}
+      <AccordionDetails sx={{ pt: 0, bgcolor: alpha(theme.palette.background.paper, 0.5), px: 2, pb: 2 }}>
+        <Collapse in={expandedPanels.has(panelKey)} timeout="auto" unmountOnExit>
+          {children}
+        </Collapse>
       </AccordionDetails>
     </Accordion>
   );
@@ -178,19 +200,36 @@ const AdvancedFilterPanel = ({
     >
       <Paper 
         sx={{ 
-          p: 2, 
-          borderRadius: 2,
+          p: { xs: 1.5, sm: 2 },
+          borderRadius: 3,
           position: 'sticky',
           top: 20,
           maxHeight: 'calc(100vh - 40px)',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          '&::-webkit-scrollbar': {
+            width: 6,
+            borderRadius: 3
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'action.hover',
+            borderRadius: 3
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'primary.main',
+            borderRadius: 3,
+            '&:hover': {
+              backgroundColor: 'primary.dark'
+            }
+          }
         }}
       >
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TuneIcon color="primary" />
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight="700" sx={{ fontSize: { xs: "1rem", sm: "1.125rem" } }}>
               Filters
             </Typography>
             {appliedFiltersCount > 0 && (
@@ -202,16 +241,26 @@ const AdvancedFilterPanel = ({
             onClick={handleClearAll}
             startIcon={<ClearIcon />}
             disabled={appliedFiltersCount === 0}
+            sx={{ 
+              fontSize: { xs: "0.7rem", sm: "0.8rem" },
+              minWidth: { xs: 60, sm: 70 },
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5
+            }}
+            variant="outlined"
           >
             Clear All
           </Button>
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 2, borderColor: alpha(theme.palette.divider, 0.5) }} />
 
         {/* Price Range */}
         <FilterSection title="Price Range" panelKey="price" defaultExpanded>
-          <FormControl component="fieldset">
+          <FormControl component="fieldset" fullWidth>
             <RadioGroup
               value={localFilters.priceRange || 'all'}
               onChange={(e) => handleFilterChange('priceRange', e.target.value)}
@@ -221,16 +270,33 @@ const AdvancedFilterPanel = ({
                   key={range.value}
                   value={range.value}
                   control={<Radio size="small" />}
-                  label={range.label}
-                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: { xs: "0.75rem", sm: "0.8rem" } }}>
+                      {range.label}
+                    </Typography>
+                  }
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
+                    mb: 0.5,
+                    py: 0.75,
+                    px: 1,
+                    borderRadius: 1.5,
+                    mx: 0,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.05)
+                    },
+                    '&.Mui-checked': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
                 />
               ))}
             </RadioGroup>
           </FormControl>
           
           {/* Custom Price Range Slider */}
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom>
+          <Box sx={{ mt: 2, px: 1 }}>
+            <Typography variant="body2" gutterBottom sx={{ fontSize: "0.8rem", fontWeight: 500, mb: 1 }}>
               Custom Range: ${localFilters.minPrice} - ${localFilters.maxPrice}
             </Typography>
             <Slider
@@ -244,7 +310,22 @@ const AdvancedFilterPanel = ({
               min={0}
               max={10000}
               step={25}
-              sx={{ mt: 1 }}
+              sx={{ 
+                mt: 1,
+                color: theme.palette.primary.main,
+                '& .MuiSlider-thumb': {
+                  width: 16,
+                  height: 16
+                },
+                '& .MuiSlider-track': {
+                  height: 4,
+                  borderRadius: 2
+                },
+                '& .MuiSlider-rail': {
+                  height: 4,
+                  borderRadius: 2
+                }
+              }}
             />
           </Box>
         </FilterSection>
@@ -266,14 +347,33 @@ const AdvancedFilterPanel = ({
                       handleFilterChange('customerRating', newRatings);
                     }}
                     size="small"
+                    sx={{ 
+                      color: theme.palette.warning.main,
+                      '&.Mui-checked': {
+                        color: theme.palette.warning.main,
+                      }
+                    }}
                   />
                 }
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Rating value={rating} readOnly size="small" />
-                    <Typography variant="body2">& up</Typography>
+                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>& up</Typography>
                   </Box>
                 }
+                sx={{ 
+                  mb: 0.5,
+                  py: 0.75,
+                  px: 1,
+                  borderRadius: 1.5,
+                  mx: 0,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.warning.main, 0.05)
+                  },
+                  '&.Mui-checked': {
+                    bgcolor: alpha(theme.palette.warning.main, 0.1)
+                  }
+                }}
               />
             ))}
           </Box>
@@ -281,46 +381,115 @@ const AdvancedFilterPanel = ({
 
         {/* Category */}
         <FilterSection title="Category" panelKey="category">
-          <FormGroup>
-            {categories?.slice(0, 8).map((category) => (
-              <FormControlLabel
-                key={category._id}
-                control={
-                  <Checkbox
-                    checked={localFilters.category === category._id}
-                    onChange={(e) => handleFilterChange('category', e.target.checked ? category._id : '')}
-                    size="small"
-                  />
-                }
-                label={category.name}
-                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
-              />
-            ))}
-            {categories?.length > 8 && (
-              <Button size="small" sx={{ justifyContent: 'flex-start', pl: 0 }}>
-                Show More Categories
-              </Button>
-            )}
-          </FormGroup>
+          {categoriesLoading ? (
+            <Box sx={{ p: 1 }}>
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} height={36} sx={{ mb: 1, borderRadius: 1.5 }} />
+              ))}
+            </Box>
+          ) : (
+            <FormGroup>
+              {categories?.slice(0, 8).map((category) => (
+                <FormControlLabel
+                  key={category._id}
+                  control={
+                    <Checkbox
+                      checked={localFilters.category.includes(category._id)}
+                      onChange={(e) => {
+                        const currentCategories = localFilters.category || [];
+                        const newCategories = e.target.checked
+                          ? [...currentCategories, category._id]
+                          : currentCategories.filter(c => c !== category._id);
+                        handleFilterChange('category', newCategories);
+                      }}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                      {category.name}
+                    </Typography>
+                  }
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
+                    mb: 0.5,
+                    py: 0.75,
+                    px: 1,
+                    borderRadius: 1.5,
+                    mx: 0,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.05)
+                    },
+                    '&.Mui-checked': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
+                />
+              ))}
+              {categories?.length > 8 && (
+                <Button 
+                  size="small" 
+                  sx={{ 
+                    justifyContent: 'flex-start', 
+                    pl: 1,
+                    fontSize: "0.8rem",
+                    textTransform: 'none',
+                    color: theme.palette.primary.main,
+                    fontWeight: 500,
+                    py: 0.75
+                  }}
+                >
+                  Show More Categories
+                </Button>
+              )}
+            </FormGroup>
+          )}
         </FilterSection>
 
         {/* Brand */}
         <FilterSection title="Brand" panelKey="brand">
-          <Autocomplete
-            options={brands || []}
-            getOptionLabel={(option) => option.name || ''}
-            value={brands?.find(b => b._id === localFilters.brand) || null}
-            onChange={(e, newValue) => handleFilterChange('brand', newValue?._id || '')}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search brands..."
-                size="small"
-                variant="outlined"
-              />
-            )}
-            sx={{ mt: 1 }}
-          />
+          {brandsLoading ? (
+            <Skeleton height={40} sx={{ borderRadius: 2 }} />
+          ) : (
+            <Autocomplete
+              options={brands || []}
+              getOptionLabel={(option) => option.name || ''}
+              value={brands?.filter(b => localFilters.brand.includes(b._id)) || []}
+              onChange={(e, newValue) => {
+                const brandIds = newValue.map(b => b._id);
+                handleFilterChange('brand', brandIds);
+              }}
+              multiple
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Search brands..."
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontSize: "0.8rem" }}
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option.name}
+                    size="small"
+                    {...getTagProps({ index })}
+                    sx={{ 
+                      m: 0.5,
+                      height: 24,
+                      '& .MuiChip-label': {
+                        px: 1,
+                        fontSize: "0.7rem"
+                      },
+                      borderRadius: 1
+                    }}
+                  />
+                ))
+              }
+              sx={{ mt: 1 }}
+            />
+          )}
         </FilterSection>
 
         {/* Availability */}
@@ -332,9 +501,33 @@ const AdvancedFilterPanel = ({
                   checked={localFilters.availability === 'in_stock'}
                   onChange={(e) => handleFilterChange('availability', e.target.checked ? 'in_stock' : '')}
                   size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      '&.Mui-checked': {
+                        color: theme.palette.success.main,
+                        '+ .MuiSwitch-track': {
+                          bgcolor: alpha(theme.palette.success.main, 0.5)
+                        }
+                      }
+                    }
+                  }}
                 />
               }
-              label="In Stock Only"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  In Stock Only
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.success.main, 0.05)
+                }
+              }}
             />
             <FormControlLabel
               control={
@@ -342,9 +535,33 @@ const AdvancedFilterPanel = ({
                   checked={localFilters.freeShipping || false}
                   onChange={(e) => handleFilterChange('freeShipping', e.target.checked)}
                   size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      '&.Mui-checked': {
+                        color: theme.palette.info.main,
+                        '+ .MuiSwitch-track': {
+                          bgcolor: alpha(theme.palette.info.main, 0.5)
+                        }
+                      }
+                    }
+                  }}
                 />
               }
-              label="Free Shipping"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  Free Shipping
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.info.main, 0.05)
+                }
+              }}
             />
             <FormControlLabel
               control={
@@ -352,16 +569,40 @@ const AdvancedFilterPanel = ({
                   checked={localFilters.discount || false}
                   onChange={(e) => handleFilterChange('discount', e.target.checked)}
                   size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      '&.Mui-checked': {
+                        color: theme.palette.error.main,
+                        '+ .MuiSwitch-track': {
+                          bgcolor: alpha(theme.palette.error.main, 0.5)
+                        }
+                      }
+                    }
+                  }}
                 />
               }
-              label="On Sale"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  On Sale
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.error.main, 0.05)
+                }
+              }}
             />
           </FormGroup>
         </FilterSection>
 
         {/* Delivery Options */}
         <FilterSection title="Delivery" panelKey="delivery">
-          <FormControl component="fieldset">
+          <FormControl component="fieldset" fullWidth>
             <RadioGroup
               value={localFilters.deliveryTime || 'all'}
               onChange={(e) => handleFilterChange('deliveryTime', e.target.value)}
@@ -371,8 +612,25 @@ const AdvancedFilterPanel = ({
                   key={option.value}
                   value={option.value}
                   control={<Radio size="small" />}
-                  label={option.label}
-                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                      {option.label}
+                    </Typography>
+                  }
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
+                    mb: 0.5,
+                    py: 0.75,
+                    px: 1,
+                    borderRadius: 1.5,
+                    mx: 0,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.secondary.main, 0.05)
+                    },
+                    '&.Mui-checked': {
+                      bgcolor: alpha(theme.palette.secondary.main, 0.1)
+                    }
+                  }}
                 />
               ))}
             </RadioGroup>
@@ -381,7 +639,7 @@ const AdvancedFilterPanel = ({
 
         {/* Seller */}
         <FilterSection title="Seller" panelKey="seller">
-          <FormControl component="fieldset">
+          <FormControl component="fieldset" fullWidth>
             <RadioGroup
               value={localFilters.seller || 'all'}
               onChange={(e) => handleFilterChange('seller', e.target.value)}
@@ -391,8 +649,25 @@ const AdvancedFilterPanel = ({
                   key={seller.value}
                   value={seller.value}
                   control={<Radio size="small" />}
-                  label={seller.label}
-                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                      {seller.label}
+                    </Typography>
+                  }
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
+                    mb: 0.5,
+                    py: 0.75,
+                    px: 1,
+                    borderRadius: 1.5,
+                    mx: 0,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.info.main, 0.05)
+                    },
+                    '&.Mui-checked': {
+                      bgcolor: alpha(theme.palette.info.main, 0.1)
+                    }
+                  }}
                 />
               ))}
             </RadioGroup>
@@ -418,8 +693,25 @@ const AdvancedFilterPanel = ({
                     size="small"
                   />
                 }
-                label={offer.label}
-                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                label={
+                  <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                    {offer.label}
+                  </Typography>
+                }
+                sx={{ 
+                  '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
+                  mb: 0.5,
+                  py: 0.75,
+                  px: 1,
+                  borderRadius: 1.5,
+                  mx: 0,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.secondary.main, 0.05)
+                  },
+                  '&.Mui-checked': {
+                    bgcolor: alpha(theme.palette.secondary.main, 0.1)
+                  }
+                }}
               />
             ))}
           </FormGroup>
@@ -436,7 +728,24 @@ const AdvancedFilterPanel = ({
                   size="small"
                 />
               }
-              label="New Arrivals"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  New Arrivals
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.primary.main, 0.05)
+                },
+                '&.Mui-checked': {
+                  bgcolor: alpha(theme.palette.primary.main, 0.1)
+                }
+              }}
             />
             <FormControlLabel
               control={
@@ -446,7 +755,24 @@ const AdvancedFilterPanel = ({
                   size="small"
                 />
               }
-              label="Best Sellers"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  Best Sellers
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.success.main, 0.05)
+                },
+                '&.Mui-checked': {
+                  bgcolor: alpha(theme.palette.success.main, 0.1)
+                }
+              }}
             />
             <FormControlLabel
               control={
@@ -456,7 +782,24 @@ const AdvancedFilterPanel = ({
                   size="small"
                 />
               }
-              label="Easy Returns"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  Easy Returns
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.info.main, 0.05)
+                },
+                '&.Mui-checked': {
+                  bgcolor: alpha(theme.palette.info.main, 0.1)
+                }
+              }}
             />
             <FormControlLabel
               control={
@@ -466,7 +809,24 @@ const AdvancedFilterPanel = ({
                   size="small"
                 />
               }
-              label="Warranty Included"
+              label={
+                <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
+                  Warranty Included
+                </Typography>
+              }
+              sx={{ 
+                mb: 0.5,
+                py: 0.75,
+                px: 1,
+                borderRadius: 1.5,
+                mx: 0,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.warning.main, 0.05)
+                },
+                '&.Mui-checked': {
+                  bgcolor: alpha(theme.palette.warning.main, 0.1)
+                }
+              }}
             />
           </FormGroup>
         </FilterSection>

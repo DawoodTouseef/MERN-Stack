@@ -36,7 +36,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGetPersonalizedRecommendationsQuery, useTrackBehaviorMutation } from '../redux/api/recommendationApiSlice';
-import { useGetUserLocationQuery, useGetLocationBasedProductsQuery } from '../redux/api/locationApiSlice';
+import { useGetUserLocationQuery, useGetLocationBasedProductsQuery, useUpdateUserLocationMutation } from '../redux/api/locationApiSlice';
 import { useGetFlashSalesQuery, useGetTrendingProductsQuery } from '../redux/api/productApiSlice';
 import { addToCart } from '../redux/features/cart/cartSlice';
 import { toast } from 'react-toastify';
@@ -60,14 +60,14 @@ const PersonalizedHomepage = () => {
     { skip: !userInfo }
   );
 
-  const { data: locationData, isLoading: locationLoading } = useGetUserLocationQuery(
+  const { data: locationData, isLoading: locationLoading, isError: locationError } = useGetUserLocationQuery(
     {},
     { skip: !userInfo }
   );
 
   const { data: locationProducts, isLoading: locationProductsLoading } = useGetLocationBasedProductsQuery(
-    { location: userLocation, limit: 12 },
-    { skip: !userLocation }
+    { location: userLocation || locationData?.location, limit: 12 },
+    { skip: !userLocation && !locationData?.location }
   );
 
   const { data: flashSales, isLoading: flashSalesLoading } = useGetFlashSalesQuery({
@@ -77,39 +77,48 @@ const PersonalizedHomepage = () => {
 
   const { data: trendingProducts, isLoading: trendingLoading } = useGetTrendingProductsQuery({
     limit: 12,
-    location: userLocation
+    location: userLocation || locationData?.location
   });
 
   const [trackBehavior] = useTrackBehaviorMutation();
+  const [updateUserLocation] = useUpdateUserLocationMutation();
 
   // Get user's current location
   useEffect(() => {
-    if (navigator.geolocation && userInfo) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          };
-          setUserLocation(location);
-          
-          // Track location-based behavior
-          trackBehavior({
-            type: 'location_detected',
-            source: 'homepage',
-            metadata: { location }
-          });
-        },
-        (error) => {
-          console.log('Location access denied:', error);
-          // Fallback to IP-based location from backend
-          if (locationData?.location) {
-            setUserLocation(locationData.location);
+    if (!userInfo) return;
+
+    const fetchLocation = async () => {
+      // Try browser geolocation first
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            };
+            setUserLocation(location);
+            
+            // Update user location in backend
+            updateUserLocation(location);
+            
+            // Track location-based behavior
+            trackBehavior({
+              type: 'location_detected',
+              source: 'homepage',
+              metadata: { location }
+            });
+          },
+          (error) => {
+            console.log('Location access denied:', error);
+            // Even if geolocation fails, we still want to get location data from backend
+            // The backend will try to determine location from IP address
           }
-        }
-      );
-    }
-  }, [userInfo, locationData, trackBehavior]);
+        );
+      }
+    };
+
+    fetchLocation();
+  }, [userInfo, trackBehavior, updateUserLocation]);
 
   // Update current time every minute for flash sale countdown
   useEffect(() => {
@@ -193,7 +202,7 @@ const PersonalizedHomepage = () => {
   const SectionSkeleton = ({ count = 4 }) => (
     <Grid container spacing={2}>
       {Array.from({ length: count }).map((_, index) => (
-        <Grid item xs={6} sm={4} md={3} key={index}>
+        <Grid xs={6} sm={4} md={3} key={index}>
           <Card>
             <Skeleton variant="rectangular" height={200} />
             <CardContent>
@@ -206,7 +215,6 @@ const PersonalizedHomepage = () => {
       ))}
     </Grid>
   );
-
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Personalized Welcome Section */}
@@ -238,7 +246,9 @@ const PersonalizedHomepage = () => {
                 <Box display="flex" alignItems="center" gap={1} mt={1}>
                   <LocationOn fontSize="small" />
                   <Typography variant="body2">
-                    {locationData?.city || 'Loading location...'}
+                    {locationLoading ? 'Loading location...' : 
+                     locationError ? 'Location not available' : 
+                     locationData?.city || 'Location not available'}
                   </Typography>
                 </Box>
               </Box>
@@ -358,13 +368,16 @@ const PersonalizedHomepage = () => {
               <Box display="flex" alignItems="center" gap={1}>
                 <LocationOn color="primary" />
                 <Typography variant="h5" fontWeight="bold">
-                  Popular in {locationData?.city || 'Your Area'}
+                  Popular in {locationLoading ? 'Loading...' : 
+                             locationError ? 'Your Area' : 
+                             locationData?.city || 'Your Area'}
                 </Typography>
               </Box>
               <Button 
                 component={Link} 
-                to={`/location-products?city=${locationData?.city}`}
+                to={`/location-products?city=${locationData?.city || 'unknown'}`}
                 endIcon={<NavigateNext />}
+                disabled={locationLoading || !locationData?.city}
               >
                 View All
               </Button>

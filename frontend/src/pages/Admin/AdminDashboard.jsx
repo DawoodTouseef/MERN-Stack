@@ -20,7 +20,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { FaUsers ,FaProductHunt} from "react-icons/fa";
+import { FaUsers, FaProductHunt } from "react-icons/fa";
 import { AiOutlineShoppingCart, AiOutlineDollarCircle } from "react-icons/ai";
 import { MdOutlineBarChart } from "react-icons/md";
 import { useSelector } from "react-redux";
@@ -75,14 +75,13 @@ const AdminDashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: sales, isLoading } = useGetTotalSalesQuery();
-  const { data: customers, isLoading: loadingCustomers } = useGetUsersQuery();
+  const { data: customersData, isLoading: loadingCustomers } = useGetUsersQuery();
   const { data: orders, isLoading: loadingOrders } = useGetTotalOrdersQuery();
-  const {data:order,isLoading:loadingOrder} = useGetOrdersQuery()
+  const { data: order, isLoading: loadingOrder } = useGetOrdersQuery();
   const { data: products, isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
-    
-  const { userInfo } = useSelector((state) => state.auth);
 
+  const { userInfo } = useSelector((state) => state.auth);
   const [chartType, setChartType] = useState("bar");
 
   const [state, setState] = useState({
@@ -122,7 +121,7 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    if (userInfo?.role==="admin") navigate("/");
+    if (userInfo?.role !== "admin") navigate("/");
   }, [userInfo, navigate]);
 
   useEffect(() => {
@@ -148,154 +147,156 @@ const AdminDashboard = () => {
     }
   }, [salesDetail]);
 
-  let customersCount = 0;
-  if (userInfo?.role==="admin" && customers) {
-    customersCount = customers.filter((u) => u.role === "customer" ).length;
-  }
-  let sellerCount = 0;
-  if (userInfo?.role==="admin" && customers) {
-    sellerCount = customers.filter((u) => u.role === "seller" ).length;
-  }
-  let vendorsCount = 0;
-  if (userInfo?.role==="admin" && customers) {
-    vendorsCount = customers.filter((u) => u.role === "vendor" ).length;
-  }
+  // Extract users array from the response object
+  const customers = customersData?.users || [];
+
+  // Calculate counts based on user roles
+  const customersCount = customers.filter((u) => u.role === "customer").length;
+  const sellerCount = customers.filter((u) => u.role === "seller").length;
+  const vendorsCount = customers.filter((u) => u.role === "vendor").length;
+  const adminCount = customers.filter((u) => u.role === "admin").length;
 
   return (
     <>
-    <DocumentTitle title="Admin DashBoard | Nexus Mart"/>
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-        py: 6,
-        px: { xs: 1, md: 8 },
-      }}
-    >
-      <Typography
-        variant="h3"
-        fontWeight={900}
-        color="primary.main"
+      <DocumentTitle title="Admin DashBoard | Nexus Mart" />
+      <Box
         sx={{
-          mb: 4,
-          letterSpacing: 1,
-          textShadow: "2px 2px 8px #e1bee7",
-          textAlign: "center",
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
+          py: 6,
+          px: { xs: 1, md: 8 },
         }}
       >
-        Admin Dashboard
-      </Typography>
+        <Typography
+          variant="h3"
+          fontWeight={900}
+          color="primary.main"
+          sx={{
+            mb: 4,
+            letterSpacing: 1,
+            textShadow: "2px 2px 8px #e1bee7",
+            textAlign: "center",
+          }}
+        >
+          Admin Dashboard
+        </Typography>
 
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={3}
-        justifyContent="center"
-        alignItems="center"
-        sx={{ mb: 4, display: "flex", flexWrap: "wrap" ,gap: 2}}
-      >
-        <StatCard
-                    icon={<AiOutlineDollarCircle size={32} />}
-                    label="Total Sales"
-                    value={
-                      isLoading ? (
-                        <Loader size={24} />
-                      ) : (
-                        `$${sales?.totalSales?.toFixed(2) || 0}`
-                      )
-                    }
-                    color={theme.palette.secondary.main}
-                  />
-                  <StatCard
-                    icon={<FaProductHunt size={28} />}
-                    label="Products"
-                    value={loadingProducts ? <Loader size={24} /> : products.length || 0}
-                    color={theme.palette.info.main}
-                  />
-                  <StatCard
-                    icon={<FaUsers size={28} />}
-                    label="Users"
-                    value={loadingProducts ? <Loader size={24} /> : customersCount}
-                    color={theme.palette.info.main}
-                  />
-                  <StatCard
-                    icon={<FaUsers size={28} />}
-                    label="Vendors"
-                    value={loadingProducts ? <Loader size={24} /> : vendorsCount}
-                    color={theme.palette.info.main}
-                  />
-                  <StatCard
-                    icon={<FaUsers size={28} />}
-                    label="Sellers"
-                    value={loadingProducts ? <Loader size={24} /> : sellerCount}
-                    color={theme.palette.info.main}
-                  />
-                  <StatCard
-                    icon={<AiOutlineShoppingCart size={32} />}
-                    label="All Orders"
-                    value={loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0}
-                    color={theme.palette.success.main}
-                  />
-                  <StatCard
-                    icon={<MdOutlineBarChart size={32} />}
-                    label="Avg. Order Value"
-                    value={
-                      isLoading || loadingOrders
-                        ? <Loader size={24} />
-                        : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
-                    }
-                    color={theme.palette.warning.main}
-                  />
-      </Stack>
-
-      <Paper
-        elevation={6}
-        sx={{
-          p: 4,
-          borderRadius: 4,
-          mb: 6,
-          background: "linear-gradient(120deg, #e3eeff 60%, #f3e7e9 100%)",
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            color="primary.main"
-            sx={{ mb: 3, letterSpacing: 1 }}
-          >
-            Sales Trend
-          </Typography>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel id="chart-type-label">Chart</InputLabel>
-            <Select
-              labelId="chart-type-label"
-              value={chartType}
-              label="Chart"
-              onChange={(e) => setChartType(e.target.value)}
-            >
-              <MenuItem value="line">Line</MenuItem>
-              <MenuItem value="bar">Bar</MenuItem>
-            </Select>
-          </FormControl>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={3}
+          justifyContent="center"
+          alignItems="center"
+          sx={{ mb: 4, display: "flex", flexWrap: "wrap", gap: 2 }}
+        >
+          <StatCard
+            icon={<AiOutlineDollarCircle size={32} />}
+            label="Total Sales"
+            value={
+              isLoading ? (
+                <Loader size={24} />
+              ) : (
+                `$${sales?.totalSales?.toFixed(2) || 0}`
+              )
+            }
+            color={theme.palette.secondary.main}
+          />
+          <StatCard
+            icon={<FaProductHunt size={28} />}
+            label="Products"
+            value={loadingProducts ? <Loader size={24} /> : products?.length || 0}
+            color={theme.palette.info.main}
+          />
+          <StatCard
+            icon={<FaUsers size={28} />}
+            label="Customers"
+            value={loadingCustomers ? <Loader size={24} /> : customersCount}
+            color={theme.palette.info.main}
+          />
+          <StatCard
+            icon={<FaUsers size={28} />}
+            label="Vendors"
+            value={loadingCustomers ? <Loader size={24} /> : vendorsCount}
+            color={theme.palette.info.main}
+          />
+          <StatCard
+            icon={<FaUsers size={28} />}
+            label="Sellers"
+            value={loadingCustomers ? <Loader size={24} /> : sellerCount}
+            color={theme.palette.info.main}
+          />
+          <StatCard
+            icon={<FaUsers size={28} />}
+            label="Admins"
+            value={loadingCustomers ? <Loader size={24} /> : adminCount}
+            color={theme.palette.info.main}
+          />
+          <StatCard
+            icon={<AiOutlineShoppingCart size={32} />}
+            label="All Orders"
+            value={loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0}
+            color={theme.palette.success.main}
+          />
+          <StatCard
+            icon={<MdOutlineBarChart size={32} />}
+            label="Avg. Order Value"
+            value={
+              isLoading || loadingOrders
+                ? <Loader size={24} />
+                : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
+            }
+            color={theme.palette.warning.main}
+          />
         </Stack>
-        <Divider sx={{ mb: 3 }} />
-        <Box sx={{ width: "100%", minHeight: 350 }}>
-          {salesDetail ? (
-            <Chart
-              options={state.options}
-              series={state.series}
-              type={chartType}
-              width="100%"
-              height={350}
-            />
-          ) : (
-            <Typography color="text.secondary" textAlign="center">
-              No sales data available.
+
+        <Paper
+          elevation={6}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            mb: 6,
+            background: "linear-gradient(120deg, #e3eeff 60%, #f3e7e9 100%)",
+          }}
+        >
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              color="primary.main"
+              sx={{ mb: 3, letterSpacing: 1 }}
+            >
+              Sales Trend
             </Typography>
-          )}
-        </Box>
-      </Paper>
-    </Box>
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel id="chart-type-label">Chart</InputLabel>
+              <Select
+                labelId="chart-type-label"
+                value={chartType}
+                label="Chart"
+                onChange={(e) => setChartType(e.target.value)}
+              >
+                <MenuItem value="line">Line</MenuItem>
+                <MenuItem value="bar">Bar</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ width: "100%", minHeight: 350 }}>
+            {salesDetail ? (
+              <Chart
+                options={state.options}
+                series={state.series}
+                type={chartType}
+                width="100%"
+                height={350}
+              />
+            ) : (
+              <Typography color="text.secondary" textAlign="center">
+                No sales data available.
+              </Typography>
+            )}
+          </Box>
+        </Paper>
+      </Box>
     </>
   );
 };

@@ -66,7 +66,8 @@ const ProductList = () => {
   const [editVariantIndex, setEditVariantIndex] = useState(null);
   const [editSpecKey, setEditSpecKey] = useState(null);
   const [countries, setCountries] = useState([]);
-  const [selectedCountries, setSelectedCountries] = useState();
+  const [selectedCountries, setSelectedCountries] = useState([]);
+  const [pincodes, setPincodes] = useState([]); // Added missing state
   const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -86,25 +87,36 @@ const ProductList = () => {
       toast.error("You can upload a maximum of 5 images.");
       return;
     }
+    
+    // Create a new FormData instance for each upload
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append("image", files[i]);
     }
+    
     try {
       const res = await uploadProductImage(formData).unwrap();
       toast.success(res.message);
       setImages([...images, ...res.images]);
-      setImageFiles([...imageFiles, ...files]);
+      // Update imageFiles with the actual files, not the response
+      setImageFiles([...imageFiles, ...Array.from(files)]);
     } catch (error) {
-      toast.error(error?.data?.message || error.error);
+      console.log(error?.data?.message);
+      toast.error(error?.data?.message || error.error || "Image upload failed");
     }
   };
 
   const deleteImageHandler = async (imagePath) => {
     try {
-      await deleteProductImage({ imagePath });
+      await deleteProductImage({ imagePath }).unwrap();
       setImages(images.filter((img) => img !== imagePath));
-      setImageFiles(imageFiles.filter((_, i) => images[i] !== imagePath));
+      // Find the index of the image to delete from imageFiles
+      const imageIndex = images.findIndex(img => img === imagePath);
+      if (imageIndex !== -1) {
+        const newImageFiles = [...imageFiles];
+        newImageFiles.splice(imageIndex, 1);
+        setImageFiles(newImageFiles);
+      }
       toast.success("Image deleted successfully");
     } catch (err) {
       toast.error("Failed to delete image");
@@ -139,7 +151,6 @@ const ProductList = () => {
       e.target.value = "";
     }
   };
-
 
   const handleRemoveItem = (item, type) => {
     if (type === "pincode") {
@@ -244,20 +255,50 @@ const ProductList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !name.trim() ||
-      images.length === 0 ||
-      !price ||
-      !quantity ||
-      !description.trim() ||
-      !stock ||
-      tags.length === 0 ||
-      !category ||
-      !brand
-    ) {
-      toast.error(
-        "Please fill all required fields: Name, Images, Price, Quantity, Description, Count in Stock, Tags, Category, Brand."
-      );
+    
+    // Validate required fields
+    if (!name.trim()) {
+      toast.error("Please enter a product name.");
+      return;
+    }
+    
+    if (images.length === 0) {
+      toast.error("Please upload at least one image.");
+      return;
+    }
+    
+    if (!price || isNaN(price) || Number(price) <= 0) {
+      toast.error("Please enter a valid price.");
+      return;
+    }
+    
+    if (!quantity || isNaN(quantity) || Number(quantity) <= 0) {
+      toast.error("Please enter a valid quantity.");
+      return;
+    }
+    
+    if (!description.trim()) {
+      toast.error("Please enter a product description.");
+      return;
+    }
+    
+    if (!stock || isNaN(stock) || Number(stock) < 0) {
+      toast.error("Please enter a valid stock count.");
+      return;
+    }
+    
+    if (tags.length === 0) {
+      toast.error("Please add at least one tag.");
+      return;
+    }
+    
+    if (!category) {
+      toast.error("Please select a category.");
+      return;
+    }
+    
+    if (!brand) {
+      toast.error("Please select a brand.");
       return;
     }
 
@@ -269,13 +310,20 @@ const ProductList = () => {
       formData.append("category", category);
       formData.append("price", Number(price));
       formData.append("quantity", Number(quantity));
-      formData.append('countries',selectedCountries);
-      tags.forEach((tag) => formData.append("tags", tag));
+      formData.append("countries", JSON.stringify(selectedCountries));
+      
+      // Append tags
+      tags.forEach((tag) => formData.append("tags[]", tag));
+      
       formData.append("warrantyPeriod", warrantyPeriod);
       formData.append("returnPolicy", returnPolicy);
+      
+      // Append specifications
       Object.entries(specifications || {}).forEach(([key, value]) => {
         formData.append(`specifications[${key}]`, value);
       });
+      
+      // Append variants
       variants.forEach((variant, i) => {
         Object.entries(variant).forEach(([key, value]) => {
           if (key === "images") {
@@ -290,19 +338,22 @@ const ProductList = () => {
           }
         });
       });
+      
+      // Append media
       images.forEach((url, i) => {
         formData.append(`media[${i}][type]`, "image");
         formData.append(`media[${i}][url]`, url);
       });
+      
       formData.append("countInStock", Number(stock));
       formData.append("user", userInfo._id);
 
-      await createProduct(formData).unwrap();
-      toast.success(`${name} is created`);
+      const result = await createProduct(formData).unwrap();
+      toast.success(`${name} created successfully`);
       navigate("/vendor/allproductslist");
     } catch (error) {
-      console.log(error)
-      toast.error("Product create failed. Try Again.");
+      console.error("Product creation error:", error);
+      toast.error(error?.data?.message || error?.message || "Product creation failed. Try Again.");
     }
   };
 
@@ -423,16 +474,17 @@ const ProductList = () => {
             </Select>
           </FormControl>
           <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>countries *</InputLabel>
+            <InputLabel sx={{ color: "#fff" }}>Countries</InputLabel>
             <Select
+              multiple
               value={selectedCountries}
               onChange={(e) => setSelectedCountries(e.target.value)}
               sx={{ color: "#fff" }}
-              label="Countries *"
+              label="Countries"
             >
-              {countries.map((b) => (
-                <MenuItem key={b.code} value={b.value}>
-                  {b.name}
+              {countries.map((country) => (
+                <MenuItem key={country.code} value={country.code}>
+                  {country.name}
                 </MenuItem>
               ))}
             </Select>

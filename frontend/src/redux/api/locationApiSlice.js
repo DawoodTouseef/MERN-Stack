@@ -29,7 +29,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           limit: limit.toString(),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -48,7 +48,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           limit: limit.toString(),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -66,7 +66,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           limit: limit.toString(),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -84,7 +84,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           limit: limit.toString(),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -99,7 +99,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
       query: ({ location, productIds = [] }) => {
         const params = new URLSearchParams();
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -117,7 +117,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
       query: ({ location }) => {
         const params = new URLSearchParams();
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -134,7 +134,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           productIds: JSON.stringify(productIds),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }
@@ -151,7 +151,7 @@ export const locationApiSlice = apiSlice.injectEndpoints({
           limit: limit.toString(),
         });
         
-        if (location) {
+        if (location && location.latitude !== undefined && location.longitude !== undefined) {
           params.append('latitude', location.latitude.toString());
           params.append('longitude', location.longitude.toString());
         }

@@ -1,6 +1,5 @@
 import { apiSlice } from "./apiSlice";
 import { EXCHANGE_URL } from "../constants";
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const currencyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -8,44 +7,85 @@ export const currencyApiSlice = apiSlice.injectEndpoints({
       query: () => EXCHANGE_URL,
       providesTags: ['Currency'],
     }),
-
-  })
-})
-export const exchangeRateApi = createApi({
-  reducerPath: 'exchangeRateApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: 'https://v6.exchangerate-api.com/v6/',
-  }),
-  endpoints: (builder) => ({
-    getLatestRates: builder.mutation({
-      query: (base = 'USD') => `latest?base=${base}`,
+    
+    // Currency management endpoints
+    getCurrencies: builder.query({
+      query: () => '/api/currencies',
+      providesTags: ['Currency'],
     }),
+    
+    getAllCurrencies: builder.query({
+      query: () => '/api/currencies/all',
+      providesTags: ['Currency'],
+    }),
+    
+    getCurrencyByCode: builder.query({
+      query: (code) => `/api/currencies/${code}`,
+      providesTags: ['Currency'],
+    }),
+    
+    createOrUpdateCurrency: builder.mutation({
+      query: (currencyData) => ({
+        url: '/api/currencies',
+        method: 'POST',
+        body: currencyData,
+      }),
+      invalidatesTags: ['Currency'],
+    }),
+    
+    updateCurrency: builder.mutation({
+      query: ({ code, ...currencyData }) => ({
+        url: `/api/currencies/${code}`,
+        method: 'PUT',
+        body: currencyData,
+      }),
+      invalidatesTags: ['Currency'],
+    }),
+    
+    deleteCurrency: builder.mutation({
+      query: (code) => ({
+        url: `/api/currencies/${code}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Currency'],
+    }),
+    
+    setDefaultCurrency: builder.mutation({
+      query: (currencyData) => ({
+        url: '/api/currencies/default',
+        method: 'PUT',
+        body: currencyData,
+      }),
+      invalidatesTags: ['Currency'],
+    }),
+    
+    updateExchangeRates: builder.mutation({
+      query: () => ({
+        url: '/api/currencies/update-rates',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Currency'],
+    }),
+    
     convertCurrency: builder.mutation({
-      query: ({ from, to, amount }) =>
-        `convert?from=${from}&to=${to}&amount=${amount}`,
+      query: (conversionData) => ({
+        url: '/api/currencies/convert',
+        method: 'POST',
+        body: conversionData,
+      }),
     }),
-
-    getExchangeRates: builder.mutation({
-      query: ({apiKey,from,to,amount}) => 
-        `${apiKey}/latest/convert?from=${from}&to=${to}&amount=${amount}`, // Example with ExchangeRate-API
-        method: 'GET',
-      }),
-    getExchangeCode: builder.mutation({
-      query: ({apiKey}) => 
-        `${apiKey}/codes`, // Example with ExchangeRate-API
-        method: 'GET',
-      }),
-    })
-
-  })
+  }),
+});
 
 export const {
   useGetExchangeApiKeyQuery,
-} = currencyApiSlice;
-
-export const{
+  useGetCurrenciesQuery,
+  useGetAllCurrenciesQuery,
+  useGetCurrencyByCodeQuery,
+  useCreateOrUpdateCurrencyMutation,
+  useUpdateCurrencyMutation,
+  useDeleteCurrencyMutation,
+  useSetDefaultCurrencyMutation,
+  useUpdateExchangeRatesMutation,
   useConvertCurrencyMutation,
-  useGetExchangeCodeMutation,
-  useGetExchangeRatesMutation,
-  useGetLatestRatesMutation,
-}=exchangeRateApi
+} = currencyApiSlice;

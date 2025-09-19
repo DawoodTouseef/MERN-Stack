@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { AiOutlineShoppingCart } from "react-icons/ai";
+import { AiOutlineShoppingCart, AiOutlineEye } from "react-icons/ai";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import { toast } from "react-toastify";
 import HeartIcon from "./HeartIcon";
+import QuickView from "../../components/QuickView";
 import {
   Box,
   Button,
@@ -14,60 +15,89 @@ import {
   Typography,
   Fade,
   Rating,
-  Avatar
+  Avatar,
+  useTheme,
+  alpha,
+  useMediaQuery,
+  Card,
+  CardMedia,
+  CardContent,
+  CardActions,
+  Skeleton,
 } from "@mui/material";
-import { useState,useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import {useFetchOffersQuery} from "../../redux/api/offerApiSlice";
+import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
+import usePerformance from "../../hooks/usePerformance";
+import useAccessibility from "../../hooks/useAccessibility";
 
-
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, viewMode = 'grid' }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const dispatch = useDispatch();
   const [hovered, setHovered] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const currency = useSelector((state) => state.currency.selectedCurrency);
   const price = useSelector((state) => state.currency.price);
   const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
+  const { shouldReduceAnimations, shouldReduceImageQuality } = usePerformance();
+  const { isKeyboardMode } = useAccessibility();
   
   const [offerpercent, setofferpercent] = useState({
-      percentage:"",
-      end:"",
-      type:""
-    })
-    
+    percentage: 0,
+    end: "",
+    type: ""
+  });
+  
   useEffect(() => {
-  if (offers) {
-    offers.forEach((offer) => {
+    if (offers && product) {
+      let bestOffer = null;
+      let bestDiscount = 0;
+      
+      offers.forEach((offer) => {
         const isProductInOffer =
           offer.products.some((p) => p._id === product._id) ||
-          offer.categories.some((c) => c._id === product.category) ||
-          (offer.brand && offer.brand._id === product.brand);
-        if (isProductInOffer && offer.discountUnit === "percent") {
-          setofferpercent({
-            percentage: offer.discountValue,
-            end: offer.endTime,
-            type:offer.discountUnit
-          });
+          offer.categories.some((c) => c._id === product.category?._id) ||
+          (offer.brand && offer.brand._id === product.brand?._id);
+          
+        if (isProductInOffer) {
+          if (offer.discountUnit === "percent" && offer.discountValue > bestDiscount) {
+            bestDiscount = offer.discountValue;
+            bestOffer = offer;
+          } else if (offer.discountUnit === "flat" && offer.discountValue > bestDiscount) {
+            bestDiscount = offer.discountValue;
+            bestOffer = offer;
+          }
         }
+      });
       
-    });
-  }
-}, [offers, product]);
+      if (bestOffer) {
+        setofferpercent({
+          percentage: bestOffer.discountValue,
+          end: bestOffer.endTime,
+          type: bestOffer.discountUnit
+        });
+      }
+    }
+  }, [offers, product]);
   
   const getCurrencySymbol = () => {
-      try {
-        const formatter = new Intl.NumberFormat('en', {
-          style: 'currency',
-          currency: currency,
-          currencyDisplay: 'symbol',
-        });
+    try {
+      const formatter = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: currency,
+        currencyDisplay: 'symbol',
+      });
+
+      const parts = formatter.formatToParts(1);
+      const symbol = parts.find(part => part.type === 'currency')?.value;
+      return symbol || currency;
+    } catch (err) {
+      return currency; // fallback if currency code is invalid
+    }
+  };
   
-        const parts = formatter.formatToParts(1);
-        const symbol = parts.find(part => part.type === 'currency')?.value;
-        return symbol || currency;
-      } catch (err) {
-        return currency; // fallback if currency code is invalid
-      }
-    };
   const addToCartHandler = (product, qty) => {
     dispatch(addToCart({ ...product, qty }));
     toast.success("Item added to cart", {
@@ -76,245 +106,792 @@ const ProductCard = ({ product }) => {
     });
   };
 
-  const hasDiscount = offerpercent.end !== Date();
+  const hasDiscount = offerpercent.percentage > 0;
   
   const calculateDiscountedPrice = (product, offers) => {
-      if (!product || !product.price) return 0; // Return 0 if product or price is undefined
-      if (!offers || offers.length === 0) return product.price * price; // Return original price if no offers
+    if (!product || !product.price) return 0;
+    if (!offers || offers.length === 0) return product.price * price;
 
-      let discountedPrice = product.price;
+    let discountedPrice = product.price;
 
-      // Iterate through all offers to find applicable discounts
-      offers.forEach((offer) => {
-        const isProductInOffer =
-          offer.products.some((p) => p._id === product._id) ||
-          offer.categories.some((c) => c._id === product.category) ||
-          (offer.brand && offer.brand._id === product.brand);
+    // Find the best discount for this product
+    let bestDiscount = 0;
+    let bestDiscountType = null;
+    
+    offers.forEach((offer) => {
+      const isProductInOffer =
+        offer.products.some((p) => p._id === product._id) ||
+        offer.categories.some((c) => c._id === product.category?._id) ||
+        (offer.brand && offer.brand._id === product.brand?._id);
 
-        if (isProductInOffer) {
-          if (offer.discountUnit === "percent" && offer.endTime !== Date()) {
-            discountedPrice = Math.min(
-              discountedPrice,
-              product.price - product.price * (offer.discountValue / 100)
-            );
-          } else if (offer.discountUnit === "flat") {
-            discountedPrice = Math.min(
-              discountedPrice,
-              product.price - offer.discountValue
-            );
-          }
+      if (isProductInOffer) {
+        if (offer.discountUnit === "percent" && offer.discountValue > bestDiscount) {
+          bestDiscount = offer.discountValue;
+          bestDiscountType = "percent";
+        } else if (offer.discountUnit === "flat" && offer.discountValue > bestDiscount) {
+          bestDiscount = offer.discountValue;
+          bestDiscountType = "flat";
         }
-      });
+      }
+    });
 
-      return discountedPrice * price;
-    };
-  let  discountedPrice = calculateDiscountedPrice(product, offers).toFixed(2);
+    if (bestDiscountType === "percent") {
+      discountedPrice = product.price - (product.price * bestDiscount / 100);
+    } else if (bestDiscountType === "flat") {
+      discountedPrice = Math.max(0, product.price - bestDiscount);
+    }
+
+    return discountedPrice * price;
+  };
   
-  return (
-    <Fade in timeout={500}>
-      <Box
-        sx={{
-          maxWidth: 360,
-          minHeight: 460,
-          bgcolor: "#1e1e20",
-          borderRadius: 4,
-          boxShadow: hovered ? 8 : 2,
-          overflow: "hidden",
-          transform: hovered ? "scale(1.02)" : "scale(1)",
-          transition: "transform 0.25s, box-shadow 0.25s",
-          border: hovered ? "2px solid #ec4899" : "2px solid transparent",
-          position: "relative",
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        
-        <Box sx={{ position: "relative" }}>
-          <Link to={`/product/${product._id}`}>
-            <img
-              src={product.media[0].url || "fallback-image-url.jpg"}
-              alt={product.name}
-              style={{
-                width: "100%",
-                height: 220,
-                objectFit: "cover",
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                filter: hovered ? "brightness(0.9) blur(0.4px)" : "none",
-                transition: "filter 0.3s",
+  const discountedPrice = useMemo(() => calculateDiscountedPrice(product, offers), [product, offers, price]);
+  const originalPrice = useMemo(() => product.price * price, [product, price]);
+  
+  // Format prices
+  const formattedDiscountedPrice = useMemo(() => new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency
+  }).format(discountedPrice), [discountedPrice, currency]);
+  
+  const formattedOriginalPrice = useMemo(() => new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency
+  }).format(originalPrice), [originalPrice, currency]);
+  
+  // Calculate savings
+  const savings = useMemo(() => originalPrice - discountedPrice, [originalPrice, discountedPrice]);
+  const savingsPercentage = useMemo(() => originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0, [originalPrice, savings]);
+  
+  if (viewMode === 'list') {
+    // List view design
+    return (
+      <>
+        <Fade in={!shouldReduceAnimations} timeout={500}>
+          <Card
+            sx={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 3,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              overflow: "hidden",
+              transition: shouldReduceAnimations ? 'none' : "all 0.3s ease",
+              border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+              '&:hover': {
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+                transform: shouldReduceAnimations ? 'none' : 'translateY(-2px)',
+              },
+              position: "relative",
+            }}
+          >
+            {/* Image Section */}
+            <Box 
+              sx={{ 
+                width: { xs: '100%', sm: 200 },
+                height: { xs: 200, sm: 'auto' },
+                position: "relative",
+                flexShrink: 0
               }}
-            />
+            >
+              <Link 
+                to={`/product/${product._id}`}
+                aria-label={`View details for ${product.name}`}
+              >
+                {!imageLoaded && (
+                  <Skeleton 
+                    variant="rectangular" 
+                    width="100%" 
+                    height="100%" 
+                    sx={{ borderRadius: 0 }}
+                  />
+                )}
+                <CardMedia
+                  component="img"
+                  image={product.media?.[0]?.url || "/placeholder.jpg"}
+                  alt={product.name}
+                  onLoad={() => setImageLoaded(true)}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: "cover",
+                    display: imageLoaded ? 'block' : 'none',
+                    transition: shouldReduceAnimations ? 'none' : "transform 0.3s ease",
+                    filter: shouldReduceImageQuality ? 'contrast(1.1)' : 'none'
+                  }}
+                  loading="lazy"
+                />
+              </Link>
+              
+              {/* Discount Badge */}
+              {hasDiscount && (
+                <Chip
+                  label={`-${savingsPercentage}%`}
+                  color="error"
+                  size="small"
+                  sx={{
+                    position: "absolute",
+                    top: 12,
+                    left: 12,
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    borderRadius: "6px",
+                    height: 22,
+                    '& .MuiChip-label': {
+                      px: 1
+                    }
+                  }}
+                />
+              )}
+              
+              {/* Wishlist Icon */}
+              <Box sx={{ position: "absolute", top: 12, right: 12 }}>
+                <HeartIcon product={product} />
+              </Box>
+            </Box>
+            
+            {/* Content Section */}
+            <CardContent sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
+              <Stack spacing={1.5}>
+                {/* Brand and Category */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {product.brand?.name && (
+                    <Chip
+                      label={product.brand.name}
+                      size="small"
+                      sx={{
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                        fontWeight: 600,
+                        fontSize: "0.7rem",
+                        height: 20,
+                        '& .MuiChip-label': {
+                          px: 0.8
+                        },
+                        borderRadius: 1
+                      }}
+                    />
+                  )}
+                  {product.category?.name && (
+                    <Chip
+                      label={product.category.name}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        borderColor: alpha(theme.palette.secondary.main, 0.3),
+                        color: theme.palette.secondary.main,
+                        fontWeight: 500,
+                        fontSize: "0.65rem",
+                        height: 20,
+                        '& .MuiChip-label': {
+                          px: 0.8
+                        },
+                        borderRadius: 1
+                      }}
+                    />
+                  )}
+                </Stack>
+                
+                {/* Product Name */}
+                <Tooltip title={product.name}>
+                  <Typography
+                    variant="h6"
+                    component={Link}
+                    to={`/product/${product._id}`}
+                    sx={{
+                      fontWeight: 700,
+                      color: theme.palette.text.primary,
+                      textDecoration: 'none',
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      '&:hover': {
+                        color: theme.palette.primary.main
+                      },
+                      fontSize: '1.125rem',
+                      lineHeight: 1.3
+                    }}
+                    aria-label={`Product: ${product.name}`}
+                  >
+                    {product.name}
+                  </Typography>
+                </Tooltip>
+                
+                {/* Rating */}
+                {product.rating > 0 && (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Rating 
+                      value={product.rating} 
+                      precision={0.1} 
+                      readOnly 
+                      size="small" 
+                      aria-label={`Rating: ${product.rating} out of 5 stars`}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      ({product.numReviews})
+                    </Typography>
+                  </Stack>
+                )}
+                
+                {/* Description */}
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {product.description}
+                </Typography>
+                
+                {/* Pricing */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 700,
+                        color: theme.palette.primary.main,
+                        fontSize: '1.25rem'
+                      }}
+                    >
+                      {formattedDiscountedPrice}
+                    </Typography>
+                    {hasDiscount && (
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          textDecoration: "line-through",
+                          color: theme.palette.text.secondary
+                        }}
+                      >
+                        {formattedOriginalPrice}
+                      </Typography>
+                    )}
+                    {hasDiscount && (
+                      <Chip
+                        label={`Save ${new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: currency
+                        }).format(savings)}`}
+                        size="small"
+                        color="success"
+                        sx={{
+                          height: 20,
+                          '& .MuiChip-label': {
+                            px: 0.8,
+                            fontSize: "0.65rem"
+                          },
+                          borderRadius: 1
+                        }}
+                      />
+                    )}
+                  </Stack>
+                </Box>
+                
+                {/* Stock Status */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Chip
+                    label={product.countInStock > 0 ? "In Stock" : "Out of Stock"}
+                    size="small"
+                    color={product.countInStock > 0 ? "success" : "error"}
+                    sx={{
+                      height: 24,
+                      '& .MuiChip-label': {
+                        px: 1,
+                        fontSize: "0.7rem"
+                      },
+                      borderRadius: 1
+                    }}
+                  />
+                  {product.countInStock > 0 && (
+                    <Typography variant="caption" color="text.secondary">
+                      {product.countInStock} available
+                    </Typography>
+                  )}
+                </Stack>
+                
+                {/* Action Buttons */}
+                <CardActions sx={{ p: 0, mt: 1 }}>
+                  <Stack direction="row" spacing={1.5}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        fontWeight: 600,
+                        textTransform: "none",
+                        boxShadow: 2,
+                        '&:hover': {
+                          boxShadow: 4
+                        },
+                        height: 36
+                      }}
+                      onClick={() => addToCartHandler(product, 1)}
+                      startIcon={<AiOutlineShoppingCart />}
+                      aria-label={`Add ${product.name} to cart`}
+                    >
+                      Add to Cart
+                    </Button>
+                    
+                    <Button
+                      component={Link}
+                      to={`/product/${product._id}`}
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        fontWeight: 600,
+                        textTransform: "none",
+                        borderColor: alpha(theme.palette.primary.main, 0.5),
+                        color: theme.palette.primary.main,
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                        },
+                        height: 36
+                      }}
+                      startIcon={<AiOutlineEye />}
+                      aria-label={`View details for ${product.name}`}
+                    >
+                      View Details
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setQuickViewOpen(true)}
+                      sx={{
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        fontWeight: 600,
+                        textTransform: "none",
+                        borderColor: alpha(theme.palette.secondary.main, 0.5),
+                        color: theme.palette.secondary.main,
+                        '&:hover': {
+                          borderColor: theme.palette.secondary.main,
+                          backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                        },
+                        height: 36
+                      }}
+                      aria-label={`Quick view ${product.name}`}
+                    >
+                      Quick View
+                    </Button>
+                  </Stack>
+                </CardActions>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Fade>
+        <QuickView 
+          product={product} 
+          open={quickViewOpen} 
+          onClose={() => setQuickViewOpen(false)} 
+        />
+      </>
+    );
+  }
+  
+  // Grid view design (default)
+  return (
+    <>
+      <Fade in={!shouldReduceAnimations} timeout={500}>
+        <Card
+          sx={{
+            width: '100%',
+            minHeight: { xs: 380, sm: 420, md: 460 },
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 3,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            overflow: "hidden",
+            transition: shouldReduceAnimations ? 'none' : "all 0.3s ease",
+            border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+            position: "relative",
+            '&:hover': {
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+              transform: shouldReduceAnimations ? 'none' : "translateY(-4px)",
+            },
+          }}
+          onMouseEnter={() => !isKeyboardMode && setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocus={() => isKeyboardMode && setHovered(true)}
+          onBlur={() => setHovered(false)}
+        >
+          {/* Image Section */}
+          <Box sx={{ position: "relative", height: { xs: 200, sm: 220, md: 240 } }}>
+            <Link 
+              to={`/product/${product._id}`}
+              aria-label={`View details for ${product.name}`}
+            >
+              {!imageLoaded && (
+                <Skeleton 
+                  variant="rectangular" 
+                  width="100%" 
+                  height="100%" 
+                  sx={{ borderRadius: 0 }}
+                />
+              )}
+              <CardMedia
+                component="img"
+                image={product.media?.[0]?.url || "/placeholder.jpg"}
+                alt={product.name}
+                onLoad={() => setImageLoaded(true)}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: imageLoaded ? 'block' : 'none',
+                  transition: shouldReduceAnimations ? 'none' : "transform 0.5s ease",
+                  transform: hovered && !shouldReduceAnimations ? "scale(1.05)" : "scale(1)",
+                  filter: shouldReduceImageQuality ? 'contrast(1.1)' : 'none'
+                }}
+                loading="lazy"
+              />
+            </Link>
+            
+            {/* Additional Images Preview */}
             {product.media?.length > 1 && (
               <Stack direction="row" spacing={0.5} sx={{ position: "absolute", bottom: 12, left: 12 }}>
                 {product.media.slice(1, 4).map((m, i) => (
                   m.type === "image" && (
-                    <Avatar key={i} src={m.url} sx={{ width: 32, height: 32 }} variant="rounded" />
+                    <Avatar 
+                      key={i} 
+                      src={m.url} 
+                      sx={{ 
+                        width: { xs: 24, sm: 28, md: 32 }, 
+                        height: { xs: 24, sm: 28, md: 32 },
+                        border: `2px solid ${theme.palette.background.paper}`,
+                        boxShadow: 1,
+                        borderRadius: 1
+                      }} 
+                      variant="rounded" 
+                      alt={`Additional view ${i+1} of ${product.name}`}
+                    />
                   )
                 ))}
               </Stack>
             )}
             
-            {hasDiscount && offerpercent.type==="flat" && (
+            {/* Discount Badge */}
+            {hasDiscount && (
               <Chip
-                label={`${offerpercent.percentage}% OFF`}
-                size="small"
+                label={`-${savingsPercentage}%`}
+                color="error"
                 sx={{
                   position: "absolute",
                   top: 12,
                   left: 12,
-                  bgcolor: "#ffe0b2",
-                  color: "#e65100",
                   fontWeight: 700,
-                  fontSize: "0.8rem",
-                  borderRadius: "999px",
+                  fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                  borderRadius: "6px",
+                  height: { xs: 24, sm: 28 },
+                  '& .MuiChip-label': {
+                    px: 1.2
+                  }
                 }}
               />
             )}
-            <Chip
-              label={product.brand?.name}
-              size="small"
-              sx={{
-                position: "absolute",
-                bottom: 12,
-                right: 12,
-                bgcolor: "#fce7f3",
-                color: "#ec4899",
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                borderRadius: "999px",
-              }}
-            />
-            {offerpercent.percentage > 0 && (
-            <Chip
-              label={`-${offerpercent.percentage}%`}
-              color="success"
-              sx={{
-                position: "absolute",
-                top: 50,
-                left: 10,
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                borderRadius: "999px",
-              }}
-            />
-          )}
-
             
-          </Link>
-          <Box sx={{ position: "absolute", top: 12, right: 12 }}>
-            <HeartIcon product={product} />
-          </Box>
-        </Box>
-
-        <Box sx={{ p: 3 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Tooltip title={product.name}>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: "#fff",
-                  fontWeight: 700,
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis",
-                  maxWidth: 180,
-                  "&:hover": { color: "#ec4899" },
-                }}
-                component={Link}
-                to={`/product/${product._id}`}
-              >
-                {product.name.length > 22 ? `${product.name.slice(0, 22)}...` : product.name}
-              </Typography>
-            </Tooltip>
-            <Chip
-              label={getCurrencySymbol()+discountedPrice.toLocaleString("en-US", { style: "currency", currency: currency })}
-              sx={{
-                bgcolor: "#f8bbd0",
-                color: "#880e4f",
-                fontWeight: 600,
-                borderRadius: "999px",
-              }}
-            />
-          </Stack>
-
-          {product.rating > 0 && (
-            <Stack direction="row" alignItems="center" spacing={0.5} mt={1}>
-              <Rating value={product.rating} precision={0.1} readOnly size="small" />
-              <Typography variant="caption" color="#ccc">
-                ({product.numReviews})
-              </Typography>
-            </Stack>
-          )}
-
-          <Typography variant="body2" color="#cfcfcf" mt={1} mb={1.5}>
-            {product.description?.substring(0, 60)}...
-          </Typography>
-
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            <Chip
-              label={product.category?.name || "Uncategorized"}
-              size="small"
-              sx={{ bgcolor: "#ffe082", color: "#ff6f00", fontWeight: 500 }}
-            />
-            <Chip
-              label={`Stock: ${product.countInStock}`}
-              size="small"
-              sx={{ bgcolor: "#c8e6c9", color: "#388e3c", fontWeight: 500 }}
-            />
-            {product.warrantyPeriod && (
+            {/* Brand Badge */}
+            {product.brand?.name && (
               <Chip
-                label={`Warranty: ${product.warrantyPeriod}`}
+                label={product.brand.name}
                 size="small"
-                sx={{ bgcolor: "#e0f7fa", color: "#00796b" }}
+                sx={{
+                  position: "absolute",
+                  bottom: 12,
+                  right: 12,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  fontWeight: 600,
+                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                  borderRadius: "6px",
+                  height: 22,
+                  '& .MuiChip-label': {
+                    px: 1
+                  }
+                }}
               />
             )}
-          </Stack>
-
-          {product.tags?.length > 0 && (
-            <Stack direction="row" spacing={0.5} mt={1}>
-              {product.tags.slice(0, 3).map((tag, idx) => (
-                <Chip
-                  key={idx}
-                  label={tag}
-                  size="small"
-                  sx={{ bgcolor: "#e0f2f1", color: "#00695c", fontWeight: 500 }}
-                />
-              ))}
-            </Stack>
-          )}
-
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
-            <Button
-              component={Link}
-              to={`/product/${product._id}`}
-              variant="contained"
-              sx={{
-                textTransform: "none",
-                fontWeight: 500,
-                borderRadius: 2,
-                backgroundColor: "#d81b60",
-                "&:hover": { backgroundColor: "#ad1457" },
-              }}
-              endIcon={<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 14 10"><path d="M1 5h12m0 0L9 1m4 4L9 9" /></svg>}
-            >
-              Read More
-            </Button>
-
-            <Tooltip title="Add to Cart" arrow>
-              <IconButton
-                onClick={() => addToCartHandler(product, 1)}
-                sx={{
-                  bgcolor: "#f8bbd0",
-                  "&:hover": { bgcolor: "#f06292", transform: "scale(1.12)" },
+            
+            {/* Wishlist Icon */}
+            <Box sx={{ position: "absolute", top: 12, right: 12 }}>
+              <HeartIcon product={product} />
+            </Box>
+            
+            {/* Quick Actions on Hover */}
+            {hovered && (
+              <Box 
+                sx={{ 
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  display: "flex",
+                  gap: 1,
+                  zIndex: 10
                 }}
               >
-                <AiOutlineShoppingCart size={24} />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Box>
-      </Box>
-    </Fade>
+                <Tooltip title="Quick View">
+                  <IconButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setQuickViewOpen(true);
+                    }}
+                    sx={{
+                      bgcolor: theme.palette.background.paper,
+                      color: theme.palette.primary.main,
+                      width: 40,
+                      height: 40,
+                      boxShadow: 3,
+                      '&:hover': {
+                        bgcolor: theme.palette.primary.main,
+                        color: theme.palette.background.paper,
+                        transform: shouldReduceAnimations ? 'none' : "scale(1.1)"
+                      },
+                      transition: shouldReduceAnimations ? 'none' : "all 0.2s ease",
+                      borderRadius: 2
+                    }}
+                    aria-label={`Quick view ${product.name}`}
+                  >
+                    <AiOutlineEye size={18} />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Add to Cart">
+                  <IconButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      addToCartHandler(product, 1);
+                    }}
+                    sx={{
+                      bgcolor: theme.palette.background.paper,
+                      color: theme.palette.primary.main,
+                      width: 40,
+                      height: 40,
+                      boxShadow: 3,
+                      '&:hover': {
+                        bgcolor: theme.palette.primary.main,
+                        color: theme.palette.background.paper,
+                        transform: shouldReduceAnimations ? 'none' : "scale(1.1)"
+                      },
+                      transition: shouldReduceAnimations ? 'none' : "all 0.2s ease",
+                      borderRadius: 2
+                    }}
+                    aria-label={`Add ${product.name} to cart`}
+                  >
+                    <AiOutlineShoppingCart size={18} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+            
+            {/* Overlay on Hover */}
+            {hovered && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: alpha('#000', 0.05),
+                  transition: shouldReduceAnimations ? 'none' : "all 0.3s ease",
+                  borderRadius: '3px 3px 0 0'
+                }}
+              />
+            )}
+          </Box>
+
+          {/* Content Section */}
+          <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+            <Stack spacing={1.5}>
+              {/* Product Name */}
+              <Tooltip title={product.name}>
+                <Typography
+                  variant="h6"
+                  component={Link}
+                  to={`/product/${product._id}`}
+                  sx={{
+                    fontWeight: 700,
+                    color: theme.palette.text.primary,
+                    textDecoration: 'none',
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                    '&:hover': {
+                      color: theme.palette.primary.main
+                    },
+                    fontSize: '1.125rem',
+                    lineHeight: 1.3
+                  }}
+                  aria-label={`Product: ${product.name}`}
+                >
+                  {product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name}
+                </Typography>
+              </Tooltip>
+              
+              {/* Rating */}
+              {product.rating > 0 && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Rating 
+                    value={product.rating} 
+                    precision={0.1} 
+                    readOnly 
+                    size="small" 
+                    aria-label={`Rating: ${product.rating} out of 5 stars`}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    ({product.numReviews})
+                  </Typography>
+                </Stack>
+              )}
+              
+              {/* Pricing */}
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700,
+                      color: theme.palette.primary.main,
+                      fontSize: '1.25rem'
+                    }}
+                  >
+                    {formattedDiscountedPrice}
+                  </Typography>
+                  {hasDiscount && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        textDecoration: "line-through",
+                        color: theme.palette.text.secondary
+                      }}
+                    >
+                      {formattedOriginalPrice}
+                    </Typography>
+                  )}
+                </Stack>
+                {hasDiscount && (
+                  <Typography 
+                    variant="caption" 
+                    color="success.main"
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Save {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: currency
+                    }).format(savings)}
+                  </Typography>
+                )}
+              </Box>
+              
+              {/* Category and Stock */}
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {product.category?.name && (
+                  <Chip
+                    label={product.category.name}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      borderColor: alpha(theme.palette.secondary.main, 0.3),
+                      color: theme.palette.secondary.main,
+                      fontWeight: 500,
+                      fontSize: "0.65rem",
+                      height: 20,
+                      '& .MuiChip-label': {
+                        px: 0.8
+                      },
+                      borderRadius: 1
+                    }}
+                  />
+                )}
+                <Chip
+                  label={product.countInStock > 0 ? "In Stock" : "Out of Stock"}
+                  size="small"
+                  color={product.countInStock > 0 ? "success" : "error"}
+                  sx={{
+                    height: 20,
+                    '& .MuiChip-label': {
+                      px: 0.8,
+                      fontSize: "0.65rem"
+                    },
+                    borderRadius: 1
+                  }}
+                />
+              </Stack>
+              
+              {/* Action Buttons */}
+              <CardActions sx={{ p: 0, mt: 1 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
+                  <Button
+                    component={Link}
+                    to={`/product/${product._id}`}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: 1.5,
+                      py: 0.8,
+                      fontSize: "0.8rem",
+                      borderColor: alpha(theme.palette.primary.main, 0.5),
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                      },
+                      height: 32
+                    }}
+                    aria-label={`View details for ${product.name}`}
+                  >
+                    Details
+                  </Button>
+                  
+                  <Tooltip title="Add to Cart">
+                    <IconButton
+                      onClick={() => addToCartHandler(product, 1)}
+                      sx={{
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                        width: 32,
+                        height: 32,
+                        '&:hover': {
+                          bgcolor: theme.palette.primary.main,
+                          color: theme.palette.background.paper,
+                          transform: shouldReduceAnimations ? 'none' : "scale(1.1)"
+                        },
+                        transition: shouldReduceAnimations ? 'none' : "all 0.2s ease",
+                        borderRadius: 1.5
+                      }}
+                      aria-label={`Add ${product.name} to cart`}
+                    >
+                      <AiOutlineShoppingCart size={16} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </CardActions>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Fade>
+      <QuickView 
+        product={product} 
+        open={quickViewOpen} 
+        onClose={() => setQuickViewOpen(false)} 
+      />
+    </>
   );
 };
 
