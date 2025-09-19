@@ -26,10 +26,19 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           mui: ['@mui/material', '@mui/icons-material'],
-          charts: ['recharts'],
           redux: ['@reduxjs/toolkit', 'react-redux']
+          // Removed charts chunk to prevent bundling issues
         }
       }
     }
+  },
+  // Add optimization to prevent charting library issues
+  optimizeDeps: {
+    include: [
+      'recharts'
+    ],
+    exclude: [
+      // Exclude recharts from pre-bundling to prevent conflicts
+    ]
   }
 });

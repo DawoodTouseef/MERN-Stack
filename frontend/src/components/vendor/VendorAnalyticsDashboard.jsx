@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
@@ -14,21 +14,22 @@ import {
   Button,
   CircularProgress
 } from '@mui/material';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
+
+// Lazy load chart components to prevent SSR issues
+const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })));
+const Bar = lazy(() => import('recharts').then(module => ({ default: module.Bar })));
+const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })));
+const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })));
+const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })));
+const Tooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
+const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })));
+const ResponsiveContainer = lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })));
+const LineChart = lazy(() => import('recharts').then(module => ({ default: module.LineChart })));
+const Line = lazy(() => import('recharts').then(module => ({ default: module.Line })));
+const PieChart = lazy(() => import('recharts').then(module => ({ default: module.PieChart })));
+const Pie = lazy(() => import('recharts').then(module => ({ default: module.Pie })));
+const Cell = lazy(() => import('recharts').then(module => ({ default: module.Cell })));
+
 import { useGetVendorDashboardQuery, useGetVendorSalesAnalyticsQuery } from '../../redux/api/vendorApiSlice';
 
 const VendorAnalyticsDashboard = () => {
@@ -295,6 +296,18 @@ const VendorAnalyticsDashboard = () => {
   const customers = performance.customers || {};
   const inventory = performance.inventory || {};
 
+  // Chart component with error boundary
+  const ChartWrapper = ({ children, title }) => (
+    <Suspense fallback={
+      <Box sx={{ textAlign: 'center', py: 5 }}>
+        <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 1 }}>Loading {title}...</Typography>
+      </Box>
+    }>
+      {children}
+    </Suspense>
+  );
+
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -408,28 +421,30 @@ const VendorAnalyticsDashboard = () => {
                 Sales Trend
               </Typography>
               {salesChartData && salesChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={salesChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke={theme.palette.primary.main} 
-                      name="Revenue" 
-                      strokeWidth={2}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="orders" 
-                      stroke={theme.palette.secondary.main} 
-                      name="Orders" 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <ChartWrapper title="Sales Trend">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={salesChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke={theme.palette.primary.main} 
+                        name="Revenue" 
+                        strokeWidth={2}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="orders" 
+                        stroke={theme.palette.secondary.main} 
+                        name="Orders" 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
                   <Typography>No sales data available for the selected period</Typography>
@@ -450,25 +465,27 @@ const VendorAnalyticsDashboard = () => {
                 Customer Segments
               </Typography>
               {customerSegments && customerSegments.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={customerSegments}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {customerSegments.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ChartWrapper title="Customer Segments">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={customerSegments}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {customerSegments.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
                   <Typography>No customer data available</Typography>
@@ -486,15 +503,17 @@ const VendorAnalyticsDashboard = () => {
                 Inventory Status
               </Typography>
               {inventoryData && inventoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={inventoryData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill={theme.palette.primary.main} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ChartWrapper title="Inventory Status">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={inventoryData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill={theme.palette.primary.main} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
                   <Typography>No inventory data available</Typography>
@@ -512,26 +531,28 @@ const VendorAnalyticsDashboard = () => {
                 Top Selling Products
               </Typography>
               {products.topProducts && products.topProducts.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={products.topProducts.map(product => ({
-                      name: product.productName && product.productName.length > 15 ? 
-                        `${product.productName.substring(0, 15)}...` : 
-                        product.productName || 'Unknown Product',
-                      revenue: product.totalRevenue || 0,
-                      quantity: product.totalQuantity || 0
-                    }))}
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={100} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Revenue" />
-                    <Bar dataKey="quantity" fill={theme.palette.secondary.main} name="Quantity" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ChartWrapper title="Top Selling Products">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={products.topProducts.map(product => ({
+                        name: product.productName && product.productName.length > 15 ? 
+                          `${product.productName.substring(0, 15)}...` : 
+                          product.productName || 'Unknown Product',
+                        revenue: product.totalRevenue || 0,
+                        quantity: product.totalQuantity || 0
+                      }))}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={100} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Revenue" />
+                      <Bar dataKey="quantity" fill={theme.palette.secondary.main} name="Quantity" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
                   <Typography>No product data available</Typography>

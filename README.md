@@ -199,42 +199,26 @@ npm run frontend
 - Manage inventory
 - Access sales analytics
 
-### Admin
-- Manage all users and roles
-- Oversee all products and orders
-- Manage categories, brands, and banners
-- Configure tax rules and offers
-- Access comprehensive analytics
+## ☁️ Deployment
 
-## 🔐 Authentication & Security
+### Vercel Deployment
+If you encounter the Redux minification error when deploying to Vercel:
+```
+redux-954c64ff.js:9 Uncaught TypeError: Rt is not a function
+```
 
-- **JWT-based authentication** with secure token storage
-- **Role-based access control** (RBAC)
-- **Password hashing** with bcryptjs
-- **Input validation** and sanitization
-- **CORS protection** for cross-origin requests
-- **Secure cookie handling** for authentication tokens
+Please refer to the [Vercel Deployment Fix Guide](VERCEL_DEPLOYMENT_FIX.md) for detailed instructions on resolving this issue.
 
-## 📊 Database Schema
-
-### Key Models
-- **User**: Authentication, profile, addresses, wishlist
-- **Product**: Details, variants, specifications, reviews
-- **Order**: Items, shipping, payment, status tracking
-- **Category**: Hierarchical product categorization
-- **Brand**: Product brand management
-- **Tax**: Location and product-based tax rules
-
-## 🚀 Deployment
+### Netlify Deployment
+For Netlify deployment, build settings:
+- Build command: `npm run build` (in the frontend directory)
+- Publish directory: `frontend/dist`
 
 ### Backend Deployment
-1. Set up MongoDB Atlas or your preferred database
-2. Configure environment variables for production
-3. Deploy to platforms like Heroku, Railway, or DigitalOcean
-
-### Frontend Deployment
-1. Build the React application: `npm run build`
-2. Deploy to platforms like Netlify, Vercel, or AWS S3
+For backend deployment on platforms like Heroku or Render:
+1. Set environment variables as in your `.env` file
+2. Update `VITE_API_URL` in frontend to point to your deployed backend
+3. Deploy the backend separately from the frontend
 
 ## 🤝 Contributing
 
