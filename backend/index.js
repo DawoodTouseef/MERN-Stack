@@ -72,24 +72,24 @@ securityMiddleware(app);
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
 console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
 
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL] // 👈 Your deployed frontend URL (e.g. https://myapp.com)
-  : ['http://localhost:5173', 'http://localhost:3000']; // 👈 Local dev (Vite + CRA)
+const allowedOrigins = [
+  "http://localhost:5173",  // Vite dev server
+  "http://localhost:3000",  // CRA dev server (optional)
+  process.env.FRONTEND_URL  // your production frontend (e.g. Netlify/Vercel domain)
+];
 
-// ✅ CORS middleware
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+  origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS blocked: ${origin} is not allowed`));
+      callback(new Error("Not allowed by CORS: " + origin));
     }
   },
-  credentials: true, // ✅ Allow cookies & auth headers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  exposedHeaders: ['X-CSRF-Token']
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  exposedHeaders: ["X-CSRF-Token"]
 }));
 
 
