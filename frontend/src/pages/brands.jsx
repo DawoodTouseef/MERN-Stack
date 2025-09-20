@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { FaSearch, FaStar, FaTag, FaShoppingCart } from "react-icons/fa";
-import { useGetBrandsQuery } from "../redux/api/productsApiSlice";
+import { useGetBrandsQuery } from "../redux/api/brandApiSlice";
 
 const Brands = () => {
   const [searchTerm, setSearchTerm] = useState("");
