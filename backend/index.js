@@ -72,15 +72,29 @@ securityMiddleware(app);
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
 console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
 // CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL,`${process.env.FRONTEND_URL}/`]
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like Postman)
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-CSRF-Token'],
   exposedHeaders: ['X-CSRF-Token']
 }));
+
+// Preflight handling
+app.options('*', cors());
+
 
 // Body parsing with size limits
 app.use(express.json({ limit: requestSizeLimits.json }));
