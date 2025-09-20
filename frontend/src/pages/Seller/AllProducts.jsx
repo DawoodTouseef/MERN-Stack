@@ -115,7 +115,7 @@ const AllProducts = () => {
         ):(
           <Button
           component={Link}
-          to="/seller/product/add" 
+          to={userInfo?.role === "seller" ? "/seller/product/add"  : "/admin/product/add"}
           variant="contained"
           color="secondary"
           startIcon={<IoAdd />}

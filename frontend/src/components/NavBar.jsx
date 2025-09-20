@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -59,6 +59,7 @@ const NavBar = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const location = useLocation();
   
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -159,7 +160,7 @@ const NavBar = ({
   };
 
   const renderSuggestion = (suggestion, { query }) => {
-    const regex = new RegExp(`(${query})`, "gi");
+    const regex = new RegExp([(`${query}`)])
     const highlightedName = suggestion.name.replace(
       regex,
       (match) => `<span style="color:${theme.palette.primary.main}; font-weight:bold;">${match}</span>`
@@ -202,11 +203,10 @@ const NavBar = ({
     if (userInfo) {
       if (userInfo.role === "admin") {
         return [
-          { label: "Dashboard", icon: <DashboardIcon />, path: "/admin/settings" },
+          { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
           { label: "Users", icon: <PeopleIcon />, path: "/admin/userlist" },
           { label: "Categories", icon: <CategoryIcon />, path: "/admin/categorylist" },
           { label: "Products", icon: <InventoryIcon />, path: "/admin/productlist" },
-          { label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" },
           { label: "Banners", icon: <StoreIcon />, path: "/admin/banner" },
         ];
     }
@@ -243,7 +243,7 @@ const NavBar = ({
     ];
     
     if (userInfo.role === "admin") {
-      baseItems.unshift({ label: "Admin Dashboard", icon: <DashboardIcon />, path: "/admin/settings" });
+      baseItems.unshift({ label: "Admin Dashboard", icon: <DashboardIcon />, path: "/" });
     } else if (userInfo.role === "seller") {
       baseItems.unshift({ label: "Seller Dashboard", icon: <DashboardIcon />, path: "/" });
     } else if (userInfo.role === "vendor") {
@@ -426,7 +426,7 @@ const NavBar = ({
           }}
         >
           {/* Mobile Menu Icon */}
-          {isMobile && (
+          {location.pathname !== "/admin/login" && isMobile && (
             <IconButton
               edge="start"
               color="primary"
@@ -467,7 +467,7 @@ const NavBar = ({
           </Box>
 
           {/* Search Bar - Desktop */}
-          {!isMobile && (
+          {location.pathname !== "/admin/login"  && !isMobile && (
             <Box sx={{ 
               flex: { md: 2 }, 
               display: "flex", 
@@ -547,7 +547,7 @@ const NavBar = ({
           )}
 
           {/* Mobile Search Icon */}
-          {isMobile && !mobileSearchOpen && (
+          { location.pathname !== "/admin/login"  && isMobile && !mobileSearchOpen && (
             <IconButton
               onClick={() => setMobileSearchOpen(true)}
               sx={{ 
@@ -561,7 +561,7 @@ const NavBar = ({
           )}
 
           {/* Mobile Search Bar */}
-          {isMobile && mobileSearchOpen && (
+          { location.pathname !== "/admin/login"  && isMobile && mobileSearchOpen && (
             <Box sx={{ 
               position: 'absolute',
               top: 0,
@@ -743,88 +743,92 @@ const NavBar = ({
                   </Menu>
                 </>
               ) : (
-                <>
-                  <Tooltip title="Login">
-                    <Button
-                      component={Link}
-                      to="/login"
-                      variant="outlined"
-                      sx={{
-                        fontWeight: 600,
-                        ml: { xs: 0.5, sm: 1 },
-                        borderRadius: 3,
-                        transition: "all 0.3s ease",
-                        "&:hover": { 
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          transform: "translateY(-2px)"
-                        },
-                        px: { xs: 1, sm: 2 },
-                        py: { xs: 0.5, sm: 1 },
-                        minWidth: { xs: 40, sm: 60 },
-                        borderColor: alpha(theme.palette.primary.main, 0.5),
-                        color: theme.palette.primary.main
-                      }}
-                      startIcon={<LoginIcon />}
-                    >
-                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Login</Box>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Register">
-                    <Button
-                      component={Link}
-                      to="/register"
-                      variant="contained"
-                      sx={{
-                        fontWeight: 600,
-                        ml: { xs: 0.5, sm: 1 },
-                        borderRadius: 3,
-                        transition: "all 0.3s ease",
-                        "&:hover": { 
-                          transform: "translateY(-2px)",
-                          boxShadow: theme.shadows[4]
-                        },
-                        px: { xs: 1, sm: 2 },
-                        py: { xs: 0.5, sm: 1 },
-                        minWidth: { xs: 40, sm: 60 },
-                        boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
-                      }}
-                      startIcon={<AppRegistrationIcon />}
-                    >
-                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Register</Box>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Login">
-                    <Button
-                      component={Link}
-                      to="/seller/login"
-                      variant="outlined"
-                      sx={{
-                        fontWeight: 600,
-                        ml: { xs: 0.5, sm: 1 },
-                        borderRadius: 3,
-                        transition: "all 0.3s ease",
-                        "&:hover": { 
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          transform: "translateY(-2px)"
-                        },
-                        px: { xs: 1, sm: 2 },
-                        py: { xs: 0.5, sm: 1 },
-                        minWidth: { xs: 40, sm: 60 },
-                        borderColor: alpha(theme.palette.primary.main, 0.5),
-                        color: theme.palette.primary.main
-                      }}
-                      startIcon={<LoginIcon />}
-                    >
-                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Become a Seller</Box>
-                    </Button>
-                  </Tooltip>
-                </>
+                // Only show login/register buttons if not on admin login page
+                location.pathname !== "/admin/login" && (
+                  <>
+                    <Tooltip title="Login">
+                      <Button
+                        component={Link}
+                        to="/login"
+                        variant="outlined"
+                        sx={{
+                          fontWeight: 600,
+                          ml: { xs: 0.5, sm: 1 },
+                          borderRadius: 3,
+                          transition: "all 0.3s ease",
+                          "&:hover": { 
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            transform: "translateY(-2px)"
+                          },
+                          px: { xs: 1, sm: 2 },
+                          py: { xs: 0.5, sm: 1 },
+                          minWidth: { xs: 40, sm: 60 },
+                          borderColor: alpha(theme.palette.primary.main, 0.5),
+                          color: theme.palette.primary.main
+                        }}
+                        startIcon={<LoginIcon />}
+                      >
+                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Login</Box>
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="Register">
+                      <Button
+                        component={Link}
+                        to="/register"
+                        variant="contained"
+                        sx={{
+                          fontWeight: 600,
+                          ml: { xs: 0.5, sm: 1 },
+                          borderRadius: 3,
+                          transition: "all 0.3s ease",
+                          "&:hover": { 
+                            transform: "translateY(-2px)",
+                            boxShadow: theme.shadows[4]
+                          },
+                          px: { xs: 1, sm: 2 },
+                          py: { xs: 0.5, sm: 1 },
+                          minWidth: { xs: 40, sm: 60 },
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+                        }}
+                        startIcon={<AppRegistrationIcon />}
+                      >
+                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Register</Box>
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="Login">
+                      <Button
+                        component={Link}
+                        to="/seller/login"
+                        variant="outlined"
+                        sx={{
+                          fontWeight: 600,
+                          ml: { xs: 0.5, sm: 1 },
+                          borderRadius: 3,
+                          transition: "all 0.3s ease",
+                          "&:hover": { 
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            transform: "translateY(-2px)"
+                          },
+                          px: { xs: 1, sm: 2 },
+                          py: { xs: 0.5, sm: 1 },
+                          minWidth: { xs: 40, sm: 60 },
+                          borderColor: alpha(theme.palette.primary.main, 0.5),
+                          color: theme.palette.primary.main
+                        }}
+                        startIcon={<LoginIcon />}
+                      >
+                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Become a Seller</Box>
+                      </Button>
+                    </Tooltip>
+                  </>
+                )
               )}
             </Box>
           )}
         </Toolbar>
         
         {/* Drawer for mobile */}
+        {location.pathname !== "/admin/login"  && (
         <Drawer
           anchor="left"
           open={drawerOpen}
@@ -840,6 +844,7 @@ const NavBar = ({
         >
           {drawerContent}
         </Drawer>
+        )}
       </AppBar>
     </Slide>
   );

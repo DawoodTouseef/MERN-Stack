@@ -145,6 +145,8 @@ const router = createBrowserRouter(
           <Route path="categorylist" element={<CategoryList />} />
           <Route path="user/edit/:id" element={<UserEditPage />} />
           <Route path="currencies" element={<CurrencyManagement />} />
+          <Route path="productlist" element={<AllProducts />} />
+          <Route path="product/add" element={<AddProduct />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
         <Route path="dashboard" element={<SellerDashBoard />} />

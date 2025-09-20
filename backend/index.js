@@ -166,7 +166,8 @@ app.use("/uploads", express.static(path.join(__dirname + "/uploads"), {
 }));
 
 // Serve frontend static files in production
-if (process.env.NODE_ENV === 'production') {
+/**
+ * if (process.env.NODE_ENV === 'production') {
   const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
   app.use(express.static(frontendBuildPath));
   
@@ -176,6 +177,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+ * 
+ */
 // Error handling middleware (must be last)
 app.use(notFound);
 app.use(errorHandler);
