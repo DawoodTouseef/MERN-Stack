@@ -281,9 +281,6 @@ const Footer = () => {
                 <Link href="/new-arrivals" underline="hover" color="#d1d5db" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   New Arrivals
                 </Link>
-                <Link href="/brands" underline="hover" color="#d1d5db" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Brands
-                </Link>
                 <Link href="/blog" underline="hover" color="#d1d5db" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   Blog
                 </Link>

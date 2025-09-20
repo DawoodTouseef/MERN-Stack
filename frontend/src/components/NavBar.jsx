@@ -793,6 +793,31 @@ const NavBar = ({
                       <Box sx={{ display: { xs: "none", sm: "block" } }}>Register</Box>
                     </Button>
                   </Tooltip>
+                  <Tooltip title="Login">
+                    <Button
+                      component={Link}
+                      to="/seller/login"
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 600,
+                        ml: { xs: 0.5, sm: 1 },
+                        borderRadius: 3,
+                        transition: "all 0.3s ease",
+                        "&:hover": { 
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          transform: "translateY(-2px)"
+                        },
+                        px: { xs: 1, sm: 2 },
+                        py: { xs: 0.5, sm: 1 },
+                        minWidth: { xs: 40, sm: 60 },
+                        borderColor: alpha(theme.palette.primary.main, 0.5),
+                        color: theme.palette.primary.main
+                      }}
+                      startIcon={<LoginIcon />}
+                    >
+                      <Box sx={{ display: { xs: "none", sm: "block" } }}>Become a Seller</Box>
+                    </Button>
+                  </Tooltip>
                 </>
               )}
             </Box>
