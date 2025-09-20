@@ -72,29 +72,22 @@ securityMiddleware(app);
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
 console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
 // CORS configuration
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL]
-  : ['http://localhost:5173', 'http://localhost:3000'];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like Postman)
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, 'https://mern-stack-two-psi.vercel.app']
+    : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','X-CSRF-Token'],
-  exposedHeaders: ['X-CSRF-Token']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  exposedHeaders: ['X-CSRF-Token'],
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
 
-// Preflight handling
-app.options('*', cors());
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors(corsOptions));
 
 // Body parsing with size limits
 app.use(express.json({ limit: requestSizeLimits.json }));
@@ -180,7 +173,6 @@ app.use("/uploads", express.static(path.join(__dirname + "/uploads"), {
 }));
 
 // Serve frontend static files in production
-/**
 if (process.env.NODE_ENV === 'production') {
   const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
   app.use(express.static(frontendBuildPath));
@@ -191,7 +183,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-*/
 // Error handling middleware (must be last)
 app.use(notFound);
 app.use(errorHandler);
