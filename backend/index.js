@@ -65,13 +65,7 @@ connectDB();
 const app = express();
 const server = createServer(app);
 
-// Apply security middleware first
-securityMiddleware(app);
-
-// Create rate limiters
-const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
-console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
-// CORS configuration
+// CORS configuration - MUST be before other middleware
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [process.env.FRONTEND_URL, 'https://mern-stack-two-psi.vercel.app']
@@ -83,11 +77,18 @@ const corsOptions = {
   optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
-// Apply CORS middleware
+// Apply CORS middleware FIRST
 app.use(cors(corsOptions));
 
 // Handle preflight OPTIONS requests for all routes
 app.options('*', cors(corsOptions));
+
+// Apply security middleware AFTER CORS
+securityMiddleware(app);
+
+// Create rate limiters
+const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
+console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
 
 // Body parsing with size limits
 app.use(express.json({ limit: requestSizeLimits.json }));

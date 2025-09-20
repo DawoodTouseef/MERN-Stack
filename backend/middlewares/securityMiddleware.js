@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
 
 // Advanced security middleware configuration
 export const securityMiddleware = (app) => {
-  // Helmet for security headers
+  // Helmet for security headers - but don't override CORS headers
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -14,11 +14,12 @@ export const securityMiddleware = (app) => {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         scriptSrc: ["'self'"],
-        connectSrc: ["'self'", "https://api.paypal.com", "https://www.paypal.com"],
+        connectSrc: ["'self'", "https://api.paypal.com", "https://www.paypal.com", "https://mern-stack-two-psi.vercel.app"],
         frameSrc: ["'self'", "https://www.paypal.com"],
       },
     },
     crossOriginEmbedderPolicy: false, // Allow embedding for payment iframes
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow cross-origin requests
   }));
 
   // Prevent NoSQL injection attacks
@@ -34,22 +35,32 @@ export const securityMiddleware = (app) => {
     whitelist: ['tags', 'categories', 'colors', 'sizes'] // Allow arrays for these parameters
   }));
 
-  // Additional security headers
+  // Additional security headers - but don't override CORS headers
   app.use((req, res, next) => {
     // Prevent MIME type sniffing
-    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (!res.headersSent) {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
     
-    // Prevent framing (clickjacking protection)
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // Prevent framing (clickjacking protection) - but allow same origin
+    if (!res.headersSent) {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
     
     // Enable XSS filtering
-    res.setHeader('X-XSS-Protection', '1; mode=block');
+    if (!res.headersSent) {
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+    }
     
     // Referrer policy
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    if (!res.headersSent) {
+      res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    }
     
     // Feature policy
-    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    if (!res.headersSent) {
+      res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    }
     
     next();
   });
