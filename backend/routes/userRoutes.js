@@ -50,10 +50,10 @@ router
 
 router
 .route("/request-password")
-.post(requestPasswordReset)
+.post(requestPasswordReset);
 
 router
 .route('/reset-password')
-.post(changePassword)
+.post(changePassword);
 
 export default router;
