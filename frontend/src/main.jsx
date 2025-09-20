@@ -63,6 +63,11 @@ import Deals from "./pages/deals.jsx";
 import NewArrivals from "./pages/newArrivals.jsx";
 import Brands from "./pages/brands.jsx";
 import Blog from "./pages/blog.jsx";
+// Additional pages
+import Terms from "./pages/terms.jsx";
+import ShippingPolicy from "./pages/shippingPolicy.jsx";
+// 404 Page
+import NotFound from "./pages/NotFound.jsx";
 // Admin
 import AdminRoute from "./pages/Admin/AdminRoute"
 import AdminLogin from "./pages/Admin/AdminLogin"
@@ -96,12 +101,13 @@ const router = createBrowserRouter(
       <Route path="/address" element={<Address />} />
       <Route path="/shop/:id" element={<Shop />} />
       <Route path="/privacy-policy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/shipping-policy" element={<ShippingPolicy />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/faq" element={<Faq/>} />
       <Route path="/Categories" element={<Categories/>}/>
       <Route path="/flash-sale" element={<FlashSale/>}/>
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
-      <Route path="/passwordReset" element={<RequestPassword/>}/>
       {/* New pages */}
       <Route path="/returns" element={<Returns />} />
       <Route path="/track-order" element={<TrackOrder />} />
@@ -150,6 +156,8 @@ const router = createBrowserRouter(
         <Route path="product/update/:_id" element={<ProductUpdate />} />
         <Route path="product/add" element={<AddProduct />} />
       </Route>
+      {/* Catch-all route for 404 */}
+      <Route path="*" element={<NotFound />} />
     </Route>
   )
 );
