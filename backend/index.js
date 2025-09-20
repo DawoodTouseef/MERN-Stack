@@ -70,28 +70,17 @@ securityMiddleware(app);
 
 // Create rate limiters
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
-console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
-
-const allowedOrigins = [
-  "http://localhost:5173",  // Vite dev server
-  "http://localhost:3000",  // CRA dev server (optional)
-  process.env.FRONTEND_URL  // your production frontend (e.g. Netlify/Vercel domain)
-];
-
+console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
+// CORS configuration
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS: " + origin));
-    }
-  },
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL]
+    : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
-  exposedHeaders: ["X-CSRF-Token"]
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  exposedHeaders: ['X-CSRF-Token']
 }));
-
 
 // Body parsing with size limits
 app.use(express.json({ limit: requestSizeLimits.json }));
@@ -178,7 +167,7 @@ app.use("/uploads", express.static(path.join(__dirname + "/uploads"), {
 
 // Serve frontend static files in production
 /**
- * if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
   app.use(express.static(frontendBuildPath));
   
@@ -188,8 +177,7 @@ app.use("/uploads", express.static(path.join(__dirname + "/uploads"), {
   });
 }
 
- * 
- */
+*/
 // Error handling middleware (must be last)
 app.use(notFound);
 app.use(errorHandler);
