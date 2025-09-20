@@ -1,4 +1,3 @@
-
 import BrandModel from "../models/BrandModel.js";
 import slugify from "slugify";
 
@@ -73,10 +72,12 @@ export const getBrandById = async (req, res) => {
 // Update an Brand
 export const updateBrandById = async (req, res) => {
   try {
-    const brand = await BrandModel.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+    // Allow admin to update any brand
+    const query = req.user.role === 'admin' 
+      ? { _id: req.params.id } 
+      : { _id: req.params.id, user: req.user._id };
+
+    const brand = await BrandModel.findOne(query);
 
     if (!brand) {
       return res.status(404).json({ message: "Brand not found" });
@@ -101,10 +102,12 @@ export const updateBrandById = async (req, res) => {
 // Delete an Brand
 export const deleteBrand = async (req, res) => {
   try {
-    const brand = await BrandModel.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+    // Allow admin to delete any brand
+    const query = req.user.role === 'admin' 
+      ? { _id: req.params.id } 
+      : { _id: req.params.id, user: req.user._id };
+
+    const brand = await BrandModel.findOneAndDelete(query);
     if (!brand) {
       return res.status(404).json({ message: "Brand not found" });
     }
@@ -113,5 +116,3 @@ export const deleteBrand = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-

@@ -145,6 +145,8 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
+    secure: process.env.NODE_ENV === 'production', // Secure in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // SameSite for cross-site cookies
   });
 
   res.status(200).json({ message: "Logged out successfully" });
@@ -425,7 +427,7 @@ const changePassword = async (req, res) => {
 
   try {
     // Get token record for the user
-    const tokenDoc = await Token.findOne(userId);
+    const tokenDoc = await Token.findOne({ userId: userId });
     if (!tokenDoc || !tokenDoc.token) {
       return res.status(400).json({ message: "Invalid or expired token" });
     }

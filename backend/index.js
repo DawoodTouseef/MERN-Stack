@@ -74,8 +74,8 @@ console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL
-    : 'http://localhost:5173',
+    ? [process.env.FRONTEND_URL, 'https://mern-stack-two-psi.vercel.app']
+    : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],

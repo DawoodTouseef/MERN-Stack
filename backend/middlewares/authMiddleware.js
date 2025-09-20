@@ -17,6 +17,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
   // Check for JWT in cookies first, then Authorization header
   token = req.cookies.jwt;
   
+  // Also check for token in Authorization header for API requests
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }

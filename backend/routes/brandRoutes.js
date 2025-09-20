@@ -7,13 +7,13 @@ import {
   updateBrandById,
   deleteBrand,
 } from "../controllers/brandController.js";
-import { authenticate } from "../middlewares/authMiddleware.js";
+import { authenticate, IsAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 router.use(authenticate);
 
 // Create a brand & get all brands (admin or for listing)
-router.route("/").post(createBrand).get(getAllBrands);
+router.route("/").post(IsAdmin,createBrand).get(getAllBrands);
 
 // Get all brands for the logged-in user
 router.route("/user/all").get(getUserBrandes);
