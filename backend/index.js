@@ -70,11 +70,11 @@ securityMiddleware(app);
 
 // Create rate limiters
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
-
+console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'http://localhost:5173'
+    ? process.env.FRONTEND_URL
     : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
