@@ -70,17 +70,28 @@ securityMiddleware(app);
 
 // Create rate limiters
 const { generalLimiter, authLimiter, passwordResetLimiter, uploadLimiter } = createRateLimiters();
-console.log(`Frontend URL: ${process.env.FRONTEND_URL}`)
-// CORS configuration
+console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL] // 👈 Your deployed frontend URL (e.g. https://myapp.com)
+  : ['http://localhost:5173', 'http://localhost:3000']; // 👈 Local dev (Vite + CRA)
+
+// ✅ CORS middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, 'https://mern-stack-two-psi.vercel.app']
-    : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin} is not allowed`));
+    }
+  },
+  credentials: true, // ✅ Allow cookies & auth headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   exposedHeaders: ['X-CSRF-Token']
 }));
+
 
 // Body parsing with size limits
 app.use(express.json({ limit: requestSizeLimits.json }));
