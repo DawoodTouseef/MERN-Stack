@@ -147,6 +147,7 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
     expires: new Date(0),
     secure: process.env.NODE_ENV === 'production', // Secure in production
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // SameSite for cross-site cookies
+    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined, // Set domain for production
   });
 
   res.status(200).json({ message: "Logged out successfully" });

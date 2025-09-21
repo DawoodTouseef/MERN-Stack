@@ -12,6 +12,7 @@ const generateToken = (res, userId) => {
     secure: process.env.NODE_ENV === 'production', // Secure in production
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // SameSite for cross-site cookies
     maxAge: 30 * 24 * 60 * 60 * 1000,
+    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined, // Set domain for production
   });
 
   return token;

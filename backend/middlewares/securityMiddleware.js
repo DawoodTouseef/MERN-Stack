@@ -38,27 +38,27 @@ export const securityMiddleware = (app) => {
   // Additional security headers - but don't override CORS headers
   app.use((req, res, next) => {
     // Prevent MIME type sniffing
-    if (!res.headersSent) {
+    if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-Content-Type-Options', 'nosniff');
     }
     
     // Prevent framing (clickjacking protection) - but allow same origin
-    if (!res.headersSent) {
+    if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     }
     
     // Enable XSS filtering
-    if (!res.headersSent) {
+    if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-XSS-Protection', '1; mode=block');
     }
     
     // Referrer policy
-    if (!res.headersSent) {
+    if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
     
     // Feature policy
-    if (!res.headersSent) {
+    if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
     }
     
