@@ -501,7 +501,7 @@ const AddProduct = () => {
     return currency ? currency.symbol : '$';
   };
 
-  return (
+   return (
     <Box sx={{ maxWidth: "100vw", px: { xs: 1, md: 4 }, py: 2 }}>
       <Paper
         elevation={3}
@@ -612,10 +612,10 @@ const AddProduct = () => {
                 />
                 <Stack direction="row" spacing={0} sx={{ mt: 1 }}>
                   <IconButton size="small" onClick={() => moveImage(index, -1)}>
-                    <ArrowUpwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                    <ArrowUpwardIcon fontSize="small" sx={{ color: "black" }} />
                   </IconButton>
                   <IconButton size="small" onClick={() => moveImage(index, 1)}>
-                    <ArrowDownwardIcon fontSize="small" sx={{ color: "#fff" }} />
+                    <ArrowDownwardIcon fontSize="small" sx={{ color: "black" }} />
                   </IconButton>
                   <IconButton size="small" onClick={() => deleteImageHandler(url)}>
                     <DeleteIcon fontSize="small" sx={{ color: "red" }} />
@@ -657,7 +657,7 @@ const AddProduct = () => {
         >
           {/* Basic Product Information */}
           <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Basic Product Information</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -667,7 +667,21 @@ const AddProduct = () => {
                   fullWidth
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                 />
                 <TextField
@@ -675,15 +689,29 @@ const AddProduct = () => {
                   fullWidth
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                 />
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: "#fff" }}>Currency *</InputLabel>
+                  <InputLabel sx={{ color: "black" }}>Currency *</InputLabel>
                   <Select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "black" }}
                     label="Currency *"
                     required
                   >
@@ -700,7 +728,21 @@ const AddProduct = () => {
                   fullWidth
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                   InputProps={{
                     startAdornment: <span>{getCurrencySymbol(currency)}</span>,
@@ -712,7 +754,21 @@ const AddProduct = () => {
                   fullWidth
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                 />
                 <TextField
@@ -722,7 +778,21 @@ const AddProduct = () => {
                   fullWidth
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    textarea: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                 />
                 <TextField
@@ -731,15 +801,29 @@ const AddProduct = () => {
                   fullWidth
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   required
                 />
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: "#fff" }}>Brand *</InputLabel>
+                  <InputLabel sx={{ color: "black" }}>Brand *</InputLabel>
                   <Select
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "black" }}
                     label="Brand *"
                     required
                   >
@@ -751,11 +835,11 @@ const AddProduct = () => {
                   </Select>
                 </FormControl>
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: "#fff" }}>Category *</InputLabel>
+                  <InputLabel sx={{ color: "black" }}>Category *</InputLabel>
                   <Select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "black" }}
                     label="Category *"
                     required
                   >
@@ -772,7 +856,7 @@ const AddProduct = () => {
           
           {/* Tax Settings */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Tax Settings</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -787,7 +871,7 @@ const AddProduct = () => {
                       <Checkbox
                         checked={taxSettings.isTaxable}
                         onChange={(e) => setTaxSettings({...taxSettings, isTaxable: e.target.checked})}
-                        sx={{ color: "#fff" }}
+                        sx={{ color: "black" }}
                       />
                     }
                     label="Product is taxable"
@@ -797,7 +881,7 @@ const AddProduct = () => {
                       <Checkbox
                         checked={taxSettings.taxExempt}
                         onChange={(e) => setTaxSettings({...taxSettings, taxExempt: e.target.checked})}
-                        sx={{ color: "#fff" }}
+                        sx={{ color: "black" }}
                       />
                     }
                     label="Product is tax exempt"
@@ -805,11 +889,11 @@ const AddProduct = () => {
                 </FormGroup>
                 
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: "#fff" }}>Tax Category</InputLabel>
+                  <InputLabel sx={{ color: "black" }}>Tax Category</InputLabel>
                   <Select
                     value={taxSettings.taxCategory}
                     onChange={(e) => setTaxSettings({...taxSettings, taxCategory: e.target.value})}
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "black" }}
                     label="Tax Category"
                     disabled={taxSettings.taxExempt}
                   >
@@ -826,7 +910,21 @@ const AddProduct = () => {
                   fullWidth
                   value={taxSettings.taxCode}
                   onChange={(e) => setTaxSettings({...taxSettings, taxCode: e.target.value})}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   helperText="HSN/SAC code or other tax classification code"
                 />
               </Stack>
@@ -835,7 +933,7 @@ const AddProduct = () => {
           
           {/* Shipping Details */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Shipping Details</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -849,7 +947,21 @@ const AddProduct = () => {
                     ...shippingDetails, 
                     weight: e.target.value
                   })}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                 />
                 
                 <Typography variant="subtitle1">Dimensions (cm)</Typography>
@@ -866,7 +978,21 @@ const AddProduct = () => {
                         length: e.target.value
                       }
                     })}
-                    sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                    sx={{ 
+                      input: { color: "black" }, 
+                      label: { color: "#bbb" },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#888',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1976d2',
+                        },
+                      },
+                    }}
                   />
                   <TextField
                     label="Width"
@@ -880,7 +1006,21 @@ const AddProduct = () => {
                         width: e.target.value
                       }
                     })}
-                    sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                    sx={{ 
+                      input: { color: "black" }, 
+                      label: { color: "#bbb" },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#888',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1976d2',
+                        },
+                      },
+                    }}
                   />
                   <TextField
                     label="Height"
@@ -894,19 +1034,33 @@ const AddProduct = () => {
                         height: e.target.value
                       }
                     })}
-                    sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                    sx={{ 
+                      input: { color: "black" }, 
+                      label: { color: "#bbb" },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#888',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1976d2',
+                        },
+                      },
+                    }}
                   />
                 </Stack>
                 
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: "#fff" }}>Shipping Class</InputLabel>
+                  <InputLabel sx={{ color: "black" }}>Shipping Class</InputLabel>
                   <Select
                     value={shippingDetails.shippingClass}
                     onChange={(e) => setShippingDetails({
                       ...shippingDetails, 
                       shippingClass: e.target.value
                     })}
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "black" }}
                     label="Shipping Class"
                   >
                     {shippingClasses.map((cls) => (
@@ -922,7 +1076,7 @@ const AddProduct = () => {
           
           {/* Product Tags */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Product Tags</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -931,7 +1085,21 @@ const AddProduct = () => {
                   label="Add Tags (Enter to Add) *"
                   fullWidth
                   onKeyDown={handleAddTag}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   helperText="Press Enter after each tag"
                 />
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
@@ -940,7 +1108,7 @@ const AddProduct = () => {
                       key={tag}
                       label={tag}
                       onDelete={() => handleRemoveItem(tag)}
-                      sx={{ bgcolor: "#222", color: "#fff" }}
+                      sx={{ bgcolor: "#222", color: "black" }}
                     />
                   ))}
                 </Stack>
@@ -950,12 +1118,12 @@ const AddProduct = () => {
           
           {/* Product Variants */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Product Variants</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Stack spacing={2}>
-                <Typography variant="h6">Add Variant</Typography>
+                <Typography variant="h6" >Add Variant</Typography>
                 <Stack direction="row" spacing={2} flexWrap="wrap">
                   {["sku", "color", "size", "storage", "price", "countInStock"].map(
                     (field) => (
@@ -966,14 +1134,29 @@ const AddProduct = () => {
                         onChange={(e) =>
                           setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
                         }
-                        sx={{ input: { color: "#fff" }, label: { color: "#fff" }, width: "150px" }}
+                        sx={{ 
+                          input: { color: "black" }, 
+                          label: { color: "#bbb" },
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: '#555',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: '#888',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: '#1976d2',
+                            },
+                          },
+                          width: "150px" 
+                        }}
                       />
                     )
                   )}
                   <Button
                     onClick={handleAddOrUpdateVariant}
                     variant="outlined"
-                    sx={{ color: "#fff", borderColor: "#fff" }}
+                    sx={{ color: "black", borderColor: "#fff" }}
                   >
                     {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
                   </Button>
@@ -993,7 +1176,7 @@ const AddProduct = () => {
                       }}
                       variant="outlined"
                       color="secondary"
-                      sx={{ color: "#fff", borderColor: "#fff" }}
+                      sx={{ color: "black", borderColor: "#fff" }}
                     >
                       Cancel
                     </Button>
@@ -1026,7 +1209,7 @@ const AddProduct = () => {
           
           {/* Product Specifications */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Product Specifications</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -1036,13 +1219,41 @@ const AddProduct = () => {
                     label="Key"
                     value={specKey}
                     onChange={(e) => setSpecKey(e.target.value)}
-                    sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                    sx={{ 
+                      input: { color: "black" }, 
+                      label: { color: "#bbb" },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#888',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1976d2',
+                        },
+                      },
+                    }}
                   />
                   <TextField
                     label="Value"
                     value={specValue}
                     onChange={(e) => setSpecValue(e.target.value)}
-                    sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                    sx={{ 
+                      input: { color: "black" }, 
+                      label: { color: "#bbb" },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#888',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#1976d2',
+                        },
+                      },
+                    }}
                   />
                   <Button
                     onClick={handleAddOrUpdateSpecification}
@@ -1095,7 +1306,7 @@ const AddProduct = () => {
           
           {/* Additional Information */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
               <Typography>Additional Information</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -1105,7 +1316,21 @@ const AddProduct = () => {
                   fullWidth
                   value={warrantyPeriod}
                   onChange={(e) => setWarrantyPeriod(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   helperText="e.g., 1 year, 30 days, lifetime"
                 />
                 <TextField
@@ -1113,7 +1338,21 @@ const AddProduct = () => {
                   fullWidth
                   value={returnPolicy}
                   onChange={(e) => setReturnPolicy(e.target.value)}
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+                  sx={{ 
+                    input: { color: "black" }, 
+                    label: { color: "#bbb" },
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#555',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#888',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
                   helperText="Details about return and refund policy"
                 />
               </Stack>
@@ -1133,6 +1372,7 @@ const AddProduct = () => {
       </Paper>
     </Box>
   );
+
 };
 
 export default AddProduct;

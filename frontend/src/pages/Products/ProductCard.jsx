@@ -651,9 +651,9 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     sx={{
                       bgcolor: theme.palette.background.paper,
                       color: theme.palette.primary.main,
-                      width: 40,
-                      height: 40,
-                      boxShadow: 3,
+                      width: 44,
+                      height: 44,
+                      boxShadow: 4,
                       '&:hover': {
                         bgcolor: theme.palette.primary.main,
                         color: theme.palette.background.paper,
@@ -664,7 +664,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     }}
                     aria-label={`Quick view ${product.name}`}
                   >
-                    <AiOutlineEye size={18} />
+                    <AiOutlineEye size={20} />
                   </IconButton>
                 </Tooltip>
                 
@@ -677,9 +677,9 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     sx={{
                       bgcolor: theme.palette.background.paper,
                       color: theme.palette.primary.main,
-                      width: 40,
-                      height: 40,
-                      boxShadow: 3,
+                      width: 44,
+                      height: 44,
+                      boxShadow: 4,
                       '&:hover': {
                         bgcolor: theme.palette.primary.main,
                         color: theme.palette.background.paper,
@@ -690,7 +690,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     }}
                     aria-label={`Add ${product.name} to cart`}
                   >
-                    <AiOutlineShoppingCart size={18} />
+                    <AiOutlineShoppingCart size={20} />
                   </IconButton>
                 </Tooltip>
               </Box>
@@ -852,7 +852,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                         borderColor: theme.palette.primary.main,
                         backgroundColor: alpha(theme.palette.primary.main, 0.05)
                       },
-                      height: 32
+                      height: 36
                     }}
                     aria-label={`View details for ${product.name}`}
                   >
@@ -865,8 +865,8 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                       sx={{
                         bgcolor: alpha(theme.palette.primary.main, 0.1),
                         color: theme.palette.primary.main,
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
                         '&:hover': {
                           bgcolor: theme.palette.primary.main,
                           color: theme.palette.background.paper,
@@ -877,7 +877,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                       }}
                       aria-label={`Add ${product.name} to cart`}
                     >
-                      <AiOutlineShoppingCart size={16} />
+                      <AiOutlineShoppingCart size={18} />
                     </IconButton>
                   </Tooltip>
                 </Stack>

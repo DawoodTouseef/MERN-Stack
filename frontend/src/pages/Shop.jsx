@@ -569,89 +569,58 @@ const Shop = () => {
         </Paper>
         
         <Grid container spacing={{ xs: 2, md: 4 }}>
-          {/* Enhanced Filter Sidebar */}
-          <Grid item xs={12} md={3}>
-            {isMobile ? (
-              <Drawer
-                anchor="left"
-                open={showFilters}
-                onClose={() => setShowFilters(false)}
-                PaperProps={{
-                  sx: {
-                    width: '85%',
-                    maxWidth: 340,
-                    p: 2,
-                    borderTopRightRadius: 16,
-                    borderBottomRightRadius: 16,
-                    bgcolor: theme.palette.background.paper,
-                    boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)'
-                  }
-                }}
-              >
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                  <Typography variant="h6" fontWeight="700" sx={{ fontSize: '1.25rem' }}>Filters</Typography>
-                  <IconButton onClick={() => setShowFilters(false)}>
-                    <FaTimes />
-                  </IconButton>
-                </Stack>
-                <AdvancedFilterPanel
-                  filters={advancedFilters}
-                  onFiltersChange={handleAdvancedFilterChange}
-                  onClearFilters={handleAdvancedFilterClear}
-                />
-              </Drawer>
-            ) : (
-              <Box sx={{ 
-                position: 'sticky',
-                top: 24,
-                maxHeight: 'calc(100vh - 48px)',
-                overflowY: 'auto',
-                pr: 1.5,
-                '&::-webkit-scrollbar': {
-                  width: 6,
-                  borderRadius: 3
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: 'action.hover',
-                  borderRadius: 3
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'primary.main',
-                  borderRadius: 3,
-                  '&:hover': {
-                    backgroundColor: 'primary.dark'
-                  }
+          {/* Enhanced Filter Sidebar - Only show on desktop/tablet, hidden on mobile by default */}
+          <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Box sx={{ 
+              position: 'sticky',
+              top: 24,
+              maxHeight: 'calc(100vh - 48px)',
+              overflowY: 'auto',
+              pr: 1.5,
+              '&::-webkit-scrollbar': {
+                width: 6,
+                borderRadius: 3
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'action.hover',
+                borderRadius: 3
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'primary.main',
+                borderRadius: 3,
+                '&:hover': {
+                  backgroundColor: 'primary.dark'
                 }
+              }
+            }}>
+              <Box sx={{ 
+                mb: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                <Box sx={{ 
-                  mb: 2,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant="h6" fontWeight="700" sx={{ fontSize: '1.25rem' }}>Filters</Typography>
-                  {activeFiltersCount > 0 && (
-                    <Button 
-                      size="small" 
-                      onClick={handleAdvancedFilterClear}
-                      sx={{ 
-                        textTransform: 'none',
-                        color: theme.palette.error.main,
-                        fontWeight: 600,
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      Clear All
-                    </Button>
-                  )}
-                </Box>
-                <AdvancedFilterPanel
-                  filters={advancedFilters}
-                  onFiltersChange={handleAdvancedFilterChange}
-                  onClearFilters={handleAdvancedFilterClear}
-                />
+                <Typography variant="h6" fontWeight="700" sx={{ fontSize: '1.25rem' }}>Filters</Typography>
+                {activeFiltersCount > 0 && (
+                  <Button 
+                    size="small" 
+                    onClick={handleAdvancedFilterClear}
+                    sx={{ 
+                      textTransform: 'none',
+                      color: theme.palette.error.main,
+                      fontWeight: 600,
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    Clear All
+                  </Button>
+                )}
               </Box>
-            )}
+              <AdvancedFilterPanel
+                filters={advancedFilters}
+                onFiltersChange={handleAdvancedFilterChange}
+                onClearFilters={handleAdvancedFilterClear}
+              />
+            </Box>
           </Grid>
           
           {/* Enhanced Product Grid */}
@@ -966,6 +935,36 @@ const Shop = () => {
           </Grid>
         </Grid>
       </Container>
+      
+      {/* Mobile Filter Drawer */}
+      <Drawer
+        anchor="left"
+        open={showFilters}
+        onClose={() => setShowFilters(false)}
+        PaperProps={{
+          sx: {
+            width: '80%',
+            maxWidth: 300,
+            p: 2,
+            borderTopRightRadius: 16,
+            borderBottomRightRadius: 16,
+            bgcolor: theme.palette.background.paper,
+            boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)'
+          }
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Typography variant="h6" fontWeight="700" sx={{ fontSize: '1.25rem' }}>Filters</Typography>
+          <IconButton onClick={() => setShowFilters(false)}>
+            <FaTimes />
+          </IconButton>
+        </Stack>
+        <AdvancedFilterPanel
+          filters={advancedFilters}
+          onFiltersChange={handleAdvancedFilterChange}
+          onClearFilters={handleAdvancedFilterClear}
+        />
+      </Drawer>
       
       {/* Enhanced Scroll to Top Button */}
       <Zoom in={showScrollTop}>

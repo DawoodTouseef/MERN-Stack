@@ -277,10 +277,10 @@ const SmartSearchSuggestions = ({
           borderRadius: 3,
           p: '2px 4px',
           height: inputHeight,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+          border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
           '&:focus-within': {
             borderColor: theme.palette.primary.main,
-            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`
+            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
           },
           ...sx
         }}
@@ -321,7 +321,9 @@ const SmartSearchSuggestions = ({
             m: 0.5,
             '&:hover': {
               bgcolor: theme.palette.primary.dark
-            }
+            },
+            width: 44,
+            height: 44
           }}
           onClick={handleSearchSubmit}
         >
@@ -700,6 +702,13 @@ const SmartSearchSuggestions = ({
                   <Typography variant="body2" color="text.secondary">
                     No suggestions found for "{searchQuery}"
                   </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={handleSearchSubmit}
+                    sx={{ mt: 2, borderRadius: 2 }}
+                  >
+                    Search Anyway
+                  </Button>
                 </Box>
               )}
 

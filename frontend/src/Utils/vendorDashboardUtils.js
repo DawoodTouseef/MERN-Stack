@@ -31,6 +31,7 @@ export const checkVendorAuth = () => {
  */
 export const testVendorAPI = async (token) => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+  console.log("BASE_URL:", baseUrl)
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'

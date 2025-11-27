@@ -34,7 +34,7 @@ const connectDB = async () => {
 const createDefaultAdmin = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "admin07@gmail.com";
-    let adminPassword = process.env.ADMIN_PASSWORD;
+    let adminPassword = process.env.ADMIN_PASSWORD || "admin123";
     
     // Generate secure random password if not provided
     if (!adminPassword || adminPassword === "admin") {

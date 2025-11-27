@@ -327,6 +327,31 @@ const AdvancedFilterPanel = ({
                 }
               }}
             />
+            {/* Custom Price Inputs */}
+            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+              <TextField
+                label="Min Price"
+                type="number"
+                value={localFilters.minPrice}
+                onChange={(e) => handleFilterChange('minPrice', Number(e.target.value))}
+                size="small"
+                sx={{ width: '100%' }}
+                InputProps={{
+                  startAdornment: '$',
+                }}
+              />
+              <TextField
+                label="Max Price"
+                type="number"
+                value={localFilters.maxPrice}
+                onChange={(e) => handleFilterChange('maxPrice', Number(e.target.value))}
+                size="small"
+                sx={{ width: '100%' }}
+                InputProps={{
+                  startAdornment: '$',
+                }}
+              />
+            </Box>
           </Box>
         </FilterSection>
 
