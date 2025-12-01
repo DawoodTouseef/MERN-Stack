@@ -157,7 +157,7 @@ const NewArrivals = () => {
                       <Typography variant="h6" color="primary.main" fontWeight="bold">
                         ${product.price?.toFixed(2)}
                       </Typography>
-                      {product.pricing?.compareAtPrice > product.price && (
+                      {product.pricing && product.pricing.compareAtPrice && product.pricing.compareAtPrice > product.price && (
                         <>
                           <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
                             ${product.pricing.compareAtPrice.toFixed(2)}

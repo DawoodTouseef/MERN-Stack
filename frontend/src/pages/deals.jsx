@@ -13,7 +13,7 @@ import {
   Alert,
   Link,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FlashOn, LocalOffer, Timer, Percent } from "@mui/icons-material";
 import { useFetchOffersQuery } from "../redux/api/offerApiSlice";
 
@@ -36,9 +36,18 @@ const Deals = () => {
     : activeTab === "featured" 
       ? offers.filter(offer => offer.isFeatured)
       : offers.filter(offer => {
-          if (offer.categories && offer.categories.length > 0) {
-            return offer.categories.some(cat => cat.name.toLowerCase().includes(activeTab));
+          // Check offer type first
+          if (offer.offerType && offer.offerType.toLowerCase().includes(activeTab)) {
+            return true;
           }
+          
+          // Check categories
+          if (offer.categories && offer.categories.length > 0) {
+            return offer.categories.some(cat => 
+              cat && cat.name && cat.name.toLowerCase().includes(activeTab)
+            );
+          }
+          
           return false;
         });
 

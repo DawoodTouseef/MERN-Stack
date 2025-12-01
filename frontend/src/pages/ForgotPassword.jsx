@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Box, TextField, Button, Typography, Paper, CircularProgress } from "@mui/material";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useRequestPasswordMutation } from "../redux/api/usersApiSlice";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [request_password]= useRequestPasswordMutation();
+  const [requestPassword] = useRequestPasswordMutation(); // Fixed variable name
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -20,18 +20,18 @@ const ForgotPassword = () => {
       setLoading(true);
 
       // Send request to backend
-      const data = request_password({email:email}).unwrap()
-      if (data.status===400){
-        console.log(data?.data)
+      const response = await requestPassword({email: email}).unwrap(); // Fixed error handling
+      
+      // Check if response has error property
+      if (response && response.error) {
+        toast.error(response.error.data?.message || "Failed to send reset email.");
+      } else {
+        toast.success(response?.message || "Password reset email sent successfully.");
+        setEmail(""); // Move inside success case
       }
-      else{
-        toast.success(data?.data.message || "Password reset email sent successfully.");
-        
-      }
-      setEmail("");
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Something went wrong. Please try again."
+        error?.data?.message || "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
