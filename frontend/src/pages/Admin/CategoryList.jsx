@@ -22,6 +22,7 @@ import {
   Avatar,
   Switch,
   Stack,
+  FormControlLabel,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 
@@ -130,6 +131,26 @@ const CategoryList = () => {
       }
     } catch (error) {
       toast.error("Category deletion failed. Try again.");
+    }
+  };
+
+  // Toggle category active status
+  const handleToggleActiveStatus = async (category) => {
+    try {
+      const result = await updateCategory({
+        categoryId: category._id,
+        updatedCategory: {
+          isActive: !category.isActive,
+        },
+      }).unwrap();
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Category ${result.isActive ? 'activated' : 'deactivated'}`);
+        refetch();
+      }
+    } catch (error) {
+      toast.error("Failed to update category status.");
     }
   };
 
@@ -268,6 +289,21 @@ const CategoryList = () => {
                     </Box>
                   </Stack>
                   <Box>
+                    <Tooltip title={category.isActive ? "Deactivate" : "Activate"}>
+                      <Switch
+                        checked={category.isActive}
+                        onChange={() => handleToggleActiveStatus(category)}
+                        color="secondary"
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: '#22c55e',
+                          },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                            backgroundColor: '#22c55e',
+                          },
+                        }}
+                      />
+                    </Tooltip>
                     <Tooltip title="Edit">
                       <IconButton
                         onClick={() => openEditModal(category)}

@@ -183,7 +183,7 @@ const Order = () => {
                     <TableRow key={index}>
                       <TableCell>
                         <img
-                          src={item.media[0].url}
+                          src={item.media?.[0]?.url || '/placeholder.png'}
                           alt={item.name}
                           style={{
                             width: "64px",

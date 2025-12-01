@@ -13,78 +13,13 @@ import {
   Alert,
   Link,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FlashOn, LocalOffer, Timer, Percent } from "@mui/icons-material";
+import { useFetchOffersQuery } from "../redux/api/offerApiSlice";
 
 const Deals = () => {
   const [activeTab, setActiveTab] = useState("all");
-
-  // Mock deals data
-  const deals = [
-    {
-      id: 1,
-      title: "Summer Sale - Up to 70% Off",
-      description: "Huge discounts on summer essentials including swimwear, sunglasses, and outdoor gear",
-      discount: "UP TO 70% OFF",
-      originalPrice: 199.99,
-      discountedPrice: 59.99,
-      expiryDate: "2024-07-31",
-      category: "summer",
-      image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=600&h=400",
-      featured: true
-    },
-    {
-      id: 2,
-      title: "Electronics Bundle Deal",
-      description: "Get a free pair of wireless earbuds with any smartphone purchase over $500",
-      discount: "FREE GIFT",
-      category: "electronics",
-      image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&h=400",
-      featured: true
-    },
-    {
-      id: 3,
-      title: "Back to School Special",
-      description: "Save on backpacks, notebooks, and school supplies with our back-to-school collection",
-      discount: "25% OFF",
-      originalPrice: 89.99,
-      discountedPrice: 67.49,
-      expiryDate: "2024-08-31",
-      category: "school",
-      image: "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&w=600&h=400"
-    },
-    {
-      id: 4,
-      title: "Flash Sale - Limited Time",
-      description: "Today only: Extra 30% off already discounted items. Limited quantities available!",
-      discount: "EXTRA 30% OFF",
-      originalPrice: 149.99,
-      discountedPrice: 83.99,
-      expiryDate: "2024-06-15",
-      category: "flash",
-      image: "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?auto=format&fit=crop&w=600&h=400",
-      flash: true
-    },
-    {
-      id: 5,
-      title: "New Arrivals - First 100 Customers",
-      description: "Be among the first 100 to buy our new collection and get 40% off",
-      discount: "40% OFF",
-      originalPrice: 129.99,
-      discountedPrice: 77.99,
-      expiryDate: "2024-06-30",
-      category: "new",
-      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&h=400"
-    },
-    {
-      id: 6,
-      title: "Free Shipping on Orders Over $50",
-      description: "No minimum discount required. Free shipping automatically applied at checkout",
-      discount: "FREE SHIPPING",
-      category: "shipping",
-      image: "https://images.unsplash.com/photo-1591370874773-6702e8f12fd8?auto=format&fit=crop&w=600&h=400"
-    }
-  ];
+  const { data: offers = [], isLoading, isError, error } = useFetchOffersQuery();
 
   const categories = [
     { id: "all", name: "All Deals" },
@@ -97,10 +32,15 @@ const Deals = () => {
   ];
 
   const filteredDeals = activeTab === "all" 
-    ? deals 
+    ? offers 
     : activeTab === "featured" 
-      ? deals.filter(deal => deal.featured)
-      : deals.filter(deal => deal.category === activeTab);
+      ? offers.filter(offer => offer.isFeatured)
+      : offers.filter(offer => {
+          if (offer.categories && offer.categories.length > 0) {
+            return offer.categories.some(cat => cat.name.toLowerCase().includes(activeTab));
+          }
+          return false;
+        });
 
   const formatExpiryDate = (dateString) => {
     const date = new Date(dateString);
@@ -127,6 +67,24 @@ const Deals = () => {
       return `${diffHours} hour${diffHours !== 1 ? 's' : ''} left`;
     }
   };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Loading deals...</Typography>
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Alert severity="error">
+          Error loading deals: {error?.data?.message || "Failed to load deals"}
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -199,7 +157,7 @@ const Deals = () => {
 
         <Grid container spacing={4}>
           {filteredDeals.map((deal) => (
-            <Grid item xs={12} sm={6} md={4} key={deal.id}>
+            <Grid item xs={12} sm={6} md={4} key={deal._id}>
               <Card 
                 sx={{ 
                   height: '100%', 
@@ -215,7 +173,7 @@ const Deals = () => {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={deal.image}
+                  image={deal.image || "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?auto=format&fit=crop&w=600&h=400"}
                   alt={deal.title}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -223,7 +181,7 @@ const Deals = () => {
                     <Typography gutterBottom variant="h6" component="div" fontWeight="bold">
                       {deal.title}
                     </Typography>
-                    {deal.flash && (
+                    {deal.offerType === "flash" && (
                       <Chip 
                         icon={<FlashOn />} 
                         label="Flash Sale" 
@@ -241,34 +199,18 @@ const Deals = () => {
                   <Box sx={{ mb: 2 }}>
                     <Chip 
                       icon={<Percent />} 
-                      label={deal.discount} 
+                      label={`${deal.discountValue}${deal.discountUnit === "percent" ? "%" : ""} OFF`} 
                       color="primary" 
                       sx={{ fontWeight: 'bold' }}
                     />
                   </Box>
                   
-                  {deal.originalPrice && deal.discountedPrice && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Typography variant="body1" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                        ${deal.originalPrice.toFixed(2)}
-                      </Typography>
-                      <Typography variant="h6" color="primary.main" fontWeight="bold">
-                        ${deal.discountedPrice.toFixed(2)}
-                      </Typography>
-                      <Chip 
-                        label={`${Math.round((1 - deal.discountedPrice / deal.originalPrice) * 100)}% OFF`} 
-                        size="small" 
-                        color="success" 
-                      />
-                    </Box>
-                  )}
-                  
-                  {deal.expiryDate && (
+                  {deal.startTime && deal.endTime && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
                       <Timer color="action" />
                       <Typography variant="body2" color="text.secondary">
-                        Expires: {formatExpiryDate(deal.expiryDate)} 
-                        <span style={{ color: '#f57c00', fontWeight: 'bold' }}> ({getTimeRemaining(deal.expiryDate)})</span>
+                        Expires: {formatExpiryDate(deal.endTime)} 
+                        <span style={{ color: '#f57c00', fontWeight: 'bold' }}> ({getTimeRemaining(deal.endTime)})</span>
                       </Typography>
                     </Box>
                   )}

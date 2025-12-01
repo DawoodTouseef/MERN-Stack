@@ -1,7 +1,7 @@
 import Category from "../models/categoryModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import slugify from "slugify";
-
+import { generateCategoryCode,generateUniqueID } from "../utils/codegenerator.js";
 // @desc    Create a new category
 // @route   POST /api/categories
 // @access  Private/Admin
@@ -27,6 +27,7 @@ const createCategory = asyncHandler(async (req, res) => {
     parent: parent || null,
     isActive: isActive !== undefined ? isActive : true,
     user: req.user._id,
+    code: `${generateCategoryCode(name)}-${generateUniqueID()}`,
   });
 
   const saved = await category.save();

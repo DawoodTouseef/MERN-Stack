@@ -10,6 +10,15 @@ let exchangeRateCache = {
   ttl: 60 * 60 * 1000 // 1 hour cache
 };
 
+// Store API configuration
+let apiConfig = {
+  apiKey: process.env.EXCHANGE_API_KEY || "",
+  autoUpdateInterval: 24, // hours
+  isEnabled: true,
+  lastUpdate: null,
+  nextUpdate: null
+};
+
 // Get all currencies - now returns supported currencies without rates
 export const getCurrencies = asyncHandler(async (req, res) => {
   try {
@@ -47,7 +56,10 @@ export const getCurrencyByCode = asyncHandler(async (req, res) => {
 // Create or update currency - only stores metadata, not rates
 export const createOrUpdateCurrency = asyncHandler(async (req, res) => {
   try {
-    const { code, name, symbol, isDefault, isEnabled, region } = req.body;
+    // For PUT requests, code comes from URL params
+    // For POST requests, code comes from request body
+    const code = req.params.code || req.body.code;
+    const { name,rate, symbol, isDefault, isEnabled, region } = req.body;
 
     // Validate required fields
     if (!code || !name || !symbol) {
@@ -65,7 +77,7 @@ export const createOrUpdateCurrency = asyncHandler(async (req, res) => {
       currency.isEnabled = isEnabled !== undefined ? isEnabled : true;
       currency.region = region || currency.region;
       currency.lastUpdated = Date.now();
-      
+      currency.rate = rate;
       const updatedCurrency = await currency.save();
       res.json(updatedCurrency);
     } else {
@@ -74,7 +86,7 @@ export const createOrUpdateCurrency = asyncHandler(async (req, res) => {
         code: code.toUpperCase(),
         name,
         symbol,
-        rate: 1.0, // Default rate, will be fetched from API
+        rate: rate,
         isDefault: isDefault || false,
         isEnabled: isEnabled !== undefined ? isEnabled : true,
         region: region || null
@@ -84,7 +96,8 @@ export const createOrUpdateCurrency = asyncHandler(async (req, res) => {
       res.status(201).json(createdCurrency);
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create or update currency error:", error);
+    res.status(500).json({ message: error.message || "Failed to create or update currency" });
   }
 });
 
@@ -99,13 +112,14 @@ export const deleteCurrency = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Cannot delete the default currency" });
       }
       
-      await currency.remove();
+      await currency.deleteOne();
       res.json({ message: "Currency removed" });
     } else {
       res.status(404).json({ message: "Currency not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Delete currency error:", error);
+    res.status(500).json({ message: error.message || "Failed to delete currency" });
   }
 });
 
@@ -132,7 +146,8 @@ export const setDefaultCurrency = asyncHandler(async (req, res) => {
       res.status(404).json({ message: "Currency not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Set default currency error:", error);
+    res.status(500).json({ message: error.message || "Failed to set default currency" });
   }
 });
 
@@ -148,8 +163,8 @@ const getExchangeRatesFromAPI = async (baseCurrencyCode) => {
       return exchangeRateCache.rates;
     }
     
-    // Get API key from environment
-    const apiKey = process.env.EXCHANGE_API_KEY;
+    // Get API key from config
+    const apiKey = apiConfig.apiKey || process.env.EXCHANGE_API_KEY;
     if (!apiKey) {
       throw new Error("Exchange rate API key not configured");
     }
@@ -160,7 +175,7 @@ const getExchangeRatesFromAPI = async (baseCurrencyCode) => {
       {
         timeout: 5000, // 5 second timeout
         headers: {
-          'User-Agent': 'NexusMart-Ecommerce/1.0'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
       }
     );
@@ -191,22 +206,8 @@ const getExchangeRatesFromAPI = async (baseCurrencyCode) => {
       return exchangeRateCache.rates;
     }
     
-    // Fallback to basic rates if no cache
-    console.log('Using fallback exchange rates');
-    return {
-      'USD': 1,
-      'EUR': 0.85,
-      'GBP': 0.75,
-      'JPY': 110,
-      'CAD': 1.25,
-      'AUD': 1.35,
-      'CHF': 0.92,
-      'CNY': 6.45,
-      'INR': 73.5,
-      'BRL': 5.2,
-      'MXN': 20.0,
-      'SGD': 1.35
-    };
+    // Throw error instead of using fallback rates
+    throw new Error("Failed to fetch exchange rates from API and no cached rates available");
   }
 };
 
@@ -214,7 +215,7 @@ const getExchangeRatesFromAPI = async (baseCurrencyCode) => {
 export const updateExchangeRates = asyncHandler(async (req, res) => {
   try {
     // Get the API key from config
-    const apiKey = process.env.EXCHANGE_API_KEY;
+    const apiKey = apiConfig.apiKey || process.env.EXCHANGE_API_KEY;
     
     if (!apiKey) {
       return res.status(400).json({ message: "Exchange rate API key not configured" });
@@ -229,10 +230,28 @@ export const updateExchangeRates = asyncHandler(async (req, res) => {
     // Refresh cache
     const rates = await getExchangeRatesFromAPI(baseCurrency.code);
     
+    // Update all currency rates in the database
+    const updatePromises = Object.entries(rates).map(async ([code, rate]) => {
+      return await Currency.updateOne(
+        { code: code.toUpperCase() },
+        { rate: rate, lastUpdated: new Date() }
+      );
+    });
+    
+    await Promise.all(updatePromises);
+    
+    // Update API config with last update time
+    apiConfig.lastUpdate = new Date();
+    const nextUpdate = new Date();
+    nextUpdate.setHours(nextUpdate.getHours() + apiConfig.autoUpdateInterval);
+    apiConfig.nextUpdate = nextUpdate;
+    
     res.json({
       message: "Exchange rates updated successfully",
       baseCurrency: baseCurrency.code,
-      ratesCount: Object.keys(rates).length
+      ratesCount: Object.keys(rates).length,
+      lastUpdate: apiConfig.lastUpdate,
+      nextUpdate: apiConfig.nextUpdate
     });
   } catch (error) {
     console.error("Exchange rate update error:", error);
@@ -243,7 +262,7 @@ export const updateExchangeRates = asyncHandler(async (req, res) => {
   }
 });
 
-// Convert amount between currencies using third-party API with enhanced error handling
+// Convert amount between currencies using database rates only
 export const convertCurrency = asyncHandler(async (req, res) => {
   try {
     const { from, to, amount } = req.body;
@@ -258,27 +277,28 @@ export const convertCurrency = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Amount must be a positive number" });
     }
     
-    // Get base currency (usually USD)
-    const baseCurrency = await Currency.findOne({ isDefault: true });
-    if (!baseCurrency) {
-      return res.status(400).json({ message: "No default currency set" });
-    }
+    // Get currencies from database
+    const fromCurrency = await Currency.findOne({ code: from.toUpperCase() });
+    const toCurrency = await Currency.findOne({ code: to.toUpperCase() });
     
-    // Get exchange rates
-    const rates = await getExchangeRatesFromAPI(baseCurrency.code);
-    
-    // Check if currencies are supported
-    if (!rates[from.toUpperCase()]) {
+    // Check if currencies exist in database
+    if (!fromCurrency) {
       return res.status(400).json({ message: `Unsupported currency: ${from}` });
     }
     
-    if (!rates[to.toUpperCase()]) {
+    if (!toCurrency) {
       return res.status(400).json({ message: `Unsupported currency: ${to}` });
     }
     
-    // Convert through base currency with proper rounding
-    const amountInBase = numericAmount / rates[from.toUpperCase()];
-    const convertedAmount = amountInBase * rates[to.toUpperCase()];
+    // Check if rates are available
+    if (!fromCurrency.rate || !toCurrency.rate) {
+      return res.status(400).json({ message: "Exchange rates not available for these currencies" });
+    }
+    
+    // Convert through base currency (USD) with proper rounding
+    // Formula: (amount / fromRate) * toRate
+    const amountInBase = numericAmount / fromCurrency.rate;
+    const convertedAmount = amountInBase * toCurrency.rate;
     
     // Round to 2 decimal places for currency display
     const roundedConvertedAmount = Math.round(convertedAmount * 100) / 100;
@@ -288,7 +308,7 @@ export const convertCurrency = asyncHandler(async (req, res) => {
       to: to.toUpperCase(),
       amount: numericAmount,
       convertedAmount: roundedConvertedAmount,
-      rate: rates[to.toUpperCase()] / rates[from.toUpperCase()]
+      rate: toCurrency.rate / fromCurrency.rate
     });
   } catch (error) {
     console.error("Currency conversion error:", error);
@@ -298,3 +318,107 @@ export const convertCurrency = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// Get API configuration
+export const getApiConfig = asyncHandler(async (req, res) => {
+  res.json(apiConfig);
+});
+
+// Enhanced updateApiConfig to reinitialize scheduled updates when config changes
+export const updateApiConfig = asyncHandler(async (req, res) => {
+  try {
+    const { apiKey, autoUpdateInterval, isEnabled } = req.body;
+    
+    // Validate required fields
+    if (apiKey !== undefined && (typeof apiKey !== 'string' || apiKey.trim() === '')) {
+      return res.status(400).json({ message: "API Key is required and must be a non-empty string" });
+    }
+    
+    if (autoUpdateInterval !== undefined && (typeof autoUpdateInterval !== 'number' || autoUpdateInterval <= 0)) {
+      return res.status(400).json({ message: "Auto-update interval must be a positive number" });
+    }
+    
+    if (isEnabled !== undefined && typeof isEnabled !== 'boolean') {
+      return res.status(400).json({ message: "isEnabled must be a boolean value" });
+    }
+    
+    // Update config values
+    if (apiKey !== undefined) apiConfig.apiKey = apiKey;
+    if (autoUpdateInterval !== undefined) apiConfig.autoUpdateInterval = autoUpdateInterval;
+    if (isEnabled !== undefined) apiConfig.isEnabled = isEnabled;
+    
+    // Reinitialize scheduled updates if interval or enabled status changed
+    if (autoUpdateInterval !== undefined || isEnabled !== undefined) {
+      initializeScheduledUpdates();
+    }
+    
+    res.json({ message: "API configuration updated successfully", config: apiConfig });
+  } catch (error) {
+    console.error("Update API config error:", error);
+    res.status(500).json({ message: error.message || "Failed to update API configuration" });
+  }
+});
+
+// Scheduled exchange rate update function
+export const scheduledExchangeRateUpdate = async () => {
+  try {
+    if (!apiConfig.isEnabled) {
+      console.log("Automatic exchange rate updates are disabled");
+      return;
+    }
+    
+    console.log("Running scheduled exchange rate update...");
+    
+    // Get base currency (usually USD)
+    const baseCurrency = await Currency.findOne({ isDefault: true });
+    if (!baseCurrency) {
+      console.error("No default currency set for scheduled update");
+      return;
+    }
+    
+    // Refresh cache
+    const rates = await getExchangeRatesFromAPI(baseCurrency.code);
+    
+    // Update all currency rates in the database
+    const updatePromises = Object.entries(rates).map(async ([code, rate]) => {
+      return await Currency.updateOne(
+        { code: code.toUpperCase() },
+        { rate: rate, lastUpdated: new Date() }
+      );
+    });
+    
+    await Promise.all(updatePromises);
+    
+    // Update API config with last update time
+    apiConfig.lastUpdate = new Date();
+    const nextUpdate = new Date();
+    nextUpdate.setHours(nextUpdate.getHours() + apiConfig.autoUpdateInterval);
+    apiConfig.nextUpdate = nextUpdate;
+    
+    console.log(`Scheduled exchange rates updated successfully. Next update: ${apiConfig.nextUpdate}`);
+  } catch (error) {
+    console.error("Scheduled exchange rate update error:", error);
+    // Log error but don't stop the scheduled updates
+  }
+};
+
+// Store the current interval ID for clearing/restarting
+let scheduledIntervalId = null;
+
+// Initialize scheduled updates
+const initializeScheduledUpdates = () => {
+  // Clear existing interval if it exists
+  if (scheduledIntervalId) {
+    clearInterval(scheduledIntervalId);
+  }
+  
+  // Set up interval for automatic updates (every 24 hours by default)
+  scheduledIntervalId = setInterval(() => {
+    scheduledExchangeRateUpdate();
+  }, apiConfig.autoUpdateInterval * 60 * 60 * 1000); // Convert hours to milliseconds
+  
+  console.log(`Scheduled exchange rate updates initialized every ${apiConfig.autoUpdateInterval} hours`);
+};
+
+// Initialize on module load
+initializeScheduledUpdates();

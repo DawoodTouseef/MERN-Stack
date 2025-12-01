@@ -74,6 +74,21 @@ export const currencyApiSlice = apiSlice.injectEndpoints({
         body: conversionData,
       }),
     }),
+    
+    // API Configuration endpoints
+    getCurrencyApiConfig: builder.query({
+      query: () => '/api/currencies/config',
+      providesTags: ['CurrencyConfig'],
+    }),
+    
+    updateCurrencyApiConfig: builder.mutation({
+      query: (configData) => ({
+        url: '/api/currencies/config',
+        method: 'PUT',
+        body: configData,
+      }),
+      invalidatesTags: ['CurrencyConfig'],
+    }),
   }),
 });
 
@@ -88,4 +103,6 @@ export const {
   useSetDefaultCurrencyMutation,
   useUpdateExchangeRatesMutation,
   useConvertCurrencyMutation,
+  useGetCurrencyApiConfigQuery,
+  useUpdateCurrencyApiConfigMutation,
 } = currencyApiSlice;

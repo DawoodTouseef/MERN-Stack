@@ -14,7 +14,8 @@ import { useLoginMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { BASE_URL } from "../../redux/constants";
+import DocumentTitle from "react-document-title";
+
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +24,6 @@ const AdminLogin = () => {
 
   const [login, { isLoading }] = useLoginMutation();
   const { userInfo } = useSelector((state) => state.auth);
-  console.log(BASE_URL);
   useEffect(() => {
     if (userInfo?.isAdmin) {
       navigate("/");
@@ -49,6 +49,7 @@ const AdminLogin = () => {
   };
 
   return (
+    <DocumentTitle title="Admin's Login | Nexus Mart" >
     <Grid
       container
       component="main"
@@ -121,6 +122,7 @@ const AdminLogin = () => {
         </Paper>
       </Grid>
     </Grid>
+    </DocumentTitle>
   );
 };
 

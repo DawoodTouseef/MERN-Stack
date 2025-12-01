@@ -11,6 +11,7 @@ import {
   updateUserById,
   verifyVendor,
   rejectVendor,
+  upgradeSellerToVendor,
   requestPasswordReset,
   changePassword
 } from "../controllers/userController.js";
@@ -31,6 +32,11 @@ router
   .route("/profile")
   .get(authenticate, getCurrentUserProfile)
   .put(authenticate, updateCurrentUserProfile);
+
+// Route for upgrading seller to vendor
+router
+  .route("/upgrade-to-vendor")
+  .post(authenticate, upgradeSellerToVendor);
 
 // ADMIN ROUTES 👇
 router

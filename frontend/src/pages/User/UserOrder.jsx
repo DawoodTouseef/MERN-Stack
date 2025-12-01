@@ -73,7 +73,7 @@ const UserOrder = () => {
                       <TableCell>
                         <Avatar
                           variant="rounded"
-                          src={order.orderItems[0]?.media[0].url}
+                          src={order.orderItems[0]?.media?.[0]?.url || '/placeholder.png'}
                           alt={order.orderItems[0]?.name}
                           sx={{ width: 56, height: 56 }}
                         />

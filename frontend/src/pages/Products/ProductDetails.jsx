@@ -30,21 +30,26 @@ import {
   TableBody,
   TableCell,
   TableRow,
+  IconButton,
+  Tooltip,
+  OutlinedInput,
+  InputAdornment,
 } from "@mui/material";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaEye, FaHeart, FaRegHeart } from "react-icons/fa";
 import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
-import HeartIcon from "./HeartIcon";
 import ProductTabs from "./ProductTabs";
 import SimilarProducts from "../../components/SimilarProducts";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import DocumentTitle from "react-document-title";
+import { getVariant, getAvailableOptions, formatVariantAttributes, isVariantInStock, getVariantPrice, getVariantImages, hasVariants, getVariantSku, getVariantShippingDetails } from "../../Utils/variantUtils";
 
 const ProductDetails = () => {
   const { id: productId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
-  const [variant, setVariant] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({}); // For variant selection
+  const [selectedVariant, setSelectedVariant] = useState(null); // Current selected variant
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
@@ -57,6 +62,16 @@ const ProductDetails = () => {
   });
   
   const { userInfo } = useSelector((state) => state.auth);
+  
+  // Update variant when product or selected options change
+  useEffect(() => {
+    if (product && product.variants && product.variants.length > 0) {
+      const variant = getVariant(product, selectedOptions);
+      setSelectedVariant(variant);
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [product, selectedOptions]);
   
   useEffect(() => {
     if (offers && product) {
@@ -87,14 +102,107 @@ const ProductDetails = () => {
   
   const [createReview, { isLoading: loadingProductReview }] = useCreateReviewMutation();
 
+  // Get current product/variant price
+  const getCurrentPrice = () => {
+    if (selectedVariant) {
+      return getVariantPrice(selectedVariant);
+    }
+    return product?.price || 0;
+  };
+
+  // Get current product/variant images
+  const getCurrentImages = () => {
+    if (selectedVariant) {
+      return getVariantImages(selectedVariant, product);
+    }
+    return product?.media?.map(m => m.url) || [];
+  };
+
+  // Get current stock
+  const getCurrentStock = () => {
+    if (selectedVariant) {
+      return selectedVariant.countInStock;
+    }
+    return product?.countInStock || 0;
+  };
+
+  // Check if current selection is in stock
+  const isInStock = () => {
+    if (selectedVariant) {
+      return isVariantInStock(selectedVariant);
+    }
+    return product?.countInStock > 0;
+  };
+
+  // Handle option selection
+  const handleOptionSelect = (optionType, value) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [optionType]: value
+    }));
+  };
+
+  // Reset selection when product changes
+  useEffect(() => {
+    setSelectedOptions({});
+    setSelectedVariant(null);
+  }, [productId]);
+
+  // Add to cart handler
   const addToCartHandler = () => {
-    dispatch(addToCart({ ...product, qty, variant }));
+    // Check if product has variants but no variant is selected
+    if (hasVariants(product) && !selectedVariant) {
+      toast.error("Please select all options before adding to cart");
+      return;
+    }
+    
+    // Prepare cart item with variant information if applicable
+    const cartItem = {
+      ...product,
+      qty,
+      // If we have a variant, include variant-specific information
+      ...(selectedVariant && {
+        _id: `${product._id}-${selectedVariant._id}`, // Unique ID for variant in cart
+        variantId: selectedVariant._id,
+        sku: getVariantSku(selectedVariant),
+        name: `${product.name} (${formatVariantAttributes(selectedVariant)})`,
+        price: getVariantPrice(selectedVariant),
+        media: getVariantImages(selectedVariant, product).map(url => ({ url })),
+        countInStock: selectedVariant.countInStock,
+        selectedOptions: selectedOptions // Store selected options for display in cart
+      })
+    };
+    
+    dispatch(addToCart(cartItem));
     toast.success("Added to cart!", { autoClose: 1800 });
     navigate("/cart");
   };
   
   const addToShippingHandler = () => {
-    dispatch(addToCart({ ...product, qty, variant }));
+    // Check if product has variants but no variant is selected
+    if (hasVariants(product) && !selectedVariant) {
+      toast.error("Please select all options before buying now");
+      return;
+    }
+    
+    // Prepare cart item with variant information if applicable
+    const cartItem = {
+      ...product,
+      qty,
+      // If we have a variant, include variant-specific information
+      ...(selectedVariant && {
+        _id: `${product._id}-${selectedVariant._id}`, // Unique ID for variant in cart
+        variantId: selectedVariant._id,
+        sku: getVariantSku(selectedVariant),
+        name: `${product.name} (${formatVariantAttributes(selectedVariant)})`,
+        price: getVariantPrice(selectedVariant),
+        media: getVariantImages(selectedVariant, product).map(url => ({ url })),
+        countInStock: selectedVariant.countInStock,
+        selectedOptions: selectedOptions // Store selected options for display in cart
+      })
+    };
+    
+    dispatch(addToCart(cartItem));
     navigate("/shipping");
   };
   
@@ -130,6 +238,9 @@ const ProductDetails = () => {
   };
   
   let discountedPrice = calculateDiscountedPrice(product, offers).toFixed(2);
+  
+  // Get available options for the product
+  const availableOptions = product ? getAvailableOptions(product) : { colors: [], sizes: [], storages: [] };
   
   return (
     <DocumentTitle title={`${product?.name || "Product"} - Details`}>
@@ -178,7 +289,7 @@ const ProductDetails = () => {
                     >
                       <CardMedia
                         component="img"
-                        image={product.media?.[0]?.url || "/placeholder.png"}
+                        image={getCurrentImages()[0] || "/placeholder.png"}
                         alt={product.name}
                         sx={{
                           width: "100%",
@@ -196,10 +307,41 @@ const ProductDetails = () => {
                           },
                         }}
                       />
+                      {/* Variant-specific image thumbnails */}
+                      {selectedVariant && getCurrentImages().length > 1 && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{
+                            mt: 2,
+                            bgcolor: "rgba(255,255,255,0.85)",
+                            borderRadius: 2,
+                            p: 0.5,
+                            boxShadow: "0 2px 8px #ec489955",
+                          }}
+                        >
+                          {getCurrentImages().slice(1, 4).map((url, idx) => (
+                            <img
+                              src={url}
+                              alt={`variant-thumb-${idx}`}
+                              key={idx}
+                              style={{
+                                width: 38,
+                                height: 38,
+                                objectFit: "cover",
+                                borderRadius: 6,
+                                border: "1.5px solid #ec4899",
+                                boxShadow: "0 1px 4px #ec489933",
+                                background: "#fff",
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                      )}
                       <Box sx={{ position: "absolute", top: 14, right: 14 }}>
-                        <HeartIcon product={product} />
+                        {/* Heart icon would go here */}
                       </Box>
-                      {product.countInStock === 0 && (
+                      {!isInStock() && (
                         <Chip
                           label="Out of Stock"
                           color="error"
@@ -219,7 +361,7 @@ const ProductDetails = () => {
                       )}
                     </Box>
                     {/* Thumbnails */}
-                    {product.media && product.media.length > 1 && (
+                    {getCurrentImages().length > 1 && (
                       <Stack
                         direction="row"
                         spacing={1}
@@ -231,9 +373,9 @@ const ProductDetails = () => {
                           boxShadow: "0 2px 8px #ec489955",
                         }}
                       >
-                        {product.media.slice(1, 4).map((media, idx) => (
+                        {getCurrentImages().slice(1, 4).map((url, idx) => (
                           <img
-                            src={media.url}
+                            src={url}
                             alt={`thumb-${idx}`}
                             key={idx}
                             style={{
@@ -287,8 +429,8 @@ const ProductDetails = () => {
                         {product.numReviews} ratings
                       </Typography>
                       <Chip
-                        label={product.countInStock > 0 ? "In Stock" : "Out of Stock"}
-                        color={product.countInStock > 0 ? "success" : "error"}
+                        label={isInStock() ? "In Stock" : "Out of Stock"}
+                        color={isInStock() ? "success" : "error"}
                         size="small"
                         sx={{
                           fontWeight: 600,
@@ -306,8 +448,142 @@ const ProductDetails = () => {
                       <br />
                       {product.description}
                     </Typography>
+                    
+                    {/* Variant Selection */}
+                    {hasVariants(product) && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          Select Options:
+                        </Typography>
+                        
+                        {/* Color Selector */}
+                        {availableOptions.colors.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                              Color:
+                            </Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              {availableOptions.colors.map((color) => (
+                                <Chip
+                                  key={color}
+                                  label={color}
+                                  onClick={() => handleOptionSelect('color', color)}
+                                  color={selectedOptions.color === color ? "primary" : "default"}
+                                  variant={selectedOptions.color === color ? "filled" : "outlined"}
+                                  sx={{ 
+                                    cursor: "pointer", 
+                                    mb: 1,
+                                    minWidth: 40,
+                                    height: 36,
+                                    '&:hover': {
+                                      transform: 'scale(1.05)',
+                                      boxShadow: 2
+                                    },
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                />
+                              ))}
+                            </Stack>
+                          </Box>
+                        )}
+                        
+                        {/* Size Selector */}
+                        {availableOptions.sizes.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                              Size:
+                            </Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              {availableOptions.sizes.map((size) => (
+                                <Chip
+                                  key={size}
+                                  label={size}
+                                  onClick={() => handleOptionSelect('size', size)}
+                                  color={selectedOptions.size === size ? "primary" : "default"}
+                                  variant={selectedOptions.size === size ? "filled" : "outlined"}
+                                  sx={{ 
+                                    cursor: "pointer", 
+                                    mb: 1,
+                                    minWidth: 40,
+                                    height: 36,
+                                    '&:hover': {
+                                      transform: 'scale(1.05)',
+                                      boxShadow: 2
+                                    },
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                />
+                              ))}
+                            </Stack>
+                          </Box>
+                        )}
+                        
+                        {/* Storage Selector */}
+                        {availableOptions.storages.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                              Storage:
+                            </Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              {availableOptions.storages.map((storage) => (
+                                <Chip
+                                  key={storage}
+                                  label={storage}
+                                  onClick={() => handleOptionSelect('storage', storage)}
+                                  color={selectedOptions.storage === storage ? "primary" : "default"}
+                                  variant={selectedOptions.storage === storage ? "filled" : "outlined"}
+                                  sx={{ 
+                                    cursor: "pointer", 
+                                    mb: 1,
+                                    minWidth: 40,
+                                    height: 36,
+                                    '&:hover': {
+                                      transform: 'scale(1.05)',
+                                      boxShadow: 2
+                                    },
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                />
+                              ))}
+                            </Stack>
+                          </Box>
+                        )}
+                        
+                        {/* Selected Variant Info */}
+                        {selectedVariant && (
+                          <Box sx={{ mt: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                              Selected: {formatVariantAttributes(selectedVariant)}
+                            </Typography>
+                            <Typography variant="body2">
+                              SKU: {getVariantSku(selectedVariant)}
+                            </Typography>
+                            {selectedVariant.countInStock < 10 && selectedVariant.countInStock > 0 && (
+                              <Typography variant="body2" color="warning.main">
+                                Only {selectedVariant.countInStock} left in stock!
+                              </Typography>
+                            )}
+                            
+                            {/* Shipping Info */}
+                            {getVariantShippingDetails(selectedVariant).weight && (
+                              <Typography variant="body2" sx={{ mt: 1 }}>
+                                Weight: {getVariantShippingDetails(selectedVariant).weight}kg
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                        
+                        {/* Warning when not all options are selected */}
+                        {!selectedVariant && Object.keys(selectedOptions).length > 0 && (
+                          <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                            Please select all options
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                    
                     <Divider sx={{ my: 2 }} />
-                    <MultiCurrencyPriceDisplay product={product} />
+                    <MultiCurrencyPriceDisplay product={{...product, price: getCurrentPrice()}} />
                     {offerpercent.percentage > 0 && (
                       <Typography
                         variant="body2"
@@ -319,6 +595,13 @@ const ProductDetails = () => {
                         }}
                       >
                         Original Price: <MultiCurrencyPriceDisplay product={{...product, price: product.price}} showConversion={false} />
+                      </Typography>
+                    )}
+                    
+                    {/* Variant-specific price display */}
+                    {selectedVariant && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Variant Price: <MultiCurrencyPriceDisplay product={{...product, price: getVariantPrice(selectedVariant)}} showConversion={false} />
                       </Typography>
                     )}
                   </Paper>
@@ -339,15 +622,15 @@ const ProductDetails = () => {
                       <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
                         Buy Now
                       </Typography>
-                      <MultiCurrencyPriceDisplay product={{...product, price: discountedPrice}} />
+                      <MultiCurrencyPriceDisplay product={{...product, price: getCurrentPrice()}} />
                       <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
-                        {product.countInStock > 0 ? (
+                        {isInStock() ? (
                           <span style={{ color: "#22c55e" }}>In Stock</span>
                         ) : (
                           <span style={{ color: "#ef4444" }}>Out of Stock</span>
                         )}
                       </Typography>
-                      {product.countInStock > 0 && (
+                      {isInStock() && (
                         <FormControl fullWidth sx={{ mb: 2 }}>
                           <InputLabel id="qty-label">Quantity</InputLabel>
                           <Select
@@ -357,12 +640,15 @@ const ProductDetails = () => {
                             onChange={(e) => setQty(Number(e.target.value))}
                             sx={{ bgcolor: "#f5f5f5", borderRadius: 2 }}
                           >
-                            {[...Array(product.countInStock).keys()].map((x) => (
+                            {[...Array(Math.min(10, getCurrentStock())).keys()].map((x) => (
                               <MenuItem key={x + 1} value={x + 1}>
                                 {x + 1}
                               </MenuItem>
                             ))}
                           </Select>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            {getCurrentStock()} available
+                          </Typography>
                         </FormControl>
                       )}
                       <Button
@@ -381,7 +667,7 @@ const ProductDetails = () => {
                           fontSize: "1.1rem",
                           py: 1.2,
                         }}
-                        disabled={product.countInStock === 0}
+                        disabled={!isInStock() || (hasVariants(product) && !selectedVariant)}
                         onClick={addToCartHandler}
                       >
                         <FaShoppingCart style={{ marginRight: 8 }} />
@@ -403,7 +689,7 @@ const ProductDetails = () => {
                           fontSize: "1.1rem",
                           py: 1.2,
                         }}
-                        disabled={product.countInStock === 0}
+                        disabled={!isInStock() || (hasVariants(product) && !selectedVariant)}
                         onClick={addToShippingHandler}
                       >
                         <FaShoppingCart style={{ marginRight: 8 }} />

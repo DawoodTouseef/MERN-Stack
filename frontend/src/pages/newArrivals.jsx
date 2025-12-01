@@ -17,96 +17,10 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { NewReleases, LocalFireDepartment, Star } from "@mui/icons-material";
+import { useGetNewProductsQuery } from "../redux/api/productApiSlice";
 
 const NewArrivals = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Mock new arrival products data
-  const newProducts = [
-    {
-      id: 1,
-      name: "Wireless Noise Cancelling Headphones",
-      description: "Premium sound quality with active noise cancellation technology",
-      price: 199.99,
-      originalPrice: 249.99,
-      rating: 4.8,
-      reviewCount: 124,
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&h=600",
-      category: "Electronics",
-      isNew: true,
-      isTrending: true
-    },
-    {
-      id: 2,
-      name: "Smart Fitness Watch",
-      description: "Track your heart rate, sleep, and daily activities with this advanced smartwatch",
-      price: 129.99,
-      rating: 4.6,
-      reviewCount: 89,
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&h=600",
-      category: "Electronics",
-      isNew: true
-    },
-    {
-      id: 3,
-      name: "Organic Cotton T-Shirt",
-      description: "Comfortable and eco-friendly t-shirt made from 100% organic cotton",
-      price: 29.99,
-      originalPrice: 39.99,
-      rating: 4.5,
-      reviewCount: 56,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&h=600",
-      category: "Clothing",
-      isNew: true,
-      isTrending: true
-    },
-    {
-      id: 4,
-      name: "Stainless Steel Water Bottle",
-      description: "Keep your drinks hot or cold for hours with this durable stainless steel bottle",
-      price: 24.99,
-      rating: 4.7,
-      reviewCount: 203,
-      image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=600&h=600",
-      category: "Home & Kitchen",
-      isNew: true
-    },
-    {
-      id: 5,
-      name: "Wireless Charging Pad",
-      description: "Fast wireless charging pad compatible with all Qi-enabled devices",
-      price: 34.99,
-      originalPrice: 49.99,
-      rating: 4.3,
-      reviewCount: 72,
-      image: "https://images.unsplash.com/photo-1606220588911-4a9b6b1f42d9?auto=format&fit=crop&w=600&h=600",
-      category: "Electronics",
-      isNew: true,
-      isTrending: true
-    },
-    {
-      id: 6,
-      name: "Yoga Mat with Carrying Strap",
-      description: "Non-slip eco-friendly yoga mat with convenient carrying strap",
-      price: 39.99,
-      rating: 4.9,
-      reviewCount: 142,
-      image: "https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=600&h=600",
-      category: "Sports & Fitness",
-      isNew: true
-    }
-  ];
-
-  useEffect(() => {
-    // Simulate API call
-    const fetchProducts = setTimeout(() => {
-      setProducts(newProducts);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(fetchProducts);
-  }, []);
+  const { data: products = [], isLoading, isError, error } = useGetNewProductsQuery();
 
   return (
     <Box
@@ -160,7 +74,7 @@ const NewArrivals = () => {
           </Typography>
         </Alert>
 
-        {loading ? (
+        {isLoading ? (
           <Grid container spacing={4}>
             {[...Array(6)].map((_, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
@@ -178,10 +92,14 @@ const NewArrivals = () => {
               </Grid>
             ))}
           </Grid>
+        ) : isError ? (
+          <Alert severity="error">
+            Error loading new arrivals: {error?.data?.message || "Failed to load products"}
+          </Alert>
         ) : (
           <Grid container spacing={4}>
             {products.map((product) => (
-              <Grid item xs={12} sm={6} md={4} key={product.id}>
+              <Grid item xs={12} sm={6} md={4} key={product._id}>
                 <Card 
                   sx={{ 
                     height: '100%', 
@@ -197,7 +115,7 @@ const NewArrivals = () => {
                   <CardMedia
                     component="img"
                     height="250"
-                    image={product.image}
+                    image={product.media?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&h=600"}
                     alt={product.name}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
@@ -206,16 +124,14 @@ const NewArrivals = () => {
                         {product.name}
                       </Typography>
                       <Box>
-                        {product.isNew && (
-                          <Chip 
-                            icon={<NewReleases />} 
-                            label="New" 
-                            color="primary" 
-                            size="small" 
-                            sx={{ mb: 0.5 }}
-                          />
-                        )}
-                        {product.isTrending && (
+                        <Chip 
+                          icon={<NewReleases />} 
+                          label="New" 
+                          color="primary" 
+                          size="small" 
+                          sx={{ mb: 0.5 }}
+                        />
+                        {product.rating >= 4.5 && (
                           <Chip 
                             icon={<LocalFireDepartment />} 
                             label="Trending" 
@@ -233,29 +149,29 @@ const NewArrivals = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <Rating value={product.rating} precision={0.5} size="small" readOnly />
                       <Typography variant="body2" color="text.secondary">
-                        {product.rating} ({product.reviewCount})
+                        {product.rating} ({product.numReviews})
                       </Typography>
                     </Box>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <Typography variant="h6" color="primary.main" fontWeight="bold">
-                        ${product.price.toFixed(2)}
+                        ${product.price?.toFixed(2)}
                       </Typography>
-                      {product.originalPrice && (
-                        <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                          ${product.originalPrice.toFixed(2)}
-                        </Typography>
-                      )}
-                      {product.originalPrice && (
-                        <Chip 
-                          label={`${Math.round((1 - product.price / product.originalPrice) * 100)}% OFF`} 
-                          size="small" 
-                          color="success" 
-                        />
+                      {product.pricing?.compareAtPrice > product.price && (
+                        <>
+                          <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                            ${product.pricing.compareAtPrice.toFixed(2)}
+                          </Typography>
+                          <Chip 
+                            label={`${Math.round((1 - product.price / product.pricing.compareAtPrice) * 100)}% OFF`} 
+                            size="small" 
+                            color="success" 
+                          />
+                        </>
                       )}
                     </Box>
                     
-                    <Chip label={product.category} variant="outlined" size="small" />
+                    <Chip label={product.category?.name || "Uncategorized"} variant="outlined" size="small" />
                   </CardContent>
                   <CardActions sx={{ mt: 'auto', p: 2, pt: 0 }}>
                     <Button 

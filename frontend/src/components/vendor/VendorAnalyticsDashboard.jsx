@@ -6,14 +6,39 @@ import {
   Grid,
   Card,
   CardContent,
+  CardHeader,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Alert,
   Button,
-  CircularProgress
+  CircularProgress,
+  Chip,
+  Avatar,
+  LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Tooltip,
+  IconButton
 } from '@mui/material';
+
+// Icons
+import {
+  Refresh as RefreshIcon,
+  TrendingUp as TrendingUpIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Inventory as InventoryIcon,
+  People as PeopleIcon,
+  AttachMoney as AttachMoneyIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 
 // Lazy load chart components to prevent SSR issues
 const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })));
@@ -21,7 +46,7 @@ const Bar = lazy(() => import('recharts').then(module => ({ default: module.Bar 
 const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })));
 const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })));
 const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })));
-const Tooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
+const TooltipChart = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
 const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })));
 const ResponsiveContainer = lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })));
 const LineChart = lazy(() => import('recharts').then(module => ({ default: module.LineChart })));
@@ -121,10 +146,11 @@ const VendorAnalyticsDashboard = () => {
   const formatInventoryData = () => {
     if (!dashboardData?.performance?.inventory) return [];
     
+    const inventory = dashboardData.performance.inventory;
     return [
-      { name: 'In Stock', value: dashboardData.performance.inventory.inStock || 0 },
-      { name: 'Low Stock', value: dashboardData.performance.inventory.lowStock || 0 },
-      { name: 'Out of Stock', value: dashboardData.performance.inventory.outOfStock || 0 }
+      { name: 'In Stock', value: typeof inventory.inStock === 'number' && !isNaN(inventory.inStock) ? inventory.inStock : 0 },
+      { name: 'Low Stock', value: typeof inventory.lowStock === 'number' && !isNaN(inventory.lowStock) ? inventory.lowStock : 0 },
+      { name: 'Out of Stock', value: typeof inventory.outOfStock === 'number' && !isNaN(inventory.outOfStock) ? inventory.outOfStock : 0 }
     ];
   };
 
@@ -140,14 +166,14 @@ const VendorAnalyticsDashboard = () => {
   };
 
   // Show loading state with more detailed information
-  if ((isDashboardLoading || isSalesLoading || forceRefresh) && !dashboardData) {
+  if ((isDashboardLoading || isSalesLoading || forceRefresh) && !dashboardData && !dashboardError && !salesError) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', p: 3 }}>
         <CircularProgress size={60} thickness={4} />
         <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
           Loading Vendor Dashboard
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
           {isDashboardLoading ? 'Loading dashboard data...' : ''}
           {isSalesLoading ? 'Loading sales analytics...' : ''}
         </Typography>
@@ -156,6 +182,7 @@ const VendorAnalyticsDashboard = () => {
           onClick={handleRefresh}
           sx={{ mt: 2 }}
           disabled={forceRefresh}
+          startIcon={<RefreshIcon />}
         >
           {forceRefresh ? 'Refreshing...' : 'Force Refresh'}
         </Button>
@@ -165,6 +192,7 @@ const VendorAnalyticsDashboard = () => {
 
   // Handle errors with more detailed information
   if (dashboardError || salesError) {
+    console.error('Vendor Dashboard Error:', { dashboardError, salesError });
     return (
       <Box sx={{ p: 3 }}>
         <Alert 
@@ -174,6 +202,7 @@ const VendorAnalyticsDashboard = () => {
               color="inherit" 
               size="small"
               onClick={handleRefresh}
+              startIcon={<RefreshIcon />}
             >
               Retry
             </Button>
@@ -215,6 +244,16 @@ const VendorAnalyticsDashboard = () => {
             </pre>
           </details>
         )}
+        
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Button 
+            variant="contained" 
+            onClick={handleRefresh}
+            startIcon={<RefreshIcon />}
+          >
+            Try Again
+          </Button>
+        </Box>
       </Box>
     );
   }
@@ -230,6 +269,7 @@ const VendorAnalyticsDashboard = () => {
               color="inherit" 
               size="small"
               onClick={handleRefresh}
+              startIcon={<RefreshIcon />}
             >
               Retry
             </Button>
@@ -248,10 +288,9 @@ const VendorAnalyticsDashboard = () => {
 
   // Check if vendor has products - with additional debugging
   const productCount = dashboardData?.products || 0;
-  console.log('Checking product count:', productCount, typeof productCount);
   
   // Additional check to ensure productCount is a valid number
-  const validProductCount = (typeof productCount === 'number' && !isNaN(productCount)) ? productCount : 0;
+  const validProductCount = (typeof productCount === 'number' && !isNaN(productCount) && isFinite(productCount)) ? productCount : 0;
   
   if (validProductCount === 0) {
     return (
@@ -263,6 +302,7 @@ const VendorAnalyticsDashboard = () => {
               color="inherit" 
               size="small"
               onClick={handleRefresh}
+              startIcon={<RefreshIcon />}
             >
               Refresh
             </Button>
@@ -308,6 +348,9 @@ const VendorAnalyticsDashboard = () => {
     </Suspense>
   );
 
+  // Recent orders data
+  const recentOrders = dashboardData.recentOrders || [];
+
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -320,6 +363,7 @@ const VendorAnalyticsDashboard = () => {
             size="small"
             onClick={handleRefresh}
             disabled={isDashboardFetching || isSalesFetching}
+            startIcon={<RefreshIcon />}
           >
             {isDashboardFetching || isSalesFetching ? <CircularProgress size={20} /> : 'Refresh'}
           </Button>
@@ -345,11 +389,14 @@ const VendorAnalyticsDashboard = () => {
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+          <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Revenue
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <AttachMoneyIcon sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Total Revenue
+                </Typography>
+              </Box>
               <Typography variant="h4" fontWeight="bold">
                 ${typeof sales.totalRevenue === 'number' ? sales.totalRevenue.toFixed(2) : '0.00'}
               </Typography>
@@ -362,11 +409,14 @@ const VendorAnalyticsDashboard = () => {
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+          <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Orders
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <ShoppingCartIcon sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Total Orders
+                </Typography>
+              </Box>
               <Typography variant="h4" fontWeight="bold">
                 {typeof sales.totalOrders === 'number' ? sales.totalOrders : 0}
               </Typography>
@@ -379,11 +429,14 @@ const VendorAnalyticsDashboard = () => {
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+          <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Products
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <InventoryIcon sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Products
+                </Typography>
+              </Box>
               <Typography variant="h4" fontWeight="bold">
                 {typeof products.totalProducts === 'number' ? products.totalProducts : validProductCount}
               </Typography>
@@ -395,11 +448,14 @@ const VendorAnalyticsDashboard = () => {
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
+          <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white', height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Customers
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <PeopleIcon sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Customers
+                </Typography>
+              </Box>
               <Typography variant="h4" fontWeight="bold">
                 {typeof customers.total === 'number' ? customers.total : 0}
               </Typography>
@@ -411,15 +467,17 @@ const VendorAnalyticsDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Charts - Only show if data is available */}
-      <Grid container spacing={3}>
+      {/* Charts Section */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Sales Trend Chart */}
         <Grid item xs={12} lg={8}>
           <Card>
+            <CardHeader
+              title="Sales Trend"
+              subheader="Track your revenue and order volume over time"
+              avatar={<TrendingUpIcon />}
+            />
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Sales Trend
-              </Typography>
               {salesChartData && salesChartData.length > 0 ? (
                 <ChartWrapper title="Sales Trend">
                   <ResponsiveContainer width="100%" height={300}>
@@ -427,7 +485,7 @@ const VendorAnalyticsDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip />
+                      <TooltipChart />
                       <Legend />
                       <Line 
                         type="monotone" 
@@ -460,10 +518,12 @@ const VendorAnalyticsDashboard = () => {
         {/* Customer Segments */}
         <Grid item xs={12} md={6} lg={4}>
           <Card>
+            <CardHeader
+              title="Customer Segments"
+              subheader="Distribution of your customer base"
+              avatar={<PeopleIcon />}
+            />
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Customer Segments
-              </Typography>
               {customerSegments && customerSegments.length > 0 ? (
                 <ChartWrapper title="Customer Segments">
                   <ResponsiveContainer width="100%" height={300}>
@@ -482,7 +542,7 @@ const VendorAnalyticsDashboard = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <TooltipChart />
                     </PieChart>
                   </ResponsiveContainer>
                 </ChartWrapper>
@@ -494,14 +554,19 @@ const VendorAnalyticsDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+      </Grid>
+
+      {/* Inventory and Recent Orders Section */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Inventory Status */}
-        <Grid item xs={12} md={6} lg={4}>
+        <Grid item xs={12} md={6}>
           <Card>
+            <CardHeader
+              title="Inventory Status"
+              subheader="Current stock levels across your products"
+              avatar={<InventoryIcon />}
+            />
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Inventory Status
-              </Typography>
               {inventoryData && inventoryData.length > 0 ? (
                 <ChartWrapper title="Inventory Status">
                   <ResponsiveContainer width="100%" height={300}>
@@ -509,7 +574,7 @@ const VendorAnalyticsDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip />
+                      <TooltipChart />
                       <Bar dataKey="value" fill={theme.palette.primary.main} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -519,17 +584,96 @@ const VendorAnalyticsDashboard = () => {
                   <Typography>No inventory data available</Typography>
                 </Box>
               )}
+              
+              {/* Low Stock Alert */}
+              {typeof inventory.lowStock === 'number' && inventory.lowStock > 0 && (
+                <Alert 
+                  severity="warning" 
+                  icon={<WarningIcon />}
+                  sx={{ mt: 2 }}
+                >
+                  <Typography variant="body2">
+                    You have {inventory.lowStock} products with low stock. Consider restocking soon.
+                  </Typography>
+                </Alert>
+              )}
             </CardContent>
           </Card>
         </Grid>
         
-        {/* Top Products */}
-        <Grid item xs={12} lg={8}>
+        {/* Recent Orders */}
+        <Grid item xs={12} md={6}>
           <Card>
+            <CardHeader
+              title="Recent Orders"
+              subheader="Latest orders from your customers"
+              avatar={<ShoppingCartIcon />}
+            />
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Top Selling Products
-              </Typography>
+              {recentOrders && recentOrders.length > 0 ? (
+                <TableContainer component={Paper}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Order ID</TableCell>
+                        <TableCell>Customer</TableCell>
+                        <TableCell align="right">Amount</TableCell>
+                        <TableCell>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {recentOrders.slice(0, 5).map((order) => (
+                        <TableRow key={order._id}>
+                          <TableCell>
+                            <Typography variant="body2" noWrap>
+                              #{order._id.substring(0, 8)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {order.user?.username || 'Anonymous'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" fontWeight="bold">
+                              ${order.totalPrice?.toFixed(2) || '0.00'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={order.isPaid ? 'Paid' : 'Pending'} 
+                              size="small" 
+                              color={order.isPaid ? 'success' : 'warning'} 
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <InfoIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                  <Typography color="text.secondary">
+                    No recent orders found
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Top Products */}
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader
+              title="Top Selling Products"
+              subheader="Your best performing products by revenue"
+              avatar={<TrendingUpIcon />}
+            />
+            <CardContent>
               {products.topProducts && products.topProducts.length > 0 ? (
                 <ChartWrapper title="Top Selling Products">
                   <ResponsiveContainer width="100%" height={300}>
@@ -546,7 +690,7 @@ const VendorAnalyticsDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis type="category" dataKey="name" width={100} />
-                      <Tooltip />
+                      <TooltipChart />
                       <Legend />
                       <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Revenue" />
                       <Bar dataKey="quantity" fill={theme.palette.secondary.main} name="Quantity" />

@@ -25,6 +25,7 @@ import DocumentTitle from "react-document-title";
 import { useMemo, useState } from "react";
 import { useFetchOffersQuery } from "../redux/api/offerApiSlice";
 import CartRecommendations from "../components/CartRecommendations";
+import { formatVariantAttributes, getVariantSku } from "../Utils/variantUtils";
 
 const Cart = () => {
   const theme = useTheme();
@@ -319,7 +320,7 @@ const Cart = () => {
                           {/* Product Info */}
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Link
-                              to={`/product/${item._id}`}
+                              to={`/product/${item.product || item.productId || item._id.split('-')[0]}`}
                               style={{
                                 color: theme.palette.primary.main,
                                 fontWeight: 700,
@@ -337,6 +338,35 @@ const Cart = () => {
                                 </span>
                               </Tooltip>
                             </Link>
+                            
+                            {/* Variant Information */}
+                            {item.variantId && (
+                              <Box sx={{ mb: 1 }}>
+                                <Typography 
+                                  variant="body2" 
+                                  color="text.secondary" 
+                                  sx={{ mb: 0.5 }}
+                                >
+                                  {formatVariantAttributes({ 
+                                    color: item.selectedOptions?.color,
+                                    size: item.selectedOptions?.size,
+                                    storage: item.selectedOptions?.storage
+                                  })}
+                                </Typography>
+                                <Chip 
+                                  label={`SKU: ${item.sku || getVariantSku(item)}`} 
+                                  size="small" 
+                                  variant="outlined" 
+                                  sx={{ 
+                                    height: 20, 
+                                    '& .MuiChip-label': { 
+                                      px: 0.8, 
+                                      fontSize: "0.7rem" 
+                                    } 
+                                  }} 
+                                />
+                              </Box>
+                            )}
                             
                             <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 1.5 }}>
                               {item.brand?.name && (

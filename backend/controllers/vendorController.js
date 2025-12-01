@@ -158,7 +158,32 @@ export const verifyVendor = asyncHandler(async (req, res) => {
         }
       }
       
-      res.json({ message: 'Vendor verified successfully', vendor: updatedVendor });
+      // Return detailed vendor information
+      res.json({ 
+        message: 'Vendor verified successfully', 
+        vendor: {
+          _id: updatedVendor._id,
+          name: updatedVendor.name,
+          email: updatedVendor.email,
+          phone: updatedVendor.phone,
+          businessType: updatedVendor.businessType,
+          taxId: updatedVendor.taxId,
+          address: updatedVendor.address,
+          contactPerson: updatedVendor.contactPerson,
+          bankDetails: updatedVendor.bankDetails,
+          isVerified: updatedVendor.isVerified,
+          isActive: updatedVendor.isActive,
+          createdAt: updatedVendor.createdAt,
+          updatedAt: updatedVendor.updatedAt,
+          user: vendor.user ? {
+            _id: vendor.user._id,
+            username: vendor.user.username,
+            email: vendor.user.email,
+            status: vendor.user.status,
+            vendorVerified: vendor.user.vendorVerified
+          } : null
+        }
+      });
     } else {
       res.status(404).json({ message: 'Vendor not found' });
     }
@@ -189,7 +214,32 @@ export const rejectVendor = asyncHandler(async (req, res) => {
         }
       }
       
-      res.json({ message: 'Vendor rejected successfully', vendor: updatedVendor });
+      // Return detailed vendor information
+      res.json({ 
+        message: 'Vendor rejected successfully', 
+        vendor: {
+          _id: updatedVendor._id,
+          name: updatedVendor.name,
+          email: updatedVendor.email,
+          phone: updatedVendor.phone,
+          businessType: updatedVendor.businessType,
+          taxId: updatedVendor.taxId,
+          address: updatedVendor.address,
+          contactPerson: updatedVendor.contactPerson,
+          bankDetails: updatedVendor.bankDetails,
+          isVerified: updatedVendor.isVerified,
+          isActive: updatedVendor.isActive,
+          createdAt: updatedVendor.createdAt,
+          updatedAt: updatedVendor.updatedAt,
+          user: vendor.user ? {
+            _id: vendor.user._id,
+            username: vendor.user.username,
+            email: vendor.user.email,
+            status: vendor.user.status,
+            vendorVerified: vendor.user.vendorVerified
+          } : null
+        }
+      });
     } else {
       res.status(404).json({ message: 'Vendor not found' });
     }
@@ -207,13 +257,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
     
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
-    console.log('Vendor products count:', products.length);
-    console.log('Vendor products:', products.map(p => ({
-      id: p._id,
-      name: p.name,
-      vendor: p.vendor
-    })));
+
     
     // Get comprehensive vendor performance metrics
     const performance = await VendorAnalyticsService.getVendorPerformance(vendorId, {
@@ -607,6 +651,23 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get vendor details by user ID
+// @route   GET /api/vendors/profile
+// @access  Private/Vendor
+export const getVendorProfile = asyncHandler(async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({ user: req.user._id }).populate('user', 'username email');
+    
+    if (vendor) {
+      res.json(vendor);
+    } else {
+      res.status(404).json({ message: 'Vendor profile not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch vendor profile', error: error.message });
+  }
+});
+
 // @desc    Check if vendor has products (debug endpoint)
 // @route   GET /api/vendors/debug/products
 // @access  Private/Vendor
@@ -633,17 +694,3 @@ export const checkVendorProducts = asyncHandler(async (req, res) => {
   }
 });
 
-export default {
-  getVendors,
-  getVendorById,
-  createVendor,
-  updateVendor,
-  deleteVendor,
-  verifyVendor,
-  rejectVendor,
-  getVendorDashboard,
-  getVendorSalesAnalytics,
-  getVendorProductAnalytics,
-  getVendorCustomerAnalytics,
-  getVendorInventoryAnalytics
-};

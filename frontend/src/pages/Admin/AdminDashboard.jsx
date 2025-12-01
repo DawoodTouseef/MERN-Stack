@@ -30,7 +30,7 @@ import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 import {
   useGetOrdersQuery
 } from "../../redux/api/orderApiSlice";
-
+import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
 
 const StatCard = ({ icon, label, value, color }) => (
   <Paper
@@ -72,6 +72,9 @@ const StatCard = ({ icon, label, value, color }) => (
 );
 
 const AdminDashboard = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  const { selectedCurrency } = useSelector((state) => state.currency);
+  const { data: currencies = [] } = useGetCurrenciesQuery();
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: sales, isLoading } = useGetTotalSalesQuery();
@@ -81,7 +84,6 @@ const AdminDashboard = () => {
   const { data: products, isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
 
-  const { userInfo } = useSelector((state) => state.auth);
   const [chartType, setChartType] = useState("bar");
 
   const [state, setState] = useState({
@@ -149,13 +151,53 @@ const AdminDashboard = () => {
 
   // Extract users array from the response object
   const customers = customersData?.users || [];
-
+  const ordersData = order?.orders || [];
   // Calculate counts based on user roles
   const customersCount = customers.filter((u) => u.role === "customer").length;
   const sellerCount = customers.filter((u) => u.role === "seller").length;
   const vendorsCount = customers.filter((u) => u.role === "vendor").length;
-  const adminCount = customers.filter((u) => u.role === "admin").length;
+  const pendingOrdersCount = ordersData.filter((o) => o.status === "pending").length;
+  const completedOrdersCount = ordersData.filter((o) => o.status === "completed").length;
+  const totalOrdersCount = ordersData.length;
+  // Function to convert amount to selected currency
+  const convertToSelectedCurrency = (amount, fromCurrency = 'USD') => {
+    if (!selectedCurrency || selectedCurrency === fromCurrency) {
+      return amount;
+    }
+    
+    // Find currencies
+    const fromCurrencyObj = currencies.find(c => c.code === fromCurrency);
+    const toCurrencyObj = currencies.find(c => c.code === selectedCurrency);
+    
+    // If we don't have currency data, return original amount
+    if (!fromCurrencyObj || !toCurrencyObj) {
+      return amount;
+    }
+    
+    // Convert using exchange rates
+    // Formula: (amount / fromRate) * toRate
+    const convertedAmount = (amount / fromCurrencyObj.rate) * toCurrencyObj.rate;
+    if (isNaN(convertedAmount)) return 0;
+    return convertedAmount;
+  };
 
+  // Function to get currency symbol
+  const getCurrencySymbol = () => {
+    try {
+      const formatter = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: selectedCurrency || 'USD',
+        currencyDisplay: 'symbol',
+      });
+
+      const parts = formatter.formatToParts(1);
+      const symbol = parts.find(part => part.type === 'currency')?.value;
+      return symbol || (selectedCurrency || 'USD');
+    } catch (err) {
+      return selectedCurrency || 'USD'; // fallback if currency code is invalid
+    }
+  };
+  
   return (
     <>
       <DocumentTitle title="Admin DashBoard | Nexus Mart" />
@@ -195,7 +237,7 @@ const AdminDashboard = () => {
               isLoading ? (
                 <Loader size={24} />
               ) : (
-                `$${sales?.totalSales?.toFixed(2) || 0}`
+                `${getCurrencySymbol()}${convertToSelectedCurrency(sales?.totalSales)?.toFixed(2) || 0}`
               )
             }
             color={theme.palette.secondary.main}
@@ -225,12 +267,6 @@ const AdminDashboard = () => {
             color={theme.palette.info.main}
           />
           <StatCard
-            icon={<FaUsers size={28} />}
-            label="Admins"
-            value={loadingCustomers ? <Loader size={24} /> : adminCount}
-            color={theme.palette.info.main}
-          />
-          <StatCard
             icon={<AiOutlineShoppingCart size={32} />}
             label="All Orders"
             value={loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0}
@@ -242,7 +278,7 @@ const AdminDashboard = () => {
             value={
               isLoading || loadingOrders
                 ? <Loader size={24} />
-                : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
+                : `${getCurrencySymbol()}${convertToSelectedCurrency(orders?.averageOrderValue)?.toFixed(2) || 0}`
             }
             color={theme.palette.warning.main}
           />

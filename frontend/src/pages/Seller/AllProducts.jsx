@@ -11,6 +11,9 @@ import {
   CircularProgress,
   Avatar,
   Chip,
+  Tabs,
+  Tab,
+  
 } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
 import DocumentTitle from "react-document-title";
@@ -21,6 +24,7 @@ const AllProducts = () => {
   const [refreshFlag, setRefreshFlag] = useState(false);
   const [filteredProducts, setfilteredProducts] = useState([]);
   const { userInfo } = useSelector((state) => state.auth);
+  
   // Listen for product add/update/delete events in localStorage
   useEffect(() => {
     const handleStorage = (e) => {
@@ -32,10 +36,12 @@ const AllProducts = () => {
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, [refetch]);
+  
   useEffect(() => {
     const filter=products.filter((p)=>(p.user===userInfo._id));
     setfilteredProducts(filter);
-  }, [products]);
+  }, [products, refreshFlag]);
+  
   // Optionally, trigger refetch on focus (for single tab)
   useEffect(() => {
     const onFocus = () => refetch();

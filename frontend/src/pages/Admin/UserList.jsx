@@ -10,6 +10,7 @@ import {
   useRejectVendorMutation,
   useGetUserDetailsQuery
 } from "../../redux/api/usersApiSlice";
+import DocumentTitle from "react-document-title";
 import { toast } from "react-toastify";
 import {
   Box,
@@ -201,8 +202,9 @@ const UserList = () => {
   };
 
   return (
-    <Box
-      sx={{
+    <DocumentTitle title="User Management | Nexus Mart">
+      <Box
+        sx={{
         minHeight: "100vh",
         background: "linear-gradient(135deg, #e3eeff 0%, #f3e7e9 100%)",
         py: 6,
@@ -892,6 +894,7 @@ const UserList = () => {
         </DialogActions>
       </Dialog>
     </Box>
+    </DocumentTitle>
   );
 };
 

@@ -19,7 +19,8 @@ const categorySchema = new mongoose.Schema(
       maxLength: 256,
     },
     image: {
-      type: String, // URL of category image
+      type: String,
+      required: false,
     },
     parent: {
       type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +39,12 @@ const categorySchema = new mongoose.Schema(
     isApproved:{
       type:Boolean,
       default:false,
-    }
+    },
+    code: {
+      type: String,
+      unique: true,
+      required: true,
+    },
   },
   { timestamps: true }
 );

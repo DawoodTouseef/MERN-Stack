@@ -13,19 +13,7 @@ const userSchema = mongoose.Schema({
   role: { type: String, enum: ["customer", "admin", "vendor", "seller"], default: "customer" },
   status: { type: String, enum: ["active", "inactive", "banned"], default: "active" },
 
-  addresses: [
-    {
-      fullName: String,
-      phone: String,
-      addressLine1: String,
-      addressLine2: String,
-      city: String,
-      state: String,
-      country: String,
-      postalCode: String,
-      isDefault: { type: Boolean, default: false },
-    }
-  ],
+  addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
 
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   recentlyViewed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
@@ -118,7 +106,7 @@ const userSchema = mongoose.Schema({
   backupCodes: [String],
 
   // Account security
-  SellerVerified: { type: Boolean, default: false },
+  UserVerified: { type: Boolean, default: false },
   suspiciousActivity: [{
     type: { type: String, enum: ['login', 'password_change', 'email_change', 'suspicious_order'] },
     details: String,

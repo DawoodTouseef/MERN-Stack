@@ -2,6 +2,7 @@ import Order from "../models/orderModel.js";
 import Product from "../models/productModel.js";
 import { Shipment } from "../models/courierModel.js";
 import notificationManager from "../services/notificationService.js";
+import { findVariantById, hasSufficientStock } from "../utils/variantUtils.js";
 
 // Utility Function
 
@@ -17,21 +18,59 @@ const createOrder = async (req, res) => {
     }
 
     // Fetch product details from the database
-    const itemsFromDB = await Product.find({ _id: { $in: orderItems.map((x) => x._id) } });
+    const itemsFromDB = await Product.find({ _id: { $in: orderItems.map((x) => x.productId || x._id) } });
 
-    const dbOrderItems = orderItems.map((clientItem) => {
-      const dbItem = itemsFromDB.find((p) => p._id.toString() === clientItem._id);
+    const dbOrderItems = [];
+    
+    // Process each order item
+    for (const clientItem of orderItems) {
+      const productId = clientItem.productId || clientItem._id;
+      const dbItem = itemsFromDB.find((p) => p._id.toString() === productId);
+      
       if (!dbItem) {
-        throw new Error(`Product not found: ${clientItem._id}`);
+        throw new Error(`Product not found: ${productId}`);
       }
-      return {
-        name: dbItem.name,
-        qty: clientItem.qty,
-        media: dbItem.media, // Ensure this field is populated
-        price: dbItem.price,
-        product: dbItem._id,
-      };
-    });
+      
+      // Check if this is a variant order
+      if (clientItem.variantId) {
+        // Find the specific variant using utility function
+        const variant = findVariantById(dbItem, clientItem.variantId);
+        
+        if (!variant) {
+          throw new Error(`Variant not found: ${clientItem.variantId}`);
+        }
+        
+        // Check stock for the variant using utility function
+        if (!hasSufficientStock(variant, clientItem.qty)) {
+          throw new Error(`Insufficient stock for variant: ${variant.sku}`);
+        }
+        
+        // Add variant details to order item
+        dbOrderItems.push({
+          name: dbItem.name,
+          qty: clientItem.qty,
+          media: variant.images || dbItem.media, // Use variant images if available
+          price: variant.price,
+          product: dbItem._id,
+          variantId: variant._id,
+          sku: variant.sku,
+          selectedOptions: {
+            color: variant.color,
+            size: variant.size,
+            storage: variant.storage
+          }
+        });
+      } else {
+        // Regular product order (no variant)
+        dbOrderItems.push({
+          name: dbItem.name,
+          qty: clientItem.qty,
+          media: dbItem.media,
+          price: dbItem.price,
+          product: dbItem._id,
+        });
+      }
+    }
 
     const {  itemsPrice ,
         shippingPrice ,
@@ -55,7 +94,16 @@ const createOrder = async (req, res) => {
 
     // Update product stock
     for (const item of dbOrderItems) {
-      await Product.updateOne({ _id: item.product }, { $inc: { countInStock: -item.qty } });
+      if (item.variantId) {
+        // Reduce stock from the specific variant
+        await Product.updateOne(
+          { _id: item.product, "variants._id": item.variantId },
+          { $inc: { "variants.$.countInStock": -item.qty } }
+        );
+      } else {
+        // Reduce stock from the main product
+        await Product.updateOne({ _id: item.product }, { $inc: { countInStock: -item.qty } });
+      }
     }
 
     res.status(201).json(createdOrder);

@@ -15,12 +15,22 @@ import {
   Stack,
   Fade,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl
 } from "@mui/material";
 import { useProfileMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { Link } from "react-router-dom";
-import { Edit, Visibility, VisibilityOff, Save, Close, AssignmentInd } from "@mui/icons-material";
+import { Edit, Visibility, VisibilityOff, Save, Close, AssignmentInd, VerifiedOutlined } from "@mui/icons-material";
 import DocumentTitle from "react-document-title";
+import { useUpgradeToVendorMutation } from "../../redux/api/usersApiSlice";
+import { useGetVendorProfileQuery } from "../../redux/api/vendorApiSlice";
 
 const Profile = () => {
   const [editMode, setEditMode] = useState(false);
@@ -30,11 +40,28 @@ const Profile = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [taxId, setTaxId] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankRoutingNumber, setBankRoutingNumber] = useState("");
+  const [contactPersonName, setContactPersonName] = useState("");
+  const [contactPersonEmail, setContactPersonEmail] = useState("");
 
   const { userInfo } = useSelector((state) => state.auth);
 
   const [updateProfile, { isLoading: loadingUpdateProfile }] =
     useProfileMutation();
+    
+  const [upgradeToVendor, { isLoading: loadingUpgrade }] =
+    useUpgradeToVendorMutation();
+    
+  const { data: vendorData, isLoading: loadingVendorData } = useGetVendorProfileQuery(undefined, {
+    skip: userInfo.role !== "vendor"
+  });
 
   useEffect(() => {
     setUserName(userInfo.username);
@@ -66,11 +93,43 @@ const Profile = () => {
     }
   };
 
+  const handleUpgradeToVendor = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await upgradeToVendor({
+        companyName,
+        phone,
+        address,
+        businessType,
+        taxId,
+        bankAccountNumber,
+        bankRoutingNumber,
+        contactPersonName,
+        contactPersonEmail
+      }).unwrap();
+      
+      toast.success(res.message);
+      setUpgradeDialogOpen(false);
+      // Reset form fields
+      setCompanyName("");
+      setPhone("");
+      setAddress("");
+      setBusinessType("");
+      setTaxId("");
+      setBankAccountNumber("");
+      setBankRoutingNumber("");
+      setContactPersonName("");
+      setContactPersonEmail("");
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
+
   return (
     <DocumentTitle title="Profile | Nexus Mart">
       <Box
         sx={{
-          maxWidth: "600px",
+          maxWidth: "800px",
           margin: "8rem auto",
           padding: { xs: "1rem", md: "2rem" },
           minHeight: "80vh",
@@ -123,6 +182,19 @@ const Profile = () => {
                 {userInfo.username}
               </Typography>
               <Typography color="text.secondary">{userInfo.email}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Role: {userInfo.role}
+              </Typography>
+              {userInfo.role === "seller" && (
+                <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: "block" }}>
+                  Seller Role - Upgrade to Vendor
+                </Typography>
+              )}
+              {userInfo.role === "vendor" && (
+                <Typography variant="caption" color="success.main" sx={{ mt: 1, display: "block" }}>
+                  Vendor Role {vendorData?.isVerified ? "(Verified)" : "(Pending Verification)"}
+                </Typography>
+              )}
             </Box>
           </Stack>
           <Divider sx={{ mb: 3 }} />
@@ -131,12 +203,86 @@ const Profile = () => {
             <Fade in>
               <Box>
                 <Stack spacing={2}>
+                  <Typography variant="h6" fontWeight="bold">
+                    User Information
+                  </Typography>
                   <Typography variant="body1">
                     <strong>Name:</strong> {userInfo.username}
                   </Typography>
                   <Typography variant="body1">
                     <strong>Email:</strong> {userInfo.email}
                   </Typography>
+                  <Typography variant="body1">
+                    <strong>Role:</strong> {userInfo.role}
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>Status:</strong> {userInfo.status}
+                  </Typography>
+                  
+                  {/* Vendor-specific information */}
+                  {userInfo.role === "vendor" && vendorData && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                        Vendor Information
+                      </Typography>
+                      {loadingVendorData ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <Stack spacing={2}>
+                          <Typography variant="body1">
+                            <strong>Company Name:</strong> {vendorData.name}
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Phone:</strong> {vendorData.phone}
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Business Type:</strong> {vendorData.businessType}
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Address:</strong> {vendorData.address?.street}, {vendorData.address?.city}, {vendorData.address?.state} {vendorData.address?.zipCode}, {vendorData.address?.country}
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Contact Person:</strong> {vendorData.contactPerson?.name} ({vendorData.contactPerson?.email})
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Verification Status:</strong> {vendorData.isVerified ? "Verified" : "Pending Verification"}
+                          </Typography>
+                          <Typography variant="body1">
+                            <strong>Active Status:</strong> {vendorData.isActive ? "Active" : "Inactive"}
+                          </Typography>
+                          {vendorData.taxId && (
+                            <Typography variant="body1">
+                              <strong>Tax ID:</strong> {vendorData.taxId}
+                            </Typography>
+                          )}
+                        </Stack>
+                      )}
+                    </Box>
+                  )}
+                  
+                  {/* Seller-specific information */}
+                  {userInfo.role === "seller" && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                        Seller Information
+                      </Typography>
+                      <Typography variant="body1">
+                        As a seller, you can list products for sale. Upgrade to a vendor for more features and capabilities.
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Customer-specific information */}
+                  {userInfo.role === "customer" && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                        Customer Information
+                      </Typography>
+                      <Typography variant="body1">
+                        As a customer, you can browse products, make purchases, and track your orders.
+                      </Typography>
+                    </Box>
+                  )}
                 </Stack>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 4 }}>
                   <Tooltip title="Edit your profile">
@@ -164,6 +310,32 @@ const Profile = () => {
                       Edit Profile
                     </Button>
                   </Tooltip>
+                  {userInfo.role === "seller" && (
+                    <Tooltip title="Upgrade to Vendor">
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: 3,
+                          fontWeight: 700,
+                          px: 4,
+                          boxShadow: 3,
+                          letterSpacing: 1,
+                          fontSize: "1rem",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          "&:hover": {
+                            transform: "scale(1.05)",
+                            boxShadow: 8,
+                          },
+                        }}
+                        startIcon={<VerifiedOutlined />}
+                        onClick={() => setUpgradeDialogOpen(true)}
+                      >
+                        Upgrade to Vendor
+                      </Button>
+                    </Tooltip>
+                  )}
                   <Tooltip title="View your orders">
                     <Button
                       component={Link}
@@ -278,7 +450,31 @@ const Profile = () => {
                         </InputAdornment>
                       ),
                     }}
+                    
                   />
+                  {userInfo.role==="seller" && (
+                      <>
+                      <Button 
+                      variant="contained"
+                      color="primary"
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: 3,
+                        fontWeight: 700,
+                        px: 4,
+                        boxShadow: 2,
+                        letterSpacing: 1,
+                        fontSize: "1rem",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          boxShadow: 6,
+                        },
+                      }}
+                      startIcon={<VerifiedOutlined />}
+                      >Verify Seller</Button>
+                      </>
+                    )}
                   <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
                     <Button
                       type="submit"
@@ -342,7 +538,111 @@ const Profile = () => {
             </Fade>
           )}
         </Paper>
-      </Box>
+        
+        {/* Upgrade to Vendor Dialog */}
+        <Dialog open={upgradeDialogOpen} onClose={() => setUpgradeDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Upgrade to Vendor</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Please provide the following information to upgrade your account from Seller to Vendor. 
+              Your account will need admin approval before becoming active.
+            </Typography>
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Company Name *"
+                variant="outlined"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Phone Number *"
+                variant="outlined"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Address *"
+                variant="outlined"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                multiline
+                rows={3}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Business Type *</InputLabel>
+                <Select
+                  value={businessType}
+                  onChange={(e) => setBusinessType(e.target.value)}
+                  label="Business Type *"
+                  required
+                >
+                  <MenuItem value="Individual">Individual</MenuItem>
+                  <MenuItem value="Partnership">Partnership</MenuItem>
+                  <MenuItem value="Corporation">Corporation</MenuItem>
+                  <MenuItem value="LLC">LLC</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Tax ID"
+                variant="outlined"
+                value={taxId}
+                onChange={(e) => setTaxId(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Bank Account Number"
+                variant="outlined"
+                value={bankAccountNumber}
+                onChange={(e) => setBankAccountNumber(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Bank Routing Number"
+                variant="outlined"
+                value={bankRoutingNumber}
+                onChange={(e) => setBankRoutingNumber(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Contact Person Name *"
+                variant="outlined"
+                value={contactPersonName}
+                onChange={(e) => setContactPersonName(e.target.value)}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Contact Person Email *"
+                variant="outlined"
+                type="email"
+                value={contactPersonEmail}
+                onChange={(e) => setContactPersonEmail(e.target.value)}
+                required
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setUpgradeDialogOpen(false)} color="secondary">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpgradeToVendor} 
+              variant="contained" 
+              color="primary"
+              disabled={loadingUpgrade}
+            >
+              {loadingUpgrade ? <CircularProgress size={24} /> : "Submit for Verification"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+    </Box>
     </DocumentTitle>
   );
 };

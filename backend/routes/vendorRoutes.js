@@ -12,7 +12,8 @@ import {
   getVendorInventoryAnalytics,
   checkVendorProducts,
   verifyVendor,
-  rejectVendor
+  rejectVendor,
+  getVendorProfile
 } from '../controllers/vendorController.js';
 import { authenticate, authorizeVendor, IsAdmin } from '../middlewares/authMiddleware.js';
 
@@ -24,6 +25,9 @@ const router = express.Router();
 // Vendor routes (vendor access)
 router.route('/dashboard')
   .get(authenticate, authorizeVendor, getVendorDashboard);
+
+router.route('/profile')
+  .get(authenticate, authorizeVendor, getVendorProfile);
 
 router.route('/analytics/sales')
   .get(authenticate, authorizeVendor, getVendorSalesAnalytics);

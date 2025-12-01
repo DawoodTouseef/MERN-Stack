@@ -1,305 +1,217 @@
-import asyncHandler from '../middlewares/asyncHandler.js';
-import User from '../models/userModel.js';
-import bcrypt from 'bcryptjs';
-import {
-  generateVerificationToken,
-  generatePasswordResetToken,
-  sendVerificationEmail,
-  sendPasswordResetEmail,
-  sendWelcomeEmail
-} from '../services/emailService.js';
+import asyncHandler from "../middlewares/asyncHandler.js";
+import User from "../models/userModel.js";
+import Auth from "../models/AuthModel.js";
+import bcrypt from "bcryptjs";
+import generateToken from "../utils/createToken.js";
+import { validationResult } from "express-validator";
 
-// @desc    Send email verification
-// @route   POST /api/auth/send-verification
-// @access  Private
-export const sendEmailVerification = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+// Helper function to get client IP
+const getClientIP = (req) => {
+  return (
+    req.headers["x-forwarded-for"] ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    (req.connection.socket ? req.connection.socket.remoteAddress : null)
+  );
+};
 
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
+// Helper function to create auth log
+const createAuthLog = async (userId, action, req, success = true, failureReason = null) => {
+  try {
+    await Auth.create({
+      user: userId,
+      action,
+      ipAddress: getClientIP(req),
+      userAgent: req.get("User-Agent"),
+      success,
+      failureReason,
+      sessionId: req.sessionID,
+    });
+  } catch (error) {
+    console.error("Failed to create auth log:", error);
   }
+};
 
-  if (user.emailVerified) {
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    // Log failed login attempt due to validation errors
+    await createAuthLog(null, "failed_login", req, false, "Validation failed");
+    
     return res.status(400).json({
       success: false,
-      message: 'Email is already verified'
+      message: "Invalid input data",
+      errors: errors.array(),
     });
   }
-
-  // Generate verification token
-  const verificationToken = generateVerificationToken();
-  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-  // Save token to user
-  user.emailVerificationToken = verificationToken;
-  user.emailVerificationExpires = verificationExpires;
-  await user.save();
 
   try {
-    // Send verification email
-    const emailResult = await sendVerificationEmail(
-      user.email,
-      user.username,
-      verificationToken
-    );
+    const user = await User.findOne({ email }).select("+password");
 
-    res.status(200).json({
-      success: true,
-      message: 'Verification email sent successfully',
-      previewUrl: emailResult.previewUrl // Only for development
-    });
-  } catch (error) {
-    // Clear token if email fails
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save();
+    if (user && (await user.matchPassword(password))) {
+      // Log successful login
+      await createAuthLog(user._id, "login", req);
+      
+      generateToken(res, user._id);
 
-    res.status(500);
-    throw new Error('Failed to send verification email');
-  }
-});
-
-// @desc    Verify email
-// @route   POST /api/auth/verify-email
-// @access  Public
-export const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    res.status(400);
-    throw new Error('Verification token is required');
-  }
-
-  const user = await User.findOne({
-    emailVerificationToken: token,
-    emailVerificationExpires: { $gt: Date.now() }
-  });
-
-  if (!user) {
-    res.status(400);
-    throw new Error('Invalid or expired verification token');
-  }
-
-  // Verify email
-  user.emailVerified = true;
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpires = undefined;
-  await user.save();
-
-  // Send welcome email (non-blocking)
-  sendWelcomeEmail(user.email, user.username).catch(error => {
-    console.error('Failed to send welcome email:', error);
-  });
-
-  res.status(200).json({
-    success: true,
-    message: 'Email verified successfully'
-  });
-});
-
-// @desc    Request password reset
-// @route   POST /api/auth/forgot-password
-// @access  Public
-export const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email: email.toLowerCase() });
-
-  if (!user) {
-    // Don't reveal if user exists or not for security
-    return res.status(200).json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent'
-    });
-  }
-
-  // Generate reset token
-  const resetToken = generatePasswordResetToken();
-  const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-  // Save token to user
-  user.passwordResetToken = resetToken;
-  user.passwordResetExpires = resetExpires;
-  await user.save();
-
-  try {
-    // Send password reset email
-    await sendPasswordResetEmail(
-      user.email,
-      user.username,
-      resetToken
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent'
-    });
-  } catch (error) {
-    // Clear token if email fails
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
-
-    res.status(500);
-    throw new Error('Failed to send password reset email');
-  }
-});
-
-// @desc    Reset password
-// @route   POST /api/auth/reset-password
-// @access  Public
-export const resetPassword = asyncHandler(async (req, res) => {
-  const { token, password } = req.body;
-
-  if (!token || !password) {
-    res.status(400);
-    throw new Error('Token and new password are required');
-  }
-
-  const user = await User.findOne({
-    passwordResetToken: token,
-    passwordResetExpires: { $gt: Date.now() }
-  });
-
-  if (!user) {
-    res.status(400);
-    throw new Error('Invalid or expired reset token');
-  }
-
-  // Hash new password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Update password and clear reset token
-  user.password = hashedPassword;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
-  user.loginAttempts = 0; // Reset login attempts
-  user.lockUntil = undefined; // Clear any account locks
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    message: 'Password reset successfully'
-  });
-});
-
-// @desc    Change password (authenticated user)
-// @route   POST /api/auth/change-password
-// @access  Private
-export const changePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    res.status(400);
-    throw new Error('Current password and new password are required');
-  }
-
-  const user = await User.findById(req.user._id);
-
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
-  // Check current password
-  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-
-  if (!isCurrentPasswordValid) {
-    res.status(400);
-    throw new Error('Current password is incorrect');
-  }
-
-  // Hash new password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-  // Update password
-  user.password = hashedPassword;
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    message: 'Password changed successfully'
-  });
-});
-
-// @desc    Resend verification email
-// @route   POST /api/auth/resend-verification
-// @access  Public
-export const resendVerificationEmail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    res.status(400);
-    throw new Error('Email is required');
-  }
-
-  const user = await User.findOne({ email: email.toLowerCase() });
-
-  if (!user) {
-    return res.status(200).json({
-      success: true,
-      message: 'If an account with that email exists and is unverified, a verification email has been sent'
-    });
-  }
-
-  if (user.emailVerified) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email is already verified'
-    });
-  }
-
-  // Generate new verification token
-  const verificationToken = generateVerificationToken();
-  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-  // Save token to user
-  user.emailVerificationToken = verificationToken;
-  user.emailVerificationExpires = verificationExpires;
-  await user.save();
-
-  try {
-    // Send verification email
-    await sendVerificationEmail(
-      user.email,
-      user.username,
-      verificationToken
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'If an account with that email exists and is unverified, a verification email has been sent'
-    });
-  } catch (error) {
-    // Clear token if email fails
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save();
-
-    res.status(500);
-    throw new Error('Failed to send verification email');
-  }
-});
-
-// @desc    Check email verification status
-// @route   GET /api/auth/verification-status
-// @access  Private
-export const getVerificationStatus = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select('emailVerified email');
-
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
-  res.status(200).json({
-    success: true,
-    data: {
-      email: user.email,
-      emailVerified: user.emailVerified
+      res.json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+      });
+    } else {
+      // Log failed login attempt
+      const userId = user ? user._id : null;
+      await createAuthLog(userId, "failed_login", req, false, "Invalid email or password");
+      
+      res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
-  });
+  } catch (error) {
+    // Log failed login attempt due to server error
+    await createAuthLog(null, "failed_login", req, false, "Server error");
+    
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred during login",
+    });
+  }
 });
+
+const registerUser = asyncHandler(async (req, res) => {
+  const { username, email, password } = req.body;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid input data",
+      errors: errors.array(),
+    });
+  }
+
+  try {
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    const user = await User.create({
+      username,
+      email,
+      password,
+    });
+
+    if (user) {
+      // Log successful registration (which includes login)
+      await createAuthLog(user._id, "login", req);
+      
+      generateToken(res, user._id);
+
+      res.status(201).json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Invalid user data",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred during registration",
+    });
+  }
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  try {
+    // Log logout action
+    if (req.user) {
+      await createAuthLog(req.user._id, "logout", req);
+    }
+    
+    res.cookie("jwt", "", {
+      httpOnly: true,
+      expires: new Date(0),
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred during logout",
+    });
+  }
+});
+
+// Get auth logs for a user
+const getUserAuthLogs = asyncHandler(async (req, res) => {
+  try {
+    const logs = await Auth.find({ user: req.user._id })
+      .sort({ timestamp: -1 })
+      .limit(50); // Limit to last 50 logs
+
+    res.json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred while fetching auth logs",
+    });
+  }
+});
+
+// Get all auth logs (admin only)
+const getAllAuthLogs = asyncHandler(async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin only.",
+      });
+    }
+
+    const logs = await Auth.find()
+      .populate("user", "username email role")
+      .sort({ timestamp: -1 })
+      .limit(100); // Limit to last 100 logs
+
+    res.json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred while fetching auth logs",
+    });
+  }
+});
+
+export {
+  loginUser,
+  registerUser,
+  logoutUser,
+  getUserAuthLogs,
+  getAllAuthLogs,
+  createAuthLog,
+};

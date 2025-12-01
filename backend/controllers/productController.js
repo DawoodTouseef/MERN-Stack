@@ -1,12 +1,11 @@
 import asyncHandler from "../middlewares/asyncHandler.js";
 import Product from "../models/productModel.js";
-
+import generateSKU from "../utils/codegenerator.js";
+import { findVariantById } from "../utils/variantUtils.js";
 
 const addProduct = asyncHandler(async (req, res) => {
   try {
-
-    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock, sku, shippingWeight, shippingLength, shippingWidth, shippingHeight, shippingClass, taxProductCode, isTaxable, taxCategory, taxExempt, currency, prices } = req.fields;
-
+    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock,  shippingWeight, shippingLength, shippingWidth, shippingHeight, shippingClass, taxProductCode, isTaxable, taxCategory, taxExempt, currency, prices } = req.fields;
     // Validation
     switch (true) {
       case !name:
@@ -53,10 +52,67 @@ const addProduct = asyncHandler(async (req, res) => {
         const index = parseInt(variantMatch[1]);
         const field = variantMatch[2];
         if (!variantsArray[index]) variantsArray[index] = {};
-        variantsArray[index][field] = req.fields[key];
+        // Handle images array specially
+        if (field === 'images') {
+          // Parse nested images array
+          const imageMatch = key.match(/variants\[(\d+)\]\[images\]\[(\d+)\]/);
+          if (imageMatch) {
+            const imgIndex = parseInt(imageMatch[2]);
+            if (!variantsArray[index].images) variantsArray[index].images = [];
+            variantsArray[index].images[imgIndex] = req.fields[key];
+          }
+        } else {
+          variantsArray[index][field] = req.fields[key];
+        }
       }
     });
 
+    // Clean up variants array - remove empty slots and filter valid variants
+    const cleanVariantsArray = variantsArray
+      .filter(item => item && Object.keys(item).length > 0)
+      .map(variant => {
+        // Clean up images array - remove empty slots
+        if (variant.images) {
+          variant.images = variant.images.filter(img => img !== undefined && img !== null);
+        }
+        return variant;
+      });
+
+    // Generate SKU for each variant
+    const variantsWithSKUs = cleanVariantsArray.map(variant => {
+      // Generate SKU for this variant
+      const variantSKU = generateSKU({
+        brand: brand,
+        category: category,
+        color: variant.color || '',
+        size: variant.size || '',
+        storage: variant.storage || ''
+      });
+      
+      return {
+        ...variant,
+        sku: variantSKU
+      };
+    });
+
+    // Generate SKU based on product attributes
+    // For the main product SKU, we'll use the first variant's attributes if available
+    let sku;
+    if (variantsWithSKUs.length > 0 && variantsWithSKUs[0]) {
+      // Use the first variant's attributes for the main product SKU
+      const firstVariant = variantsWithSKUs[0];
+      sku = firstVariant.sku;
+    } else {
+      // Generate SKU based on basic product attributes
+      sku = generateSKU({
+        brand: brand,
+        category: category,
+        color: '',
+        size: '',
+        storage: ''
+      });
+    }
+    
     const productData = {
       name,
       description,
@@ -69,7 +125,7 @@ const addProduct = asyncHandler(async (req, res) => {
       tags: tags ? (Array.isArray(tags) ? tags : [tags]) : [],
       media: mediaArray.filter(item => item && item.type && item.url), // Ensure valid media entries
       specifications,
-      variants: variantsArray.filter(item => item && Object.keys(item).length > 0), // Ensure valid variants
+      variants: variantsWithSKUs,
       user: req.fields.user,
       countInStock: Number(countInStock),
       sku,
@@ -85,7 +141,6 @@ const addProduct = asyncHandler(async (req, res) => {
       taxCategory,
       taxExempt: taxExempt === 'true',
     };
-
 
     const product = new Product(productData)
     await product.save();
@@ -1516,6 +1571,32 @@ const addVendorResponse = asyncHandler(async (req, res) => {
   }
 });
 
+// Get a specific variant from a product
+const getProductVariant = asyncHandler(async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+    
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    
+    const variant = findVariantById(product, variantId);
+    if (!variant) {
+      return res.status(404).json({ error: "Variant not found" });
+    }
+    
+    res.json({
+      ...variant.toObject(),
+      productName: product.name,
+      productId: product._id
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export {
   addProduct,
   updateProductDetails,
@@ -1537,6 +1618,7 @@ export {
   addVendorResponse,
   getFlashSales,
   getTrendingProducts,
+  getProductVariant
 };
 
 // @desc    Get flash sales products

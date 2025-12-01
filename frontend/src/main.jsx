@@ -41,6 +41,7 @@ import Shipping from "./pages/Orders/Shipping.jsx";
 import PlaceOrder from "./pages/Orders/PlaceOrder.jsx";
 import Order from "./pages/Orders/Order.jsx";
 import OrderList from "./pages/Seller/OrderList.jsx";
+import AdminOrderList from "./pages/Admin/OrderList.jsx";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import Search from "./pages/Search.jsx"
 import AdvancedSearch from "./pages/AdvancedSearch.jsx";
@@ -78,8 +79,8 @@ import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 import UserEditPage from "./pages/Admin/Users.jsx";
 import UserManagement from "./pages/Admin/UserManagement.jsx";
 import VendorManagement from "./pages/Admin/VendorManagement.jsx";
-import TestVendorAPIPage from "./pages/Vendor/TestVendorAPIPage.jsx";
 import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
+import BrandManagement from "./pages/Admin/Brand.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -127,7 +128,6 @@ const router = createBrowserRouter(
       </Route>
       {/** Registered Seller*/}
       <Route path="/seller" element={<SellerRoute />}>
-        <Route path="productlist" element={<ProductList />} />
         <Route path="allproductslist" element={<AllProducts />} />
         <Route path="productlist/:pageNumber" element={<ProductList />} />
         <Route path="product/update/:_id" element={<ProductUpdate />} />
@@ -140,19 +140,19 @@ const router = createBrowserRouter(
           <Route path="vendors" element={<VendorManagement />} />
           <Route path="settings" element={<AdminSettings/>}/>
           <Route path="banner" element={<AdminBannerCarousels/>}/>
+          <Route path="brand" element={<BrandManagement />} />
           <Route path="pages" element={<Pages/>}/>
           <Route path="offer" element={<AdminOffer/>}/>
           <Route path="categorylist" element={<CategoryList />} />
           <Route path="user/edit/:id" element={<UserEditPage />} />
           <Route path="currencies" element={<CurrencyManagement />} />
-          <Route path="productlist" element={<AllProducts />} />
           <Route path="product/add" element={<AddProduct />} />
+          <Route path="productlist" element={<AllProducts />} />
+          <Route path="orderlist" element={<AdminOrderList />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
         <Route path="dashboard" element={<SellerDashBoard />} />
-        <Route path="test-api" element={<TestVendorAPIPage />} />
         <Route path="brand" element={<Brand />} />
-        <Route path="productlist" element={<ProductList />} />
         <Route path="allproductslist" element={<AllProducts />} />
         <Route path="productlist/:pageNumber" element={<ProductList />} />
         <Route path="product/update/:_id" element={<ProductUpdate />} />

@@ -10,10 +10,18 @@ const orderSchema = mongoose.Schema({
       name: { type: String, required: true },
       qty: { type: Number, required: true },
       media: [
-    { type: { type: String, enum: ["image", "video"], default: "image" }, url: String }
-  ],
+        { type: { type: String, enum: ["image", "video"], default: "image" }, url: String }
+      ],
       price: { type: Number, required: true },
       product: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "Product" },
+      // Variant information
+      variantId: { type: mongoose.Schema.Types.ObjectId },
+      sku: { type: String },
+      selectedOptions: {
+        color: { type: String },
+        size: { type: String },
+        storage: { type: String }
+      },
     }
   ],
 

@@ -23,7 +23,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   /* Add background for better contrast on high-resolution screens */
-  background-color: #f8fafc;
+  background-color: #fff0f5; /* Light pink background */
 }
 
 /* Prevent horizontal scrolling */
@@ -31,6 +31,7 @@ body {
   overflow-x: hidden;
   width: 100%;
   min-height: 100vh;
+  background-color: #fff0f5; /* Light pink background */
 }
 
 /* Responsive Typography Improvements */

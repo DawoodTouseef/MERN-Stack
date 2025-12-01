@@ -30,6 +30,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 import DocumentTitle from "react-document-title";
+import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
 
 const StatCard = ({ icon, label, value, color }) => (
   <Paper
@@ -79,7 +80,47 @@ const SellerDashBoard = () => {
   const { data: products, isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
   const { userInfo } = useSelector((state) => state.auth);
+  const { selectedCurrency } = useSelector((state) => state.currency);
+  const { data: currencies = [] } = useGetCurrenciesQuery();
+  
+  // Function to convert amount to selected currency
+  const convertToSelectedCurrency = (amount, fromCurrency = 'USD') => {
+    if (!selectedCurrency || selectedCurrency === fromCurrency) {
+      return amount;
+    }
+    
+    // Find currencies
+    const fromCurrencyObj = currencies.find(c => c.code === fromCurrency);
+    const toCurrencyObj = currencies.find(c => c.code === selectedCurrency);
+    
+    // If we don't have currency data, return original amount
+    if (!fromCurrencyObj || !toCurrencyObj) {
+      return amount;
+    }
+    
+    // Convert using exchange rates
+    // Formula: (amount / fromRate) * toRate
+    const convertedAmount = (amount / fromCurrencyObj.rate) * toCurrencyObj.rate;
+    return convertedAmount;
+  };
+  
+  // Function to get currency symbol
+  const getCurrencySymbol = () => {
+    try {
+      const formatter = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: selectedCurrency || 'USD',
+        currencyDisplay: 'symbol',
+      });
 
+      const parts = formatter.formatToParts(1);
+      const symbol = parts.find(part => part.type === 'currency')?.value;
+      return symbol || (selectedCurrency || 'USD');
+    } catch (err) {
+      return selectedCurrency || 'USD'; // fallback if currency code is invalid
+    }
+  };
+  
   const [chartType, setChartType] = useState("bar");
   const [chartData, setChartData] = useState({
     options: {
@@ -203,7 +244,7 @@ const SellerDashBoard = () => {
               isLoading ? (
                 <Loader size={24} />
               ) : (
-                `$${sales?.totalSales?.toFixed(2) || 0}`
+                `${getCurrencySymbol()}${convertToSelectedCurrency(sales?.totalSales)?.toFixed(2) || 0}`
               )
             }
             color={theme.palette.secondary.main}
@@ -226,7 +267,7 @@ const SellerDashBoard = () => {
             value={
               isLoading || loadingOrders
                 ? <Loader size={24} />
-                : `$${orders?.averageOrderValue?.toFixed(2) || 0}`
+                : `${getCurrencySymbol()}${convertToSelectedCurrency(orders?.averageOrderValue)?.toFixed(2) || 0}`
             }
             color={theme.palette.warning.main}
           />
@@ -282,7 +323,7 @@ const SellerDashBoard = () => {
         </Paper>
 
         <Paper elevation={6} sx={{ p: 4, borderRadius: 4, background: "#fff" }}>
-          <OrderList />
+          <OrderList isAdmin={userInfo?.role === "admin"} />
         </Paper>
       </Box>
     </DocumentTitle>

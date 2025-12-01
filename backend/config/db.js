@@ -3,7 +3,7 @@ import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-const MONGO_URI = process.env.MONGODB_URL || "mongodb://localhost:27017/huxnStors";
+const MONGO_URI = process.env.MONGODB_URL || "mongodb://localhost:27017/eCommerce";
 
 const connectDB = async () => {
   try {

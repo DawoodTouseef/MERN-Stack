@@ -110,11 +110,6 @@ const productSchema = mongoose.Schema({
   price:{type:Number,required:true},
   // Multi-currency pricing
   currency: { type: String, default: "USD" },
-  prices: {
-    type: Map,
-    of: Number,
-    default: {}
-  },
   variants: [
     {
       sku: String,
@@ -128,15 +123,17 @@ const productSchema = mongoose.Schema({
         default: {}
       },
       countInStock: Number,
-      images: [String]
+      images: [String],
+      // Shipping information
+      shippingWeight: { type: Number },
+      shippingLength: { type: Number },
+      shippingWidth: { type: Number },
+      shippingHeight: { type: Number },
+      shippingClass: { type: String },
     }
   ],
   countInStock:{type:Number,required:true},
   quantity:{type:Number,required:true},
-  media: [
-    { type: { type: String, enum: ["image", "video"], default: "image" }, url: String }
-  ],
-
   specifications: mongoose.Schema.Types.Mixed,
   tags: [String],
   warrantyPeriod: String,
@@ -148,7 +145,6 @@ const productSchema = mongoose.Schema({
   countryOfOrigin: { type: String }, // Optional: for international rules
 
   // New fields for tax and shipping
-  sku: { type: String },
   isTaxable: { type: Boolean, default: true },
   taxCategory: { type: String },
   taxExempt: { type: Boolean, default: false },
@@ -161,7 +157,7 @@ const productSchema = mongoose.Schema({
   shippingClass: { type: String },
 
   user: { type: ObjectId, required: true, ref: "User" },
-  vendor: { type: ObjectId, ref: "Vendor" }, // Add vendor reference
+  vendor: { type: ObjectId, ref: "Vendor" },
 }, { timestamps: true });
 
 // Add index for vendor field

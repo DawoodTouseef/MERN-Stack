@@ -12,6 +12,15 @@ export const vendorApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Vendor'],
     }),
     
+    // Vendor profile endpoint
+    getVendorProfile: builder.query({
+      query: () => ({
+        url: `${VENDORS_URL}/profile`,
+      }),
+      keepUnusedDataFor: 5,
+      providesTags: ['Vendor'],
+    }),
+    
     // Vendor analytics endpoints
     getVendorSalesAnalytics: builder.query({
       query: ({ startDate, endDate, groupBy }) => {
@@ -153,6 +162,7 @@ export const vendorApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetVendorDashboardQuery,
+  useGetVendorProfileQuery,
   useGetVendorSalesAnalyticsQuery,
   useGetVendorProductAnalyticsQuery,
   useGetVendorCustomerAnalyticsQuery,

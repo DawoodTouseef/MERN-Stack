@@ -25,7 +25,7 @@ import AnalyticsRoutes from './routes/analyticsRoutes.js';
 import TestRoutes from './routes/testRoutes.js';
 import BannerRoutes from "./routes/bannerRoutes.js";
 import OfferRoutes from './routes/offerRoutes.js'
-import authRoutes from './routes/authRoutes.js';
+import authenticationRoutes from './routes/authenticationRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
@@ -103,7 +103,7 @@ app.use(generalLimiter);
 
 // Routes with specific rate limiting
 app.use("/api/users", userRoutes);
-app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/auth", authLimiter, authenticationRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/products", productQARoutes);

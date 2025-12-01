@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import AccessibilityToolbar from "./components/AccessibilityToolbar";
 import PerformanceMonitor from "./components/PerformanceMonitor";
+import DocumentTitle from "react-document-title";
 
 const App = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -41,7 +42,9 @@ const App = () => {
   };
 
   return (
-    <AccessibilityProvider>
+    <>
+    <DocumentTitle title="Nexus Mart">
+      <AccessibilityProvider>
       <>
         <ErrorBoundary>
           <Box
@@ -51,7 +54,7 @@ const App = () => {
               minHeight: "100vh",
               margin: 0,
               padding: 0,
-              bgcolor: "#f9fafb",
+              bgcolor: "#fff0f5", // Light pink background
               position: "relative",
               width: "100%",
               maxWidth: "100vw",
@@ -89,7 +92,7 @@ const App = () => {
               flexDirection: "column",
               margin: 0,
               padding: 0,
-              bgcolor: "#ffffff",
+              bgcolor: "#fff0f5", // Light pink background
               boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
               filter: isInactiveVendor ? "blur(6px)" : "none",
               pointerEvents: isInactiveVendor ? "none" : "auto",
@@ -144,12 +147,12 @@ const App = () => {
               </Box>
             )}
           </Box>
-          <PWAInstallBanner />
-          <AccessibilityToolbar />
-          <PerformanceMonitor />
         </ErrorBoundary>
       </>
     </AccessibilityProvider>
+
+    </DocumentTitle>
+    </>
   );
 };
 

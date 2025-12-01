@@ -1,14 +1,14 @@
 import Message from "../../components/Message";
 import Loader from "../../components/Loader";
 import { Link } from "react-router-dom";
-import { useGetOrdersQuery, useDeleteOrderMutation } from "../../redux/api/orderApiSlice";
+import { useGetOrdersQuery, useDeleteOrderMutation, useGetMyOrdersQuery } from "../../redux/api/orderApiSlice";
 import { styled } from '@mui/material/styles';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button,
   CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide,
-  Chip, Tooltip, Box, Typography, Avatar, Stack
+  Chip, Tooltip, Box, Typography, Avatar, Stack, Grid, Card, CardContent
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "react-toastify";
 import * as React from 'react';
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -16,6 +16,12 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import CancelIcon from "@mui/icons-material/Cancel";
 import InfoIcon from "@mui/icons-material/Info";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PendingIcon from "@mui/icons-material/Pending";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import { useSelector } from "react-redux";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -76,12 +82,107 @@ const getPaymentChip = (status) => {
   }
 };
 
-const OrderList = () => {
-  const { data: orders = [], isLoading, error, refetch } = useGetOrdersQuery();
+// Status card component for order statistics
+const StatusCard = ({ title, count, icon, color, bgColor }) => (
+  <Card 
+    sx={{ 
+      bgcolor: bgColor, 
+      borderRadius: 3, 
+      boxShadow: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
+    }}
+  >
+    <CardContent>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h6" sx={{ color: color, fontWeight: 600 }}>
+            {title}
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mt: 1 }}>
+            {count}
+          </Typography>
+        </Box>
+        <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
+          {icon}
+        </Avatar>
+      </Box>
+    </CardContent>
+  </Card>
+);
+
+const OrderList = ({ isAdmin = false }) => {
+  // Get user info from Redux store
+  const { userInfo } = useSelector((state) => state.auth);
+  
+  // Use different hooks based on user role
+  const { 
+    data: allOrders = [], 
+    isLoading: isLoadingAll, 
+    error: errorAll, 
+    refetch: refetchAll 
+  } = useGetOrdersQuery({}, { skip: !isAdmin });
+  
+  const { 
+    data: myOrders = [], 
+    isLoading: isLoadingMy, 
+    error: errorMy, 
+    refetch: refetchMy 
+  } = useGetMyOrdersQuery({}, { skip: isAdmin });
+  
+  // Determine which orders to display
+  const orders = isAdmin ? allOrders : myOrders;
+  const isLoading = isAdmin ? isLoadingAll : isLoadingMy;
+  const error = isAdmin ? errorAll : errorMy;
+  const refetch = isAdmin ? refetchAll : refetchMy;
+  
   const [deleteOrder, { isLoading: isDeleting }] = useDeleteOrderMutation();
   const [deletingId, setDeletingId] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  
+  // Calculate order statistics
+  const orderStats = useMemo(() => {
+    if (!orders || orders.length === 0) return {
+      pending: 0,
+      completed: 0,
+      cod: 0,
+      online: 0,
+      total: 0
+    };
+
+    return orders.reduce((stats, order) => {
+      // Count pending orders (not delivered)
+      if (order.orderStatus !== "Delivered") {
+        stats.pending += 1;
+      }
+      
+      // Count completed orders (delivered)
+      if (order.orderStatus === "Delivered") {
+        stats.completed += 1;
+      }
+      
+      // Count COD orders
+      if (order.paymentMethod === "Cash on Delivery") {
+        stats.cod += 1;
+      }
+      
+      // Count online payment orders
+      if (order.paymentMethod !== "Cash on Delivery") {
+        stats.online += 1;
+      }
+      
+      return stats;
+    }, {
+      pending: 0,
+      completed: 0,
+      cod: 0,
+      online: 0,
+      total: orders.length
+    });
+  }, [orders]);
+
   const handleDialogOpen = (orderId) => {
     setSelectedOrderId(orderId);
     setDialogOpen(true);
@@ -108,11 +209,52 @@ const OrderList = () => {
 
   return (
     <>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h5" fontWeight={700} color="primary.main" sx={{ mb: 2, letterSpacing: 1 }}>
-          All Orders
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight={700} color="primary.main" sx={{ mb: 3, letterSpacing: 1 }}>
+          {isAdmin ? "Order Management" : "My Orders"}
         </Typography>
+        
+        {/* Status Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatusCard 
+              title="Pending Orders" 
+              count={orderStats.pending} 
+              icon={<PendingIcon />} 
+              color="#ff9800" 
+              bgColor="#2d2d2d" 
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatusCard 
+              title="Completed Orders" 
+              count={orderStats.completed} 
+              icon={<CheckCircleIcon />} 
+              color="#4caf50" 
+              bgColor="#2d2d2d" 
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatusCard 
+              title="COD Orders" 
+              count={orderStats.cod} 
+              icon={<AttachMoneyIcon />} 
+              color="#f44336" 
+              bgColor="#2d2d2d" 
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatusCard 
+              title="Online Payments" 
+              count={orderStats.online} 
+              icon={<CreditCardIcon />} 
+              color="#2196f3" 
+              bgColor="#2d2d2d" 
+            />
+          </Grid>
+        </Grid>
       </Box>
+      
       {isLoading ? (
         <Loader />
       ) : error ? (

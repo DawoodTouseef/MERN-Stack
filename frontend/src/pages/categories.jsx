@@ -24,7 +24,7 @@ const fadeInUp = {
 
 const Categories = () => {
   const { data: categories, isLoading, isError, error } = useFetchCategoriesQuery();
-
+  
   return (
     <Box sx={{ maxWidth: "1200px", mx: "auto", mt: 6, px: 2 }}>
       <Typography

@@ -237,12 +237,23 @@ const VendorManagement = () => {
   // Handle verification/rejection
   const handleVerificationAction = async () => {
     try {
+      let result;
       if (verificationDialog.action === 'verify') {
-        await verifyVendor(verificationDialog.vendor._id).unwrap();
-        alert('Vendor verified successfully!');
+        result = await verifyVendor(verificationDialog.vendor._id).unwrap();
+        alert(`Vendor verified successfully!
+
+Company: ${result.vendor.name}
+Tax ID: ${result.vendor.taxId || 'N/A'}
+Address: ${result.vendor.address?.street}, ${result.vendor.address?.city}, ${result.vendor.address?.state} ${result.vendor.address?.zipCode}
+Contact Person: ${result.vendor.contactPerson?.name} (${result.vendor.contactPerson?.email})`);
       } else if (verificationDialog.action === 'reject') {
-        await rejectVendor(verificationDialog.vendor._id).unwrap();
-        alert('Vendor rejected successfully!');
+        result = await rejectVendor(verificationDialog.vendor._id).unwrap();
+        alert(`Vendor rejected successfully!
+
+Company: ${result.vendor.name}
+Tax ID: ${result.vendor.taxId || 'N/A'}
+Address: ${result.vendor.address?.street}, ${result.vendor.address?.city}, ${result.vendor.address?.state} ${result.vendor.address?.zipCode}
+Contact Person: ${result.vendor.contactPerson?.name} (${result.vendor.contactPerson?.email})`);
       }
       refetch();
       closeVerificationDialog();
@@ -451,6 +462,7 @@ const VendorManagement = () => {
   }
 
   return (
+    <>
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" fontWeight="bold" color="primary.main">
@@ -756,6 +768,88 @@ const VendorManagement = () => {
                 : `Are you sure you want to reject ${verificationDialog.vendor?.name}? This will deactivate their account.`}
             </Typography>
             <Divider sx={{ my: 2 }} />
+            
+            {/* Vendor Information Display */}
+            {verificationDialog.vendor && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Vendor Details
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Company Name</Typography>
+                    <Typography variant="body1">{verificationDialog.vendor.name}</Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Email</Typography>
+                    <Typography variant="body1">{verificationDialog.vendor.email}</Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Phone</Typography>
+                    <Typography variant="body1">{verificationDialog.vendor.phone}</Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Business Type</Typography>
+                    <Typography variant="body1">{verificationDialog.vendor.businessType}</Typography>
+                  </Grid>
+                  
+                  {verificationDialog.vendor.taxId && (
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" color="textSecondary">Tax ID</Typography>
+                      <Typography variant="body1">{verificationDialog.vendor.taxId}</Typography>
+                    </Grid>
+                  )}
+                  
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="textSecondary">Address</Typography>
+                    <Typography variant="body1">
+                      {verificationDialog.vendor.address?.street}<br />
+                      {verificationDialog.vendor.address?.city}, {verificationDialog.vendor.address?.state} {verificationDialog.vendor.address?.zipCode}<br />
+                      {verificationDialog.vendor.address?.country}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Contact Person</Typography>
+                    <Typography variant="body1">
+                      {verificationDialog.vendor.contactPerson?.name}<br />
+                      {verificationDialog.vendor.contactPerson?.email}<br />
+                      {verificationDialog.vendor.contactPerson?.phone}
+                    </Typography>
+                  </Grid>
+                  
+                  {verificationDialog.vendor.bankDetails && (
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" color="textSecondary">Bank Details</Typography>
+                      <Typography variant="body1">
+                        {verificationDialog.vendor.bankDetails.accountName && `Account: ${verificationDialog.vendor.bankDetails.accountName}`}<br />
+                        {verificationDialog.vendor.bankDetails.bankName && `Bank: ${verificationDialog.vendor.bankDetails.bankName}`}<br />
+                        {verificationDialog.vendor.bankDetails.accountNumber && `Account #: ${verificationDialog.vendor.bankDetails.accountNumber}`}<br />
+                        {verificationDialog.vendor.bankDetails.routingNumber && `Routing #: ${verificationDialog.vendor.bankDetails.routingNumber}`}
+                      </Typography>
+                    </Grid>
+                  )}
+                  
+                  {verificationDialog.vendor.user && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="textSecondary">Associated User</Typography>
+                      <Typography variant="body1">
+                        Username: {verificationDialog.vendor.user.username}<br />
+                        Email: {verificationDialog.vendor.user.email}<br />
+                        Status: {verificationDialog.vendor.user.status}
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            )}
+            
+            <Divider sx={{ my: 2 }} />
+            
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <Badge
                 overlap="circular"
@@ -829,6 +923,8 @@ const VendorManagement = () => {
         </DialogActions>
       </Dialog>
     </Box>
+    
+    </>
   );
 };
 

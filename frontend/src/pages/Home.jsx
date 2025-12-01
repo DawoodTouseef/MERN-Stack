@@ -25,7 +25,6 @@ import ResponsiveProductGrid from "../components/ResponsiveProductGrid";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import SellerDashBoard from "./Seller/SellerDashboard";
 import VendorDashboard from "./Vendor/vendorDashboard";
-import PageTitle from "../components/PageTitle";
 import { useFetchBannersQuery} from "../redux/api/bannerApiSlice";
 import {useFetchOffersQuery} from "../redux/api/offerApiSlice";
 import PersonalizedHomepage from "../components/PersonalizedHomepage";

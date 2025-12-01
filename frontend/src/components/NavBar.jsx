@@ -29,6 +29,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import { Money } from "@mui/icons-material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import PersonIcon from "@mui/icons-material/Person";
@@ -203,25 +204,28 @@ const NavBar = ({
     if (userInfo) {
       if (userInfo.role === "admin") {
         return [
-          { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
           { label: "Users", icon: <PeopleIcon />, path: "/admin/userlist" },
           { label: "Categories", icon: <CategoryIcon />, path: "/admin/categorylist" },
-          { label: "Products", icon: <InventoryIcon />, path: "/admin/productlist" },
+          { label: "Inventory", icon: <InventoryIcon />, path: "/admin/productlist" },
           { label: "Banners", icon: <StoreIcon />, path: "/admin/banner" },
+          { label: "Brands", icon: <SellIcon />, path: "/admin/brand" },
+          { label: "Offers", icon: <DashboardIcon />, path: "/admin/offer" },
         ];
     }
 
     if (userInfo.role === "seller") {
       return [
-        { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
-        { label: "Products", icon: <InventoryIcon />, path: "/seller/allproductslist" },
+        { label: "Inventory", icon: <InventoryIcon />, path: "/seller/allproductslist" },
         { label: "Orders", icon: <ReceiptIcon />, path: "/seller/orderlist" },
       ];
     }
 
     if (userInfo.role === "vendor") {
       return [
-        { label: "Brand", icon: <SellIcon />, path: "/vendor/brand" },
+  
+        { label: "Inventory", icon: <InventoryIcon />, path: "/vendor/allproductslist" },
+        { label: "Orders", icon: <ReceiptIcon />, path: "/vendor/orderlist" },
+
       ];
     }
 
@@ -239,15 +243,18 @@ const NavBar = ({
     
     const baseItems = [
       { label: "Profile", icon: <PersonIcon />, path: "/profile" },
-      { label: "Orders", icon: <ReceiptIcon />, path: "/orders" },
+      
     ];
-    
     if (userInfo.role === "admin") {
-      baseItems.unshift({ label: "Admin Dashboard", icon: <DashboardIcon />, path: "/" });
-    } else if (userInfo.role === "seller") {
-      baseItems.unshift({ label: "Seller Dashboard", icon: <DashboardIcon />, path: "/" });
-    } else if (userInfo.role === "vendor") {
-      baseItems.unshift({ label: "Vendor Dashboard", icon: <DashboardIcon />, path: "/vendor/dashboard" });
+      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" })
+      baseItems.push({
+        label: "Currencies",
+        icon: <Money />,
+        path: "/admin/currencies",
+      });
+    }
+    else{
+      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/orders" })
     }
     
     baseItems.push({ label: "Logout", icon: <LogoutIcon />, action: handleLogout });
@@ -466,7 +473,9 @@ const NavBar = ({
             </Typography>
           </Box>
 
-          {/* Search Bar - Desktop */}
+          {userInfo && userInfo.role!=="admin" &&(
+            <>
+            {/* Search Bar - Desktop */}
           {location.pathname !== "/admin/login"  && !isMobile && (
             <Box sx={{ 
               flex: { md: 2 }, 
@@ -561,7 +570,7 @@ const NavBar = ({
           )}
 
           {/* Mobile Search Bar */}
-          { location.pathname !== "/admin/login"  && isMobile && mobileSearchOpen && (
+          { location.pathname !== "/admin/login"   && isMobile && mobileSearchOpen && (
             <Box sx={{ 
               position: 'absolute',
               top: 0,
@@ -609,6 +618,8 @@ const NavBar = ({
             </Box>
           )}
 
+            </>
+          )}
           {/* Navigation & User Actions */}
           {!isMobile && (
             <Box
@@ -662,7 +673,7 @@ const NavBar = ({
                         ml: 2, 
                         width: 44, 
                         height: 44,
-                        border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                        border: "none",
                         transition: "all 0.3s ease",
                         "&:hover": {
                           transform: "scale(1.05)",
@@ -677,7 +688,7 @@ const NavBar = ({
                           width: 36, 
                           height: 36,
                           bgcolor: 'primary.main',
-                          color: 'white'
+                          color: 'white',
                         }} 
                       />
                     </IconButton>

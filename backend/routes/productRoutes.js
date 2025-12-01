@@ -24,6 +24,7 @@ import {
   addVendorResponse,
   getFlashSales,
   getTrendingProducts,
+  getProductVariant
 } from "../controllers/productController.js";
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
 import { searchLimiter } from "../middlewares/rateLimitMiddleware.js";
@@ -57,6 +58,9 @@ router
   .get(fetchProductById)
   .put(authenticate, authorizeVendor, formidable(), updateProductDetails)
   .delete(authenticate, authorizeVendor, removeProduct);
+
+// Product variant route
+router.get('/:productId/variants/:variantId', getProductVariant);
 
 router.route("/filtered-products").post(filterProducts);
 

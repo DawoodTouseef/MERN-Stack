@@ -208,7 +208,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 )}
                 <CardMedia
                   component="img"
-                  image={product.media?.[0]?.url || "/placeholder.jpg"}
+                  image={product.media?.[0]?.url || product.variants[0]?.images[0]}
                   alt={product.name}
                   onLoad={() => setImageLoaded(true)}
                   sx={{

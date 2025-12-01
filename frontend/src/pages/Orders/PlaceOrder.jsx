@@ -1,41 +1,37 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import Message from "../../components/Message";
-import ProgressSteps from "../../components/ProgressSteps";
-import Loader from "../../components/Loader";
-import { useCreateOrderMutation, usePayOrderMutation, useGetPaypalClientIdQuery } from "../../redux/api/orderApiSlice";
-import { clearCartItems } from "../../redux/features/cart/cartSlice";
+import { Link, useNavigate } from "react-router-dom";
+import { useCreateOrderMutation } from "../../redux/api/orderApiSlice";
+import { useGetPaypalClientIdQuery } from "../../redux/api/orderApiSlice";
+import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
+import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import { toast } from "react-toastify";
 import {
   Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
+  Typography,
+  CircularProgress,
   Button,
-  Divider,
   Grid,
-  Stack,
+  Divider,
   Chip,
 } from "@mui/material";
-import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
-import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
+import Message from "../../components/Message";
+import Loader from "../../components/Loader";
+import { formatVariantAttributes, getVariantSku } from "../../Utils/variantUtils";
+
 const PlaceOrder = () => {
   const navigate = useNavigate();
-  const cart = useSelector((state) => state.cart);
-  const currency = useSelector((state) => state.currency.selectedCurrency);
-  const [createOrder, { isLoading, error }] = useCreateOrderMutation();
-  const [payOrder] = usePayOrderMutation();
-  const { data: paypal, isLoading: loadingPayPal, error: errorPayPal } = useGetPaypalClientIdQuery();
   const dispatch = useDispatch();
 
-  const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
-    
+  const cart = useSelector((state) => state.cart);
+  const currency = useSelector((state) => state.currency.selectedCurrency);
+  const price = useSelector((state) => state.currency.price);
+
+  const [createOrder, { isLoading, error }] = useCreateOrderMutation();
+  const { data: paypal } = useGetPaypalClientIdQuery();
+  const { data: offers } = useFetchOffersQuery();
+  
   const [isPaid, setIsPaid] = useState(false); // Track payment status
   const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
 
@@ -45,21 +41,23 @@ const PlaceOrder = () => {
       navigate("/shipping");
     }
   }, [cart.shippingAddress, navigate]);
+  
   const getCurrencySymbol = () => {
-            try {
-              const formatter = new Intl.NumberFormat('en', {
-                style: 'currency',
-                currency: currency,
-                currencyDisplay: 'symbol',
-              });
-        
-              const parts = formatter.formatToParts(1);
-              const symbol = parts.find(part => part.type === 'currency')?.value;
-              return symbol || currency;
-            } catch (err) {
-              return currency; // fallback if currency code is invalid
-            }
-          };
+    try {
+      const formatter = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: currency,
+        currencyDisplay: 'symbol',
+      });
+
+      const parts = formatter.formatToParts(1);
+      const symbol = parts.find(part => part.type === 'currency')?.value;
+      return symbol || currency;
+    } catch (err) {
+      return currency; // fallback if currency code is invalid
+    }
+  };
+  
   // Load PayPal script if payment method is PayPal
   useEffect(() => {
     if (cart.paymentMethod === "PayPal" && paypal?.clientId) {
@@ -103,163 +101,133 @@ const PlaceOrder = () => {
     }
 
     try {
+      // Prepare order items with variant information
+      const orderItems = cart.cartItems.map(item => ({
+        // For variants, send productId and variantId
+        ...(item.variantId ? {
+          productId: item._id.split('-')[0], // Extract product ID from variant ID
+          variantId: item.variantId,
+          sku: item.sku || getVariantSku(item),
+          qty: item.qty
+        } : {
+          // For regular products
+          productId: item._id,
+          qty: item.qty
+        })
+      }));
 
       const res = await createOrder({
-        orderItems: cart.cartItems,
+        orderItems,
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
-        itemsPrice: cart.itemsPrice ,
-        shippingPrice: cart.shippingPrice ,
+        itemsPrice: cart.itemsPrice,
+        shippingPrice: cart.shippingPrice,
         taxPrice: cart.taxPrice,
-        totalPrice: cart.totalPrice ,
+        totalPrice: cart.totalPrice,
       }).unwrap();
-      dispatch(clearCartItems());
+
+      // Clear cart
+      dispatch({ type: "cart/clearCartItems" });
       navigate(`/order/${res._id}`);
-    } catch (error) {
-      toast.error(error?.data?.message || error.error || error);
+    } catch (err) {
+      toast.error(err?.data?.message || err.error || "Failed to place order");
     }
   };
-
-  const calculateDiscountedPrice = (product, offers) => {
-  if (!product || !product.price) return 0; // Return 0 if product or price is undefined
-  if (!offers || offers.length === 0) return product.price; // Return original price if no offers
-
-  let discountedPrice = product.price;
-
-  // Iterate through all offers to find applicable discounts
-  offers.forEach((offer) => {
-    const isProductInOffer =
-      offer.products.some((p) => p._id === product._id) ||
-      offer.categories.some((c) => c._id === product.category) ||
-      (offer.brand && offer.brand._id === product.brand);
-
-    if (isProductInOffer) {
-      if (offer.discountUnit === "percent" && offer.endTime !== Date()) {
-        discountedPrice = Math.min(
-          discountedPrice,
-          product.price - product.price * (offer.discountValue / 100)
-        );
-      } else if (offer.discountUnit === "flat") {
-        discountedPrice = Math.min(
-          discountedPrice,
-          product.price - offer.discountValue
-        );
-      }
-    }
-  });
-
-  return discountedPrice;
-};
-  
-  const discountPrice = (p) => {
-    return calculateDiscountedPrice(p,offers)
-  };
-  
-  const shipping = cart.shippingAddress || {};
-  const addressLine = `${shipping.street || ""}, ${shipping.city || ""}, ${
-    shipping.state || ""
-  } ${shipping.postalCode || ""}, ${shipping.country || ""}`;
 
   return (
     <>
-      <ProgressSteps step1 step2 step3 step4 />
-
-      <Box sx={{ maxWidth: "1200px", mx: "auto", mt: 8 }}>
-        {cart.cartItems.length === 0 ? (
-          <Message>Your cart is empty</Message>
-        ) : (
-          <TableContainer component={Paper} sx={{ borderRadius: 3, mb: 4 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Image</TableCell>
-                  <TableCell>Product</TableCell>
-                  <TableCell align="center">Quantity</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>Total</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {cart.cartItems.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <img
-                        src={item.media[0].url}
-                        alt={item.name}
-                        style={{
-                          width: 64,
-                          height: 64,
-                          objectFit: "cover",
-                          borderRadius: 8,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to={`/product/${item.product}`}
-                        style={{
-                          textDecoration: "none",
-                          color: "#6366f1",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {item.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell align="center">{item.qty}</TableCell>
-                    <TableCell>{getCurrencySymbol()}{discountPrice(item)}</TableCell>
-                    <TableCell>{getCurrencySymbol()}{(item.qty * discountPrice(item)).toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-            background: "linear-gradient(135deg, #fff 70%, #f3f4f6 100%)",
-          }}
-        >
-          <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, color: "#6366f1" }}>
-            Order Summary
-          </Typography>
+      <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
+          Place Order
+        </Typography>
+        <Paper elevation={3} sx={{ p: 3, borderRadius: 4 }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                Shipping Address
+            {/* Shipping Info */}
+            <Grid item xs={12} md={8}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Shipping
               </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Address:</strong> {addressLine}
+              <Typography>
+                <strong>Address:</strong> {cart.shippingAddress?.street}, {cart.shippingAddress?.city},{" "}
+                {cart.shippingAddress?.state}, {cart.shippingAddress?.country} -{" "}
+                {cart.shippingAddress?.postalCode}
               </Typography>
-              <Chip
-                label={shipping.label || "Delivery"}
-                color={shipping.isDefault ? "success" : "default"}
-                sx={{
-                  mt: 1,
-                  fontWeight: 600,
-                  fontSize: "0.9rem",
-                  borderRadius: "999px",
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="h6" sx={{ mb: 2 }}>
                 Payment Method
               </Typography>
-              <Typography variant="body2">
+              <Typography>
                 <strong>Method:</strong> {cart.paymentMethod}
               </Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                Price Details
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Order Items
               </Typography>
-              <Stack spacing={1}>
+              {cart.cartItems.map((item) => (
+                <Box
+                  key={item._id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: "1px solid #eee",
+                  }}
+                >
+                  <img
+                    src={item.media?.[0]?.url}
+                    alt={item.name}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                      marginRight: 16,
+                    }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Link
+                      to={`/product/${item.product || item.productId || item._id.split('-')[0]}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <Typography variant="body1" fontWeight="bold">
+                        {item.name}
+                      </Typography>
+                    </Link>
+                    
+                    {/* Variant Information */}
+                    {item.variantId && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          {formatVariantAttributes({ 
+                            color: item.selectedOptions?.color,
+                            size: item.selectedOptions?.size,
+                            storage: item.selectedOptions?.storage
+                          })}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                          SKU: {item.sku || getVariantSku(item)}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    <Typography variant="body2">
+                      {item.qty} x {getCurrencySymbol()}{(item.price * price).toFixed(2)} ={" "}
+                      {getCurrencySymbol()}{(item.qty * item.price * price).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Grid>
+
+            {/* Order Summary */}
+            <Grid item xs={12} md={4}>
+              <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Order Summary
+                </Typography>
                 <Typography variant="body2">
                   <strong>Items:</strong> {getCurrencySymbol()}{Number(cart.itemsPrice || 0).toFixed(2)}
                 </Typography>
@@ -269,7 +237,7 @@ const PlaceOrder = () => {
                 <Typography variant="body2" fontWeight="bold">
                   <strong>Total:</strong> {getCurrencySymbol()}{Number(cart.totalPrice || 0).toFixed(2)}
                 </Typography>
-              </Stack>
+              </Paper>
             </Grid>
           </Grid>
           <Divider sx={{ my: 3 }} />

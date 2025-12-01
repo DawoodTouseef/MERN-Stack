@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import createToken from "../utils/createToken.js";
 import Token from "../models/tokenModel.js";
 import { randomBytes } from "crypto";
+import { createAuthLog } from "./authController.js";
 
 // Create new user (Register)
 const createUser = asyncHandler(async (req, res) => {
@@ -84,6 +85,9 @@ const createUser = asyncHandler(async (req, res) => {
     vendorProfile = await vendor.save();
   }
   
+  // Log successful registration
+  await createAuthLog(savedUser._id, "login", req);
+  
   createToken(res, savedUser._id);
 
   // Include vendor profile in response if it exists
@@ -104,6 +108,9 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
+    // Log failed login attempt due to missing credentials
+    await createAuthLog(null, "failed_login", req, false, "Missing email or password");
+    
     res.status(400);
     throw new Error("Please provide email and password");
   }
@@ -111,6 +118,9 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
+    // Log failed login attempt due to user not found
+    await createAuthLog(null, "failed_login", req, false, "User not found");
+    
     res.status(404);
     throw new Error("User not found");
   }
@@ -118,6 +128,9 @@ const loginUser = asyncHandler(async (req, res) => {
   // Check password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
+    // Log failed login attempt due to invalid password
+    await createAuthLog(user._id, "failed_login", req, false, "Invalid password");
+    
     // Optionally, increment loginAttempts here and lock account after threshold
     res.status(401);
     throw new Error("Invalid password");
@@ -125,6 +138,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // For vendors, check if they are verified
   if (user.role === "vendor" && !user.vendorVerified) {
+    // Log failed login attempt due to unverified vendor
+    await createAuthLog(user._id, "failed_login", req, false, "Vendor not verified");
+    
     res.status(401);
     throw new Error("Vendor account is not verified yet. Please contact admin.");
   }
@@ -135,6 +151,9 @@ const loginUser = asyncHandler(async (req, res) => {
   user.lockUntil = undefined;
   await user.save();
 
+  // Log successful login
+  await createAuthLog(user._id, "login", req);
+  
   createToken(res, user._id);
 
   res.status(200).json(user);
@@ -142,6 +161,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // Logout user (clear cookie)
 const logoutCurrentUser = asyncHandler(async (req, res) => {
+  // Log logout action
+  if (req.user) {
+    await createAuthLog(req.user._id, "logout", req);
+  }
+  
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
@@ -247,9 +271,9 @@ const updateCurrentUserProfile = asyncHandler(async (req, res) => {
       ? req.body.newsletterSubscribed
       : user.newsletterSubscribed;
   
-  user.SellerVerified =
-    req.body.SellerVerified !== undefined
-      ? req.body.SellerVerified
+  user.UserVerified =
+    req.body.UserVerified !== undefined
+      ? req.body.UserVerified
       : false;
   if (req.body.password) {
     const salt = await bcrypt.genSalt(10);
@@ -393,6 +417,88 @@ const rejectVendor = asyncHandler(async (req, res) => {
 
 const bcryptSalt = 10;
 
+// Upgrade seller to vendor
+const upgradeSellerToVendor = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    // Check if user is a seller
+    if (user.role !== "seller") {
+      res.status(400);
+      throw new Error("Only sellers can upgrade to vendors");
+    }
+
+    // Get vendor information from request body
+    const {
+      companyName,
+      phone,
+      address,
+      businessType,
+      taxId,
+      bankAccountNumber,
+      bankRoutingNumber,
+      contactPersonName,
+      contactPersonEmail
+    } = req.body;
+
+    // Validate required fields
+    if (!companyName || !phone || !address || !businessType || !contactPersonName || !contactPersonEmail) {
+      res.status(400);
+      throw new Error("Please provide all required vendor information");
+    }
+
+    // Update user role to vendor
+    user.role = "vendor";
+    user.vendorVerified = false; // Vendors need to be verified by admin
+    user.status = "inactive"; // Vendors are inactive until verified
+    
+    const updatedUser = await user.save();
+
+    // Create vendor profile
+    const vendor = new Vendor({
+      name: companyName,
+      email: user.email,
+      phone,
+      address: {
+        street: address,
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "USA"
+      },
+      businessType,
+      taxId: taxId || "",
+      bankDetails: {
+        accountNumber: bankAccountNumber || "",
+        routingNumber: bankRoutingNumber || ""
+      },
+      contactPerson: {
+        name: contactPersonName,
+        email: contactPersonEmail
+      },
+      user: user._id,
+      isVerified: false,
+      isActive: false
+    });
+
+    const vendorProfile = await vendor.save();
+
+    res.status(200).json({
+      message: "Seller upgraded to vendor successfully. Awaiting admin verification.",
+      user: updatedUser,
+      vendor: vendorProfile
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -469,6 +575,7 @@ export {
   updateUserById,
   verifyVendor,
   rejectVendor,
+  upgradeSellerToVendor,
   requestPasswordReset,
   changePassword
 };

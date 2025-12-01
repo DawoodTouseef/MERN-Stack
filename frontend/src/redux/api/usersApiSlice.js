@@ -30,6 +30,14 @@ export const userApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    // New endpoint for upgrading seller to vendor
+    upgradeToVendor: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/upgrade-to-vendor`,
+        method: "POST",
+        body: data,
+      }),
+    }),
     getUsers: builder.query({
       query: (params) => {
         const { search, role, status, sortBy, sortOrder, page, limit } = params || {};
@@ -120,5 +128,6 @@ export const {
   useRequestPasswordMutation,
   useChangePasswordMutation,
   useVerifyVendorMutation,
-  useRejectVendorMutation
+  useRejectVendorMutation,
+  useUpgradeToVendorMutation
 } = userApiSlice;

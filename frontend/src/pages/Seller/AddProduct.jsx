@@ -66,11 +66,9 @@ const AddProduct = () => {
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
   const [stock, setStock] = useState("");
-  const [sku, setSku] = useState("");
   const [tags, setTags] = useState([]);
   const [variants, setVariants] = useState([]);
   const [variantForm, setVariantForm] = useState({
-    sku: "",
     color: "",
     size: "",
     storage: "",
@@ -78,6 +76,9 @@ const AddProduct = () => {
     countInStock: "",
     images: [],
   });
+  
+  // State for variant image uploads
+  const [variantImageFiles, setVariantImageFiles] = useState([]);
   
   // Currency state
   const [currency, setCurrency] = useState("USD");
@@ -307,6 +308,133 @@ const AddProduct = () => {
     }
   };
 
+  const uploadVariantImageHandler = async (e, variantIndex = null) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      toast.error("No files selected.");
+      return;
+    }
+    
+    if (files.length > 5) {
+      toast.error("You can upload a maximum of 5 images per variant.");
+      return;
+    }
+    
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append("image", files[i]);
+    }
+    
+    try {
+      const res = await uploadProductImage(formData).unwrap();
+      toast.success(res.message);
+      
+      if (variantIndex !== null) {
+        // Update specific variant
+        const updatedVariants = [...variants];
+        const variantImages = updatedVariants[variantIndex].images || [];
+        updatedVariants[variantIndex].images = [...variantImages, ...res.images];
+        setVariants(updatedVariants);
+        
+        // Update variant image files state
+        const updatedVariantImageFiles = [...variantImageFiles];
+        if (!updatedVariantImageFiles[variantIndex]) {
+          updatedVariantImageFiles[variantIndex] = [];
+        }
+        updatedVariantImageFiles[variantIndex] = [...updatedVariantImageFiles[variantIndex], ...files];
+        setVariantImageFiles(updatedVariantImageFiles);
+      } else {
+        // Update variant form (for new variants)
+        setVariantForm(prev => ({
+          ...prev,
+          images: [...prev.images, ...res.images]
+        }));
+      }
+    } catch (error) {
+      console.error("Error uploading variant images:", error);
+      toast.error(error?.data?.message || error.error || "Failed to upload images");
+    }
+  };
+
+  const deleteVariantImageHandler = async (imagePath, variantIndex) => {
+    try {
+      // Only delete from server if it's a server-stored image (starts with /uploads)
+      if (imagePath && imagePath.startsWith('/uploads')) {
+        await deleteProductImage({ imagePath });
+      }
+      
+      if (variantIndex !== null) {
+        // Update specific variant
+        const updatedVariants = [...variants];
+        const variantImages = updatedVariants[variantIndex].images || [];
+        updatedVariants[variantIndex].images = variantImages.filter(img => img !== imagePath);
+        setVariants(updatedVariants);
+        
+        // Update variant image files state
+        const updatedVariantImageFiles = [...variantImageFiles];
+        if (updatedVariantImageFiles[variantIndex]) {
+          updatedVariantImageFiles[variantIndex] = updatedVariantImageFiles[variantIndex].filter((_, i) => 
+            updatedVariants[variantIndex].images[i] !== imagePath
+          );
+        }
+        setVariantImageFiles(updatedVariantImageFiles);
+      } else {
+        // Update variant form (for new variants)
+        setVariantForm(prev => ({
+          ...prev,
+          images: prev.images.filter(img => img !== imagePath)
+        }));
+      }
+      
+      toast.success("Variant image deleted successfully");
+    } catch (err) {
+      toast.error("Failed to delete variant image");
+    }
+  };
+
+  const moveVariantImage = (variantIndex, imageIndex, direction) => {
+    if (variantIndex !== null) {
+      const updatedVariants = [...variants];
+      const variantImages = [...(updatedVariants[variantIndex].images || [])];
+      const targetIndex = imageIndex + direction;
+      
+      if (targetIndex >= 0 && targetIndex < variantImages.length) {
+        [variantImages[imageIndex], variantImages[targetIndex]] = [
+          variantImages[targetIndex],
+          variantImages[imageIndex]
+        ];
+        updatedVariants[variantIndex].images = variantImages;
+        setVariants(updatedVariants);
+        
+        // Update variant image files state
+        const updatedVariantImageFiles = [...variantImageFiles];
+        if (updatedVariantImageFiles[variantIndex]) {
+          const variantFiles = [...updatedVariantImageFiles[variantIndex]];
+          [variantFiles[imageIndex], variantFiles[targetIndex]] = [
+            variantFiles[targetIndex],
+            variantFiles[imageIndex]
+          ];
+          updatedVariantImageFiles[variantIndex] = variantFiles;
+          setVariantImageFiles(updatedVariantImageFiles);
+        }
+      }
+    } else {
+      // Handle moving images in the variant form
+      const newImages = [...variantForm.images];
+      const targetIndex = imageIndex + direction;
+      if (targetIndex >= 0 && targetIndex < newImages.length) {
+        [newImages[imageIndex], newImages[targetIndex]] = [
+          newImages[targetIndex],
+          newImages[imageIndex]
+        ];
+        setVariantForm(prev => ({
+          ...prev,
+          images: newImages
+        }));
+      }
+    }
+  };
+
   const moveImage = (index, direction) => {
     const newImages = [...images];
     const newFiles = [...imageFiles];
@@ -352,13 +480,20 @@ const AddProduct = () => {
       toast.error("Please fill at least one field for the variant.");
       return;
     }
+    
+    // Ensure images array exists
+    const variantWithImages = { ...variantForm };
+    if (!variantWithImages.images) {
+      variantWithImages.images = [];
+    }
+    
     if (editVariantIndex !== null) {
       const updated = [...variants];
-      updated[editVariantIndex] = { ...variantForm };
+      updated[editVariantIndex] = variantWithImages;
       setVariants(updated);
       setEditVariantIndex(null);
     } else {
-      setVariants([...variants, { ...variantForm }]);
+      setVariants([...variants, variantWithImages]);
     }
     setVariantForm({
       sku: "",
@@ -372,7 +507,12 @@ const AddProduct = () => {
   };
 
   const handleEditVariant = (index) => {
-    setVariantForm({ ...variants[index] });
+    // Make sure images array exists
+    const variant = { ...variants[index] };
+    if (!variant.images) {
+      variant.images = [];
+    }
+    setVariantForm(variant);
     setEditVariantIndex(index);
   };
 
@@ -441,7 +581,6 @@ const AddProduct = () => {
       formData.append("category", category);
       formData.append("price", Number(price));
       formData.append("quantity", Number(quantity));
-      formData.append("sku", sku);
       formData.append("currency", currency);
       formData.append("prices", JSON.stringify(prices));
       tags.forEach((tag, i) => formData.append(`tags[${i}]`, tag));
@@ -453,9 +592,12 @@ const AddProduct = () => {
       variants.forEach((variant, i) => {
         Object.entries(variant).forEach(([key, value]) => {
           if (key === "images") {
-            value.forEach((img, j) => {
-              formData.append(`variants[${i}][images][${j}]`, img);
-            });
+            // Handle images array
+            if (Array.isArray(value)) {
+              value.forEach((img, j) => {
+                formData.append(`variants[${i}][images][${j}]`, img);
+              });
+            }
           } else {
             formData.append(
               `variants[${i}][${key}]`,
@@ -488,6 +630,8 @@ const AddProduct = () => {
       
       await createProduct(formData).unwrap();
       toast.success(`${name} created successfully`);
+      // Signal that a product has been created
+      localStorage.setItem("productChanged", Date.now().toString());
       navigate("/vendor/allproductslist");
     } catch (error) {
       console.log(error);
@@ -684,28 +828,7 @@ const AddProduct = () => {
                   }}
                   required
                 />
-                <TextField
-                  label="SKU *"
-                  fullWidth
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
-                    label: { color: "#bbb" },
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: '#555',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#888',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#1976d2',
-                      },
-                    },
-                  }}
-                  required
-                />
+          
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: "black" }}>Currency *</InputLabel>
                   <Select
@@ -1122,87 +1245,267 @@ const AddProduct = () => {
               <Typography>Product Variants</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Stack spacing={2}>
-                <Typography variant="h6" >Add Variant</Typography>
-                <Stack direction="row" spacing={2} flexWrap="wrap">
-                  {["sku", "color", "size", "storage", "price", "countInStock"].map(
-                    (field) => (
-                      <TextField
-                        key={field}
-                        label={field.charAt(0).toUpperCase() + field.slice(1)}
-                        value={variantForm[field]}
-                        onChange={(e) =>
-                          setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
-                        }
-                        sx={{ 
-                          input: { color: "black" }, 
-                          label: { color: "#bbb" },
-                          '& .MuiOutlinedInput-root': {
-                            '& fieldset': {
-                              borderColor: '#555',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: '#888',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: '#1976d2',
-                            },
-                          },
-                          width: "150px" 
-                        }}
-                      />
-                    )
-                  )}
+              <Stack spacing={3}>
+                <Typography variant="h6">Add New Variant</Typography>
+                
+                {/* Variant Images Upload Section */}
+                <Box sx={{ p: 2, border: "1px dashed #ccc", borderRadius: 2, bgcolor: "#f9f9f9" }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Variant Images
+                  </Typography>
                   <Button
-                    onClick={handleAddOrUpdateVariant}
                     variant="outlined"
-                    sx={{ color: "black", borderColor: "#fff" }}
+                    component="label"
+                    fullWidth
+                    sx={{
+                      color: "#333",
+                      borderColor: "#999",
+                      bgcolor: "#fff",
+                      mb: 2,
+                      py: 2,
+                      fontWeight: "bold",
+                      borderRadius: 2,
+                    }}
+                    startIcon={<AddPhotoAlternateIcon />}
                   >
-                    {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
+                    Upload Images for This Variant (Max 5)
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      multiple
+                      onChange={(e) => uploadVariantImageHandler(e, null)}
+                    />
                   </Button>
-                  {editVariantIndex !== null && (
-                    <Button
-                      onClick={() => {
-                        setEditVariantIndex(null);
-                        setVariantForm({
-                          sku: "",
-                          color: "",
-                          size: "",
-                          storage: "",
-                          price: "",
-                          countInStock: "",
-                          images: [],
-                        });
-                      }}
-                      variant="outlined"
-                      color="secondary"
-                      sx={{ color: "black", borderColor: "#fff" }}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </Stack>
-                <Stack spacing={1}>
-                  {variants.map((v, i) => (
-                    <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography sx={{ color: "#ccc" }}>{JSON.stringify(v)}</Typography>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleEditVariant(i)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteVariant(i)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                  
+                  {/* Display variant images preview */}
+                  {variantForm.images && variantForm.images.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="body2" gutterBottom>
+                        Selected Images ({variantForm.images.length}/5):
+                      </Typography>
+                      <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
+                        {variantForm.images.map((url, imgIndex) => (
+                          <Box key={imgIndex} sx={{ position: "relative" }}>
+                            <img
+                              src={url}
+                              alt={`variant-img-${imgIndex}`}
+                              style={{ height: 100, borderRadius: 8, border: "1px solid #ddd" }}
+                            />
+                            <Stack direction="row" spacing={0} sx={{ mt: 1 }}>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => moveVariantImage(null, imgIndex, -1)}
+                                disabled={imgIndex === 0}
+                                sx={{ minWidth: "30px", minHeight: "30px" }}
+                              >
+                                <ArrowUpwardIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => moveVariantImage(null, imgIndex, 1)}
+                                disabled={imgIndex === variantForm.images.length - 1}
+                                sx={{ minWidth: "30px", minHeight: "30px" }}
+                              >
+                                <ArrowDownwardIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => deleteVariantImageHandler(url, null)}
+                                sx={{ minWidth: "30px", minHeight: "30px" }}
+                              >
+                                <DeleteIcon fontSize="small" color="error" />
+                              </IconButton>
+                            </Stack>
+                          </Box>
+                        ))}
+                      </Stack>
                     </Box>
-                  ))}
-                </Stack>
+                  )}
+                </Box>
+                
+                {/* Variant Properties */}
+                <Box sx={{ p: 2, border: "1px solid #eee", borderRadius: 2, bgcolor: "#fafafa" }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Variant Properties
+                  </Typography>
+                  <Stack direction="row" spacing={2} flexWrap="wrap">
+                    {[ "color", "size", "storage", "price", "countInStock"].map(
+                      (field) => (
+                        <TextField
+                          key={field}
+                          label={field.charAt(0).toUpperCase() + field.slice(1)}
+                          value={variantForm[field]}
+                          onChange={(e) =>
+                            setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
+                          }
+                          sx={{ 
+                            input: { color: "black" }, 
+                            label: { color: "#666" },
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: '#ccc',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#999',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#1976d2',
+                              },
+                            },
+                            width: { xs: "100%", sm: "150px" },
+                            mb: 1
+                          }}
+                        />
+                      )
+                    )}
+                  </Stack>
+                  
+                  <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                    <Button
+                      onClick={handleAddOrUpdateVariant}
+                      variant="contained"
+                      color="primary"
+                      sx={{ fontWeight: "bold" }}
+                    >
+                      {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
+                    </Button>
+                    {editVariantIndex !== null && (
+                      <Button
+                        onClick={() => {
+                          setEditVariantIndex(null);
+                          setVariantForm({
+                            sku: "",
+                            color: "",
+                            size: "",
+                            storage: "",
+                            price: "",
+                            countInStock: "",
+                            images: [],
+                          });
+                        }}
+                        variant="outlined"
+                        color="secondary"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </Stack>
+                </Box>
+                
+                {/* Existing Variants List */}
+                {variants.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Existing Variants ({variants.length})
+                    </Typography>
+                    <Stack spacing={2}>
+                      {variants.map((v, i) => (
+                        <Card key={i} sx={{ p: 2, bgcolor: "#ffffff", boxShadow: 2 }}>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                              Variant #{i + 1}
+                            </Typography>
+                            <Box>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleEditVariant(i)}
+                                title="Edit Variant"
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteVariant(i)}
+                                title="Delete Variant"
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                            {v.color && <Chip label={`Color: ${v.color}`} size="small" sx={{ bgcolor: "#e3f2fd" }} />}
+                            {v.size && <Chip label={`Size: ${v.size}`} size="small" sx={{ bgcolor: "#e8f5e9" }} />}
+                            {v.storage && <Chip label={`Storage: ${v.storage}`} size="small" sx={{ bgcolor: "#fff3e0" }} />}
+                            {v.price && <Chip label={`Price: $${v.price}`} size="small" sx={{ bgcolor: "#fce4ec" }} />}
+                            {v.countInStock && <Chip label={`Stock: ${v.countInStock}`} size="small" sx={{ bgcolor: "#f3e5f5" }} />}
+                          </Box>
+                          
+                          {/* Variant images section */}
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                              Variant Images:
+                            </Typography>
+                            
+                            {/* Upload button for existing variant */}
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              size="small"
+                              sx={{ mb: 1, mr: 1 }}
+                            >
+                              Add More Images
+                              <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                multiple
+                                onChange={(e) => uploadVariantImageHandler(e, i)}
+                              />
+                            </Button>
+                            
+                            {/* Display variant images */}
+                            {v.images && v.images.length > 0 ? (
+                              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
+                                {v.images.map((url, imgIndex) => (
+                                  <Box key={imgIndex} sx={{ position: "relative" }}>
+                                    <img
+                                      src={url}
+                                      alt={`variant-${i}-img-${imgIndex}`}
+                                      style={{ height: 80, borderRadius: 4, border: "1px solid #ddd" }}
+                                    />
+                                    <Stack direction="row" spacing={0} sx={{ mt: 0.5 }}>
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => moveVariantImage(i, imgIndex, -1)}
+                                        disabled={imgIndex === 0}
+                                        sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
+                                      >
+                                        <ArrowUpwardIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => moveVariantImage(i, imgIndex, 1)}
+                                        disabled={imgIndex === v.images.length - 1}
+                                        sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
+                                      >
+                                        <ArrowDownwardIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => deleteVariantImageHandler(url, i)}
+                                        sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
+                                      >
+                                        <DeleteIcon fontSize="small" color="error" />
+                                      </IconButton>
+                                    </Stack>
+                                  </Box>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Typography variant="body2" color="textSecondary">
+                                No images uploaded for this variant
+                              </Typography>
+                            )}
+                          </Box>
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
               </Stack>
             </AccordionDetails>
           </Accordion>
