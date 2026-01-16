@@ -77,8 +77,6 @@ import AdminBannerCarousels from './pages/Admin/BannerCarousels.jsx'
 import Pages from "./pages/Admin/Pages.jsx";
 import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 import UserEditPage from "./pages/Admin/Users.jsx";
-import UserManagement from "./pages/Admin/UserManagement.jsx";
-import VendorManagement from "./pages/Admin/VendorManagement.jsx";
 import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
 import BrandManagement from "./pages/Admin/Brand.jsx";
 
@@ -86,10 +84,10 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
       <Route path="/seller/register" element={<AdminRegister />} />
-      <Route path="/seller/login" element={<SellerLogin/>} />
-      <Route path="/vendor/login" element={<VendorLogin/>} />
+      <Route path="/seller/login" element={<SellerLogin />} />
+      <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/vendor/register" element={<VendorRegister />} />
-      <Route path="/admin/login" element={<AdminLogin/>} />
+      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route index={true} path="/" element={<Home />} />
@@ -105,10 +103,10 @@ const router = createBrowserRouter(
       <Route path="/terms" element={<Terms />} />
       <Route path="/shipping-policy" element={<ShippingPolicy />} />
       <Route path="/contact" element={<ContactUs />} />
-      <Route path="/faq" element={<Faq/>} />
-      <Route path="/Categories" element={<Categories/>}/>
-      <Route path="/flash-sale" element={<FlashSale/>}/>
-      <Route path="/forgot-password" element={<ForgotPassword/>}/>
+      <Route path="/faq" element={<Faq />} />
+      <Route path="/Categories" element={<Categories />} />
+      <Route path="/flash-sale" element={<FlashSale />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       {/* New pages */}
       <Route path="/returns" element={<Returns />} />
       <Route path="/track-order" element={<TrackOrder />} />
@@ -123,8 +121,8 @@ const router = createBrowserRouter(
         <Route path="/shipping" element={<Shipping />} />
         <Route path="/placeorder" element={<PlaceOrder />} />
         <Route path="/order/:id" element={<Order />} />
-        <Route path="/orders" element={<UserOrder/>}/>
-        <Route path="/support/chat" element={<LiveChat/>}/>
+        <Route path="/orders" element={<UserOrder />} />
+        <Route path="/support/chat" element={<LiveChat />} />
       </Route>
       {/** Registered Seller*/}
       <Route path="/seller" element={<SellerRoute />}>
@@ -134,21 +132,19 @@ const router = createBrowserRouter(
         <Route path="product/add" element={<AddProduct />} />
         <Route path="orderlist" element={<OrderList />} />
       </Route>
-      <Route path="/admin" element={<AdminRoute/>}>
-          <Route path="userlist" element={<UserList />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="vendors" element={<VendorManagement />} />
-          <Route path="settings" element={<AdminSettings/>}/>
-          <Route path="banner" element={<AdminBannerCarousels/>}/>
-          <Route path="brand" element={<BrandManagement />} />
-          <Route path="pages" element={<Pages/>}/>
-          <Route path="offer" element={<AdminOffer/>}/>
-          <Route path="categorylist" element={<CategoryList />} />
-          <Route path="user/edit/:id" element={<UserEditPage />} />
-          <Route path="currencies" element={<CurrencyManagement />} />
-          <Route path="product/add" element={<AddProduct />} />
-          <Route path="productlist" element={<AllProducts />} />
-          <Route path="orderlist" element={<AdminOrderList />} />
+      <Route path="/admin" element={<AdminRoute />}>
+        <Route path="userlist" element={<UserList />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="banner" element={<AdminBannerCarousels />} />
+        <Route path="brand" element={<BrandManagement />} />
+        <Route path="pages" element={<Pages />} />
+        <Route path="offer" element={<AdminOffer />} />
+        <Route path="categorylist" element={<CategoryList />} />
+        <Route path="user/edit/:id" element={<UserEditPage />} />
+        <Route path="currencies" element={<CurrencyManagement />} />
+        <Route path="product/add" element={<AddProduct />} />
+        <Route path="productlist" element={<AllProducts />} />
+        <Route path="orderlist" element={<AdminOrderList />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
         <Route path="dashboard" element={<SellerDashBoard />} />

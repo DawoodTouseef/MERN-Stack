@@ -13,7 +13,7 @@ class PaymentService {
   async initializeGateways() {
     try {
       const activeGateways = await PaymentGateway.find({ isActive: true });
-      
+
       for (const gateway of activeGateways) {
         switch (gateway.name) {
           case 'stripe':
@@ -52,7 +52,7 @@ class PaymentService {
     try {
       // Run fraud detection
       const fraudResult = await this.runFraudDetection(paymentData);
-      
+
       if (fraudResult.blocked) {
         throw new Error(`Transaction blocked due to fraud detection: ${fraudResult.reason}`);
       }
@@ -154,30 +154,54 @@ class PaymentService {
   }
 
   async createPayPalPayment(paymentData) {
-    // PayPal payment creation logic
-    const { amount, currency, orderId, customerInfo } = paymentData;
-    
-    const paypalOrder = {
-      intent: 'CAPTURE',
-      purchase_units: [{
-        reference_id: orderId,
-        amount: {
-          currency_code: currency,
-          value: amount.toFixed(2)
-        }
-      }],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            payment_method_preference: 'IMMEDIATE_PAYMENT_REQUIRED',
-            user_action: 'PAY_NOW'
-          }
+    const { amount, currency, orderId } = paymentData;
+
+    const gateway = await PaymentGateway.findOne({ name: 'paypal', isActive: true });
+    if (!gateway) throw new Error('PayPal gateway not configured');
+
+    const auth = Buffer.from(`${gateway.configuration.publicKey}:${gateway.configuration.secretKey}`).toString('base64');
+
+    // Get access token
+    const tokenResponse = await axios.post(
+      `${gateway.configuration.environment === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'}/v1/oauth2/token`,
+      'grant_type=client_credentials',
+      {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
       }
-    };
+    );
 
-    // Implement PayPal API call
-    return paypalOrder;
+    const accessToken = tokenResponse.data.access_token;
+
+    // Create order
+    const response = await axios.post(
+      `${gateway.configuration.environment === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'}/v2/checkout/orders`,
+      {
+        intent: 'CAPTURE',
+        purchase_units: [{
+          reference_id: orderId,
+          amount: {
+            currency_code: currency.toUpperCase(),
+            value: amount.toFixed(2)
+          }
+        }]
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return {
+      id: response.data.id,
+      status: response.data.status,
+      links: response.data.links,
+      client_secret: response.data.id // For PayPal, the ID is often used as the identifier for client-side SDK
+    };
   }
 
   async runFraudDetection(paymentData) {
@@ -191,7 +215,7 @@ class PaymentService {
 
       for (const rule of fraudRules) {
         const ruleResult = await this.evaluateFraudRule(rule, paymentData);
-        
+
         if (ruleResult.triggered) {
           totalScore += rule.actions.score;
           flags.push({
@@ -261,7 +285,7 @@ class PaymentService {
   async checkVelocity(paymentData) {
     const timeWindow = 15; // minutes
     const maxTransactions = 5;
-    
+
     const recentTransactions = await PaymentTransaction.countDocuments({
       userId: paymentData.userId,
       createdAt: {
@@ -304,34 +328,53 @@ class PaymentService {
   async confirmPayment(transactionId, gatewayResponse) {
     try {
       const transaction = await PaymentTransaction.findById(transactionId);
-      if (!transaction) {
-        throw new Error('Transaction not found');
-      }
+      if (!transaction) throw new Error('Transaction not found');
 
-      // Verify webhook signature based on gateway
-      const isValidWebhook = await this.verifyWebhookSignature(
-        transaction.gateway,
-        gatewayResponse
+      const isValidWebhook = await this.verifyWebhookSignature(transaction.gateway, gatewayResponse);
+      if (!isValidWebhook) throw new Error('Invalid webhook signature');
+
+      // Detect success based on multiple gateway response formats
+      const isSuccess = (
+        gatewayResponse.status === 'succeeded' || // Stripe
+        gatewayResponse.status === 'captured' || // Razorpay
+        gatewayResponse.status === 'COMPLETED' || // PayPal
+        gatewayResponse.event === 'payment.captured' || // Razorpay event
+        gatewayResponse.event_type === 'PAYMENT.CAPTURE.COMPLETED' // PayPal event
       );
 
-      if (!isValidWebhook) {
-        throw new Error('Invalid webhook signature');
-      }
-
-      // Update transaction status
-      transaction.status = gatewayResponse.status === 'succeeded' ? 'completed' : 'failed';
+      transaction.status = isSuccess ? 'completed' : 'failed';
       transaction.gatewayResponse = { ...transaction.gatewayResponse, ...gatewayResponse };
       transaction.webhookVerified = true;
 
-      if (gatewayResponse.payment_method) {
-        transaction.cardDetails = {
-          last4: gatewayResponse.payment_method.card?.last4,
-          brand: gatewayResponse.payment_method.card?.brand,
-          country: gatewayResponse.payment_method.card?.country
-        };
-      }
-
       await transaction.save();
+
+      if (transaction.status === 'completed') {
+        const ParentOrder = (await import('../models/parentOrderModel.js')).default;
+        const Order = (await import('../models/orderModel.js')).default;
+
+        const parentOrder = await ParentOrder.findById(transaction.orderId);
+        if (parentOrder) {
+          parentOrder.isPaid = true;
+          parentOrder.paidAt = new Date();
+          parentOrder.paymentStatus = 'Completed';
+          parentOrder.paymentResult = {
+            id: transaction.gatewayTransactionId,
+            status: transaction.status,
+            update_time: new Date().toISOString()
+          };
+          await parentOrder.save();
+
+          await Order.updateMany(
+            { parentOrder: parentOrder._id },
+            {
+              isPaid: true,
+              paidAt: new Date(),
+              paymentStatus: 'Completed',
+              paymentResult: parentOrder.paymentResult
+            }
+          );
+        }
+      }
 
       return transaction;
     } catch (error) {
@@ -370,7 +413,7 @@ class PaymentService {
   verifyRazorpayWebhook(payload) {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = payload.headers['x-razorpay-signature'];
-    
+
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(JSON.stringify(payload.body))
@@ -379,9 +422,35 @@ class PaymentService {
     return signature === expectedSignature;
   }
 
-  verifyPayPalWebhook(payload) {
-    // PayPal webhook verification logic
-    return true; // Placeholder
+  async verifyPayPalWebhook(payload) {
+    const gateway = await PaymentGateway.findOne({ name: 'paypal', isActive: true });
+    if (!gateway) return false;
+
+    try {
+      const auth = Buffer.from(`${gateway.configuration.publicKey}:${gateway.configuration.secretKey}`).toString('base64');
+      const response = await axios.post(
+        `${gateway.configuration.environment === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'}/v1/notifications/verify-webhook-signature`,
+        {
+          auth_algo: payload.headers['paypal-auth-algo'],
+          cert_url: payload.headers['paypal-cert-url'],
+          transmission_id: payload.headers['paypal-transmission-id'],
+          transmission_sig: payload.headers['paypal-transmission-sig'],
+          transmission_time: payload.headers['paypal-transmission-time'],
+          webhook_id: gateway.configuration.webhookSecret,
+          webhook_event: payload.body
+        },
+        {
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data.verification_status === 'SUCCESS';
+    } catch (error) {
+      console.error('PayPal webhook verification failed:', error.message);
+      return false;
+    }
   }
 
   async processRefund(transactionId, refundData) {
@@ -444,7 +513,7 @@ class PaymentService {
 
   async processStripeRefund(transaction, amount) {
     const stripe = this.gateways.get('stripe');
-    
+
     return await stripe.refunds.create({
       payment_intent: transaction.gatewayTransactionId,
       amount: Math.round(amount * 100)
@@ -453,7 +522,7 @@ class PaymentService {
 
   async processRazorpayRefund(transaction, amount) {
     const razorpay = this.gateways.get('razorpay');
-    
+
     return await razorpay.payments.refund(transaction.gatewayTransactionId, {
       amount: Math.round(amount * 100)
     });
@@ -466,7 +535,7 @@ class PaymentService {
 
   async getPaymentMethods(country = 'IN') {
     try {
-      const gateways = await PaymentGateway.find({ 
+      const gateways = await PaymentGateway.find({
         isActive: true,
         countries: { $in: [country] }
       });
@@ -493,7 +562,7 @@ class PaymentService {
 
   async getTransactionHistory(userId, options = {}) {
     const { page = 1, limit = 20, status, gateway } = options;
-    
+
     const query = { userId };
     if (status) query.status = status;
     if (gateway) query.gateway = gateway;

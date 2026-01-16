@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "backend": "nodemon backend/index.js",
-    "frontend": "cd frontend && npm install && npm run dev",
+    "frontend": "cd frontend && npm install && vite dev",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
     "build": "cd frontend && npm install && npm run build",
     "start": "node backend/index.js",

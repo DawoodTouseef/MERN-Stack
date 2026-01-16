@@ -20,7 +20,8 @@ import {
   addTrackingEvent,
   updateDeliveryPreferences,
   getOrdersWithFilters,
-  submitOrderFeedback
+  submitOrderFeedback,
+  getVendorOrders
 } from "../controllers/orderController.js";
 
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
@@ -33,6 +34,9 @@ router
 
 // Get orders of logged-in user
 router.route("/mine").get(authenticate, getUserOrders);
+
+// Get orders of logged-in vendor
+router.route("/vendor-orders").get(authenticate, authorizeVendor, getVendorOrders);
 
 // Get total number of orders
 router.route("/total-orders").get(authenticate, authorizeVendor, countTotalOrders);

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
+import Organization from "../models/organizationModel.js";
 import asyncHandler from "./asyncHandler.js";
 
 // Ensure JWT_SECRET is properly configured
@@ -16,16 +17,16 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
   // Check for JWT in cookies first, then Authorization header
   token = req.cookies.jwt;
-  
+
   // Also check for token in Authorization header for API requests
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }
-  
+
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET || "admin123");
-      
+
       // Add additional security checks
       if (!decoded.userId) {
         res.status(401);
@@ -34,7 +35,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
       // Fetch user and check if account is still active
       const user = await User.findById(decoded.userId).select("-password");
-      
+
       if (!user) {
         res.status(401);
         throw new Error("User no longer exists.");
@@ -78,6 +79,10 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
 const authorizeVendor = (req, res, next) => {
   if (req.user && (req.user.role === "admin" || req.user.role === "vendor" || req.user.role === "seller")) {
+    next();
+  } else if (req.user && req.user.role === "organization_member" && req.user.organization) {
+    // If they are a member of an organization, we let them pass for now.
+    // Specific permissions will be checked by requirePermission in specific routes.
     next();
   } else {
     res.status(403).json({
@@ -123,7 +128,7 @@ const requireRole = (...roles) => {
 const checkResourceOwnership = (resourceUserField = 'user') => {
   return (req, res, next) => {
     const resourceUserId = req.resource ? req.resource[resourceUserField] : req.params.userId;
-    
+
     if (req.user.role === 'admin' || req.user._id.toString() === resourceUserId?.toString()) {
       next();
     } else {
@@ -133,12 +138,53 @@ const checkResourceOwnership = (resourceUserField = 'user') => {
       });
     }
   };
+}
+// Check for specific granular permission
+const requirePermission = (permission) => {
+  return asyncHandler(async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Admins have all permissions
+    if (req.user.role === 'admin') return next();
+
+    // Organizers (Vendor/Seller owners) have all permissions for their Org
+    if (req.user.role === 'vendor' || req.user.role === 'seller') return next();
+
+    // Check cached permissions (requires cachePermissions middleware to be run before)
+    if (req.user._allPermissions && (req.user._allPermissions.includes(permission) || req.user._allPermissions.includes('all'))) {
+      return next();
+    }
+
+    // Fallback: If cache not present (middleware skipped?), check directly but log warning
+    // In production, you would enforce the middleware, but for safety:
+    if (!req.user._permissionsResolved) {
+      // ... (Old logic could be here, but let's assume cache middleware is used)
+      // For now, let's keep the fallback for robustness during transition
+      if (req.user.permissions && req.user.permissions.includes(permission)) return next();
+
+      if (req.user.organization && req.user.userGroup) {
+        const org = await Organization.findById(req.user.organization);
+        if (org && org.isActive) {
+          const group = org.userGroups.find(g => g.slug === req.user.userGroup);
+          if (group && group.permissions.includes(permission)) return next();
+        }
+      }
+    }
+
+    res.status(403).json({
+      success: false,
+      message: `Access denied. Missing permission: ${permission}`
+    });
+  });
 };
 
-export { 
-  authenticate, 
-  authorizeVendor, 
-  IsAdmin, 
+export {
+  authenticate,
+  authorizeVendor,
+  IsAdmin,
   requireRole,
-  checkResourceOwnership
+  checkResourceOwnership,
+  requirePermission
 };

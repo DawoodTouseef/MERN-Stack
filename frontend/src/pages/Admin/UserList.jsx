@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { FaTrash, FaEdit, FaCheck, FaTimes, FaUserCheck, FaUserTimes, FaSearch, FaFilter } from "react-icons/fa";
-import Message from "../../components/Message";
-import Loader from "../../components/Loader";
+import { FaSearch, FaFilter } from "react-icons/fa";
+import { DataGrid } from '@mui/x-data-grid';
+
 import {
   useDeleteUserMutation,
   useGetUsersQuery,
@@ -54,8 +54,30 @@ import {
   ListItemText,
   ListItemIcon
 } from "@mui/material";
-import { CheckCircle, Cancel, VerifiedUser, Warning, ExpandMore, Email, Phone, LocationOn, CalendarToday, AccessTime, ShoppingCart, Favorite, Visibility } from '@mui/icons-material';
+import {
+  CheckCircle,
+  Cancel,
+  VerifiedUser,
+  Warning,
+  ExpandMore,
+  Email,
+  Phone,
+  LocationOn,
+  CalendarToday,
+  AccessTime,
+  ShoppingCart,
+  Favorite,
+  Visibility,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  DeleteForever as DeleteForeverIcon,
+  Person as PersonIcon,
+  Badge as BadgeIcon,
+  Verified as VerifiedIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useTheme as useMuiTheme } from "@mui/material/styles";
 
 const UserList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,7 +87,7 @@ const UserList = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  
+
   const { data, refetch, isLoading, error } = useGetUsersQuery({
     search: searchTerm,
     role: roleFilter,
@@ -75,54 +97,79 @@ const UserList = () => {
     page,
     limit
   });
-  
+
   const users = data?.users || [];
   const pagination = data?.pagination || {};
-  
+
   const [deleteUser] = useDeleteUserMutation();
   const [verifyVendor] = useVerifyVendorMutation();
   const [rejectVendor] = useRejectVendorMutation();
 
-  const [editableUserId, setEditableUserId] = useState(null);
-  const [editableUserName, setEditableUserName] = useState("");
-  const [editableUserEmail, setEditableUserEmail] = useState("");
-
   const [updateUser] = useUpdateUserMutation();
   const [verificationDialog, setVerificationDialog] = useState({ open: false, user: null, action: '' });
   const [userDetailDialog, setUserDetailDialog] = useState({ open: false, user: null });
+  const [editDialog, setEditDialog] = useState({ open: false, user: null });
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState({ open: false, user: null });
   const [selectedUser, setSelectedUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    email: '',
+    role: '',
+    status: ''
+  });
+
+  const theme = useMuiTheme();
 
   useEffect(() => {
     refetch();
   }, [refetch, searchTerm, roleFilter, statusFilter, sortBy, sortOrder, page, limit]);
 
-  const deleteHandler = async (user) => {
-    if (window.confirm("Are you sure you want to delete this "+user.role+"?")) {
-      try {
-        await deleteUser(user._id);
-        refetch();
-        toast.success("User deleted");
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
+  const openEditDialog = (user) => {
+    setEditDialog({ open: true, user });
+    setEditFormData({
+      username: user.username || '',
+      email: user.email || '',
+      role: user.role || 'customer',
+      status: user.status || 'active'
+    });
+  };
+
+  const closeEditDialog = () => {
+    setEditDialog({ open: false, user: null });
+  };
+
+  const openDeleteConfirmDialog = (user) => {
+    setDeleteConfirmDialog({ open: true, user });
+  };
+
+  const closeDeleteConfirmDialog = () => {
+    setDeleteConfirmDialog({ open: false, user: null });
+  };
+
+  const deleteHandler = async () => {
+    const user = deleteConfirmDialog.user;
+    if (!user) return;
+
+    try {
+      await deleteUser(user._id).unwrap();
+      toast.success(`${user.role.charAt(0).toUpperCase() + user.role.slice(1)} deleted successfully`);
+      refetch();
+      closeDeleteConfirmDialog();
+    } catch (err) {
+      toast.error(err?.data?.message || err.error || "Failed to delete user");
     }
   };
 
-  const toggleEdit = (id, username, email) => {
-    // Admin cannot edit users - only view details
-    // This function is kept for backward compatibility but won't allow editing
-    toast.info("Admin cannot edit user details. View user information instead.");
-  };
-
-  const updateHandler = async (id) => {
-    // Admin cannot edit users - only view details
-    toast.info("Admin cannot edit user details. View user information instead.");
-  };
-
-  const cancelEdit = () => {
-    setEditableUserId(null);
-    setEditableUserName("");
-    setEditableUserEmail("");
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await updateUser({ userId: editDialog.user._id, ...editFormData }).unwrap();
+      toast.success("User updated successfully");
+      refetch();
+      closeEditDialog();
+    } catch (err) {
+      toast.error(err?.data?.message || err.error || "Failed to update user");
+    }
   };
 
   // Open verification confirmation dialog
@@ -143,7 +190,7 @@ const UserList = () => {
         toast.success('Vendor verified successfully!');
       } else if (verificationDialog.action === 'reject') {
         await rejectVendor(verificationDialog.user._id).unwrap();
-        toast.success('Vendor rejected successfully!');
+        toast.warning('Vendor rejected and account deactivated.');
       }
       refetch();
       closeVerificationDialog();
@@ -181,116 +228,222 @@ const UserList = () => {
     setPage(1);
   };
 
-  // Handle sort changes
-  const handleSortChange = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-  };
-
-  // Handle pagination
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
-
   // Format date
   const formatDate = (date) => {
     return date ? format(new Date(date), 'MMM dd, yyyy HH:mm') : 'N/A';
   };
 
+  const columns = [
+    {
+      field: 'username',
+      headerName: 'User',
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+          <Avatar sx={{ bgcolor: theme.palette.primary.main, color: "#fff", width: 40, height: 40 }}>
+            {params.row.username?.charAt(0)?.toUpperCase() || "U"}
+          </Avatar>
+          <Box sx={{ overflow: 'hidden' }}>
+            <Typography variant="body2" fontWeight={600} sx={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {params.row.username}
+            </Typography>
+            <Typography variant="caption" color="textSecondary" display="block">
+              {params.row.email}
+            </Typography>
+          </Box>
+        </Box>
+      )
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      width: 120,
+      renderCell: (params) => {
+        const role = params.value?.toLowerCase();
+        let color = 'default';
+        if (role === 'admin') color = 'error';
+        else if (role === 'vendor') color = 'primary';
+        else if (role === 'seller') color = 'secondary';
+        else if (role === 'customer') color = 'info';
+
+        return (
+          <Chip
+            label={role?.toUpperCase()}
+            size="small"
+            color={color}
+            variant="outlined"
+            sx={{ fontWeight: 600, borderRadius: 1.5 }}
+          />
+        );
+      }
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value?.toUpperCase() || 'ACTIVE'}
+          size="small"
+          color={
+            params.value === 'active' ? 'success' :
+              params.value === 'inactive' ? 'warning' : 'error'
+          }
+          sx={{ fontWeight: 600 }}
+        />
+      )
+    },
+    {
+      field: 'verification',
+      headerName: 'Verification',
+      width: 160,
+      renderCell: (params) => {
+        if (params.row.role !== 'vendor') return "--";
+        const isVerified = params.row.vendorVerified;
+        return (
+          <Chip
+            icon={isVerified ? <VerifiedUser sx={{ width: 14, height: 14 }} /> : <Warning sx={{ width: 14, height: 14 }} />}
+            label={isVerified ? "Verified" : "Pending"}
+            size="small"
+            color={isVerified ? "success" : "warning"}
+            variant="soft"
+          />
+        );
+      }
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Joined Date',
+      width: 180,
+      valueGetter: (params) => formatDate(params.value)
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 220,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View Details">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => openUserDetailDialog(params.row)}
+            >
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Edit User">
+            <IconButton
+              size="small"
+              onClick={() => openEditDialog(params.row)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {params.row.role === 'vendor' && !params.row.vendorVerified && (
+            <>
+              <Tooltip title="Verify Vendor">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => openVerificationDialog(params.row, 'verify')}
+                >
+                  <CheckCircle fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Reject Vendor">
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={() => openVerificationDialog(params.row, 'reject')}
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+
+          {params.row.role !== 'admin' && (
+            <Tooltip title="Delete User">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => openDeleteConfirmDialog(params.row)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      )
+    }
+  ];
+
   return (
     <DocumentTitle title="User Management | Nexus Mart">
-      <Box
-        sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #e3eeff 0%, #f3e7e9 100%)",
-        py: 6,
-        px: { xs: 1, md: 8 },
-      }}
-    >
-      <Fade in>
-        <Paper
-          elevation={8}
-          sx={{
-            maxWidth: 1200,
-            mx: "auto",
-            p: { xs: 2, md: 5 },
-            borderRadius: 4,
-            bgcolor: "#fff",
-            boxShadow: "0 8px 32px 0 rgba(99,102,241,0.10)",
-          }}
-        >
-          <Typography
-            variant="h4"
-            fontWeight={800}
-            color="primary.main"
-            sx={{
-              mb: 3,
-              letterSpacing: 1,
-              textAlign: "center",
-              textShadow: "2px 2px 8px #e3eeff",
-            }}
-          >
-            User Management
-          </Typography>
-          
-          {/* Search and Filter Section */}
-          <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f7ff', borderRadius: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="Search Users"
-                  variant="outlined"
-                  size="small"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton>
-                        <FaSearch />
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={6} md={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Role</InputLabel>
-                  <Select
-                    value={roleFilter}
-                    label="Role"
-                    onChange={handleRoleFilterChange}
-                  >
-                    <MenuItem value="all">All Roles</MenuItem>
-                    <MenuItem value="customer">Customer</MenuItem>
-                    <MenuItem value="vendor">Vendor</MenuItem>
-                    <MenuItem value="admin">Admin</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={6} md={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    label="Status"
-                    onChange={handleStatusFilterChange}
-                  >
-                    <MenuItem value="all">All Status</MenuItem>
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                    <MenuItem value="banned">Banned</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Stack direction="row" spacing={1} justifyContent="flex-end">
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
+        <Fade in>
+          <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h4" fontWeight={800} color="text.primary">
+                  User Intelligence
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Manage platform members, verify vendors, and audit account statuses
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Filters Section */}
+            <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    placeholder="Search by name, email, or ID..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    InputProps={{
+                      startAdornment: <FaSearch style={{ marginRight: 8, color: '#64748b' }} />,
+                      sx: { borderRadius: 2, bgcolor: 'white' }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Role</InputLabel>
+                    <Select value={roleFilter} label="Role" onChange={handleRoleFilterChange} sx={{ borderRadius: 2, bgcolor: 'white' }}>
+                      <MenuItem value="all">All Roles</MenuItem>
+                      <MenuItem value="customer">Customer</MenuItem>
+                      <MenuItem value="vendor">Vendor</MenuItem>
+                      <MenuItem value="seller">Seller</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Status</InputLabel>
+                    <Select value={statusFilter} label="Status" onChange={handleStatusFilterChange} sx={{ borderRadius: 2, bgcolor: 'white' }}>
+                      <MenuItem value="all">All Status</MenuItem>
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
+                      <MenuItem value="banned">Banned</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
-                    variant="outlined"
+                    variant="text"
                     startIcon={<FaFilter />}
                     onClick={() => {
                       setSearchTerm("");
@@ -299,601 +452,290 @@ const UserList = () => {
                       setPage(1);
                     }}
                   >
-                    Clear Filters
+                    Reset Filters
                   </Button>
-                </Stack>
+                </Grid>
               </Grid>
-            </Grid>
-          </Box>
-          
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 6 }}>
-              <Loader />
             </Box>
-          ) : error ? (
-            <Message variant="danger">
-              {error?.data?.message || error.error}
-            </Message>
-          ) : (
-            <>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Avatar</TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('_id')}
-                      >
-                        ID {sortBy === '_id' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('username')}
-                      >
-                        Name {sortBy === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('email')}
-                      >
-                        Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('role')}
-                      >
-                        Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('status')}
-                      >
-                        Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell 
-                        sx={{ fontWeight: 700, cursor: 'pointer' }} 
-                        onClick={() => handleSortChange('createdAt')}
-                      >
-                        Created {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">
-                        Actions
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow
-                        key={user._id}
-                        sx={{
-                          "&:hover": {
-                            background: "linear-gradient(90deg, #e3eeff 60%, #f3e7e9 100%)",
-                            cursor: 'pointer'
-                          },
-                        }}
-                        onClick={() => openUserDetailDialog(user)}
-                      >
-                        <TableCell>
-                          <Avatar sx={{ bgcolor: "#6366f1", color: "#fff" }}>
-                            {user.username?.charAt(0)?.toUpperCase() || "U"}
-                          </Avatar>
-                        </TableCell>
-                        <TableCell>{user._id.substring(0, 8)}...</TableCell>
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <span>{user.username}</span>
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <a href={`mailto:${user.email}`}>{user.email}</a>
-                        </TableCell>
-                        <TableCell>
-                          {user.role==="admin" ? (
-                            <Chip label="Admin" color="success" size="small" />
-                          ) : (
-                            <Chip label={user.role.toUpperCase()} color="info" size="small" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {user.role === "vendor" ? (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              {user.vendorVerified ? (
-                                <Chip 
-                                  icon={<VerifiedUser sx={{ width: 12, height: 12 }} />}
-                                  label="Verified" 
-                                  color="success" 
-                                  size="small" 
-                                />
-                              ) : (
-                                <Chip 
-                                  icon={<Warning sx={{ width: 12, height: 12 }} />}
-                                  label="Pending" 
-                                  color="warning" 
-                                  size="small" 
-                                />
-                              )}
-                            </Stack>
-                          ) : (
-                            <Chip 
-                              label={user.status?.toUpperCase() || "ACTIVE"} 
-                              color={user.status === "active" ? "success" : "default"} 
-                              size="small" 
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(user.createdAt)}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Stack direction="row" spacing={1} justifyContent="center">
-                            {user.role === "vendor" && !user.vendorVerified && (
-                              <>
-                                <Tooltip title="Verify Vendor">
-                                  <IconButton
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openVerificationDialog(user, 'verify');
-                                    }}
-                                    color="success"
-                                    size="small"
-                                    sx={{ mr: 1 }}
-                                  >
-                                    <FaUserCheck />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Reject Vendor">
-                                  <IconButton
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openVerificationDialog(user, 'reject');
-                                    }}
-                                    color="error"
-                                    size="small"
-                                    sx={{ mr: 1 }}
-                                  >
-                                    <FaUserTimes />
-                                  </IconButton>
-                                </Tooltip>
-                              </>
-                            )}
-                            {user.role!=="admin" && (
-                              <Tooltip title="Delete User">
-                                <IconButton
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteHandler(user);
-                                  }}
-                                  color="error"
-                                  size="small"
-                                >
-                                  <FaTrash />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                  <Pagination 
-                    count={pagination.totalPages} 
-                    page={page} 
-                    onChange={handlePageChange}
-                    color="primary"
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              )}
-              
-              {users.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="h6" color="textSecondary">
-                    No users found matching your criteria
-                  </Typography>
-                </Box>
-              )}
-            </>
-          )}
-        </Paper>
-      </Fade>
 
-      {/* Verification Confirmation Dialog */}
-      <Dialog open={verificationDialog.open} onClose={closeVerificationDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {verificationDialog.action === 'verify' ? 'Verify Vendor' : 'Reject Vendor'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ py: 2 }}>
-            <Typography variant="body1" gutterBottom>
-              {verificationDialog.action === 'verify' 
-                ? `Are you sure you want to verify ${verificationDialog.user?.username}?` 
-                : `Are you sure you want to reject ${verificationDialog.user?.username}? This will ${verificationDialog.action === 'reject' ? 'ban their account' : 'deactivate their account'}.`}
+            {/* DataGrid Implementation */}
+            <Box sx={{ height: 650, width: '100%', '& .MuiDataGrid-root': { border: 'none' } }}>
+              {error ? (
+                <Alert severity="error" sx={{ mx: 'auto', mt: 4, maxWidth: 600 }}>
+                  {error?.data?.message || "Failed to load user data. Please try again later."}
+                </Alert>
+              ) : (
+                <DataGrid
+                  rows={users}
+                  columns={columns}
+                  getRowId={(row) => row._id}
+                  paginationMode="server"
+                  rowCount={pagination.totalUsers || 0}
+                  loading={isLoading}
+                  page={page - 1}
+                  pageSize={limit}
+                  onPageChange={(newPage) => setPage(newPage + 1)}
+                  onPageSizeChange={(newSize) => setLimit(newSize)}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  disableSelectionOnClick
+                  density="comfortable"
+                  sx={{
+                    '& .MuiDataGrid-columnHeaders': {
+                      bgcolor: '#f8fafc',
+                      color: '#475569',
+                      fontWeight: 700,
+                      borderBottom: '1px solid #e2e8f0',
+                    },
+                    '& .MuiDataGrid-row': {
+                      borderBottom: '1px solid #f1f5f9',
+                      '&:hover': { bgcolor: '#f1f5f9' },
+                    },
+                    '& .MuiDataGrid-footerContainer': {
+                      borderTop: '1px solid #e2e8f0',
+                    },
+                  }}
+                />
+              )}
+            </Box>
+          </Paper>
+        </Fade>
+
+        {/* Edit User Dialog */}
+        <Dialog open={editDialog.open} onClose={closeEditDialog} maxWidth="xs" fullWidth>
+          <form onSubmit={handleEditSubmit}>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Typography variant="h6" fontWeight={700}>Edit Member Profile</Typography>
+              <Typography variant="caption" color="text.secondary">ID: {editDialog.user?._id}</Typography>
+            </DialogTitle>
+            <DialogContent>
+              <Stack spacing={3} sx={{ mt: 1 }}>
+                <TextField
+                  fullWidth
+                  label="Display Name"
+                  value={editFormData.username}
+                  onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
+                />
+                <TextField
+                  fullWidth
+                  label="Email Address"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                />
+                <FormControl fullWidth>
+                  <InputLabel>Account Role</InputLabel>
+                  <Select
+                    label="Account Role"
+                    value={editFormData.role}
+                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  >
+                    <MenuItem value="customer">Customer</MenuItem>
+                    <MenuItem value="vendor">Vendor</MenuItem>
+                    <MenuItem value="seller">Seller</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Account Status</InputLabel>
+                  <Select
+                    label="Account Status"
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  >
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                    <MenuItem value="banned">Banned</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, pt: 1 }}>
+              <Button onClick={closeEditDialog}>Cancel</Button>
+              <Button type="submit" variant="contained" sx={{ borderRadius: 2 }}>Save Changes</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteConfirmDialog.open} onClose={closeDeleteConfirmDialog} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+            <DeleteForeverIcon /> Confirm Deletion
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Are you sure you want to permanently delete <strong>{deleteConfirmDialog.user?.username}</strong>?
             </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: "#6366f1", color: "#fff" }}>
-                {verificationDialog.user?.username?.charAt(0)?.toUpperCase() || "U"}
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight="bold">
-                  {verificationDialog.user?.username}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {verificationDialog.user?.email}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                  <Chip 
-                    label={verificationDialog.user?.role} 
-                    size="small" 
-                    color={verificationDialog.user?.role === 'admin' ? 'success' : verificationDialog.user?.role === 'vendor' ? 'info' : 'default'} 
-                  />
-                  <Chip 
-                    label={verificationDialog.user?.status} 
-                    size="small" 
-                    color={
-                      verificationDialog.user?.status === 'active' ? 'success' : 
-                      verificationDialog.user?.status === 'inactive' ? 'warning' : 'error'
-                    } 
-                  />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              This action is irreversible. All associated data will be purged.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={closeDeleteConfirmDialog}>Dismiss</Button>
+            <Button onClick={deleteHandler} variant="contained" color="error" sx={{ borderRadius: 2 }}>
+              Confirm Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Verification Confirmation Dialog */}
+        <Dialog open={verificationDialog.open} onClose={closeVerificationDialog} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            {verificationDialog.action === 'verify' ? 'Approve Vendor Documents' : 'Reject Vendor Application'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ py: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Avatar sx={{ width: 64, height: 64, bgcolor: "primary.soft", color: "primary.main", border: '2px solid' }}>
+                  {verificationDialog.user?.username?.charAt(0)?.toUpperCase()}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight={700}>{verificationDialog.user?.username}</Typography>
+                  <Typography variant="body2" color="text.secondary">{verificationDialog.user?.email}</Typography>
                 </Box>
               </Box>
+
+              <Alert severity={verificationDialog.action === 'verify' ? "info" : "warning"} icon={<InfoIcon />}>
+                {verificationDialog.action === 'verify'
+                  ? "Verifying this vendor will grant them permission to publish and sell products on the marketplace."
+                  : "Rejecting this application will restrict vendor privileges and deactivate the account."}
+              </Alert>
             </Box>
-            
-            <Alert severity="info" sx={{ mt: 2 }}>
-              {verificationDialog.action === 'verify' 
-                ? 'This will activate the vendor account and allow them to list products for sale.'
-                : 'This will ban the vendor account and prevent them from accessing the platform.'}
-            </Alert>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeVerificationDialog} color="primary">
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleVerificationAction} 
-            variant="contained"
-            color={verificationDialog.action === 'verify' ? 'success' : 'error'}
-            startIcon={verificationDialog.action === 'verify' ? <CheckCircle /> : <Cancel />}
-          >
-            {verificationDialog.action === 'verify' ? 'Verify Vendor' : 'Reject Vendor'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={closeVerificationDialog}>Cancel</Button>
+            <Button
+              onClick={handleVerificationAction}
+              variant="contained"
+              color={verificationDialog.action === 'verify' ? 'success' : 'error'}
+              startIcon={verificationDialog.action === 'verify' ? <CheckCircle /> : <Cancel />}
+              sx={{ borderRadius: 2 }}
+            >
+              {verificationDialog.action === 'verify' ? 'Confirm Approval' : 'Confirm Rejection'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* User Detail Dialog */}
-      <Dialog 
-        open={userDetailDialog.open} 
-        onClose={closeUserDetailDialog} 
-        maxWidth="md" 
-        fullWidth
-        scroll="paper"
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ width: 56, height: 56, bgcolor: "#6366f1", color: "#fff", fontSize: 24 }}>
-              {userDetailDialog.user?.username?.charAt(0)?.toUpperCase() || "U"}
-            </Avatar>
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                {userDetailDialog.user?.username}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                {userDetailDialog.user?.email}
-              </Typography>
+        {/* User Detail Dialog */}
+        <Dialog open={userDetailDialog.open} onClose={closeUserDetailDialog} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ borderBottom: '1px solid #e2e8f0', py: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" fontWeight={700}>Member Intelligence Report</Typography>
+              <Chip label={userDetailDialog.user?.role?.toUpperCase()} color="primary" variant="soft" />
             </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          {userDetailDialog.user && (
-            <Box sx={{ py: 2 }}>
-              {/* Basic Information */}
-              <Card sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom fontWeight="bold">
-                    Basic Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemIcon>
-                            <Email color="primary" />
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary="Email" 
-                            secondary={
-                              <a href={`mailto:${userDetailDialog.user.email}`}>
-                                {userDetailDialog.user.email}
-                              </a>
-                            } 
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon>
-                            <Phone color="primary" />
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary="Phone" 
-                            secondary={userDetailDialog.user.phone || 'Not provided'} 
-                          />
-                        </ListItem>
-                      </List>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemIcon>
-                            <CalendarToday color="primary" />
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary="Created At" 
-                            secondary={formatDate(userDetailDialog.user.createdAt)} 
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon>
-                            <AccessTime color="primary" />
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary="Last Login" 
-                            secondary={userDetailDialog.user.lastLoginAt ? formatDate(userDetailDialog.user.lastLoginAt) : 'Never'} 
-                          />
-                        </ListItem>
-                      </List>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
+          </DialogTitle>
+          <DialogContent sx={{ bgcolor: '#f8fafc', p: 3 }}>
+            {userDetailDialog.user && (
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Card sx={{ height: '100%', borderRadius: 3 }}>
+                    <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                      <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: 32 }}>
+                        {userDetailDialog.user.username?.charAt(0)}
+                      </Avatar>
+                      <Typography variant="h6" fontWeight={700}>{userDetailDialog.user.username}</Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>{userDetailDialog.user.email}</Typography>
+                      <Chip
+                        label={userDetailDialog.user.status?.toUpperCase()}
+                        size="small"
+                        color={userDetailDialog.user.status === 'active' ? 'success' : 'error'}
+                        sx={{ mt: 1 }}
+                      />
+                    </CardContent>
+                    <Divider />
+                    <List dense>
+                      <ListItem>
+                        <ListItemIcon><Email fontSize="small" color="primary" /></ListItemIcon>
+                        <ListItemText primary="Email" secondary={userDetailDialog.user.email} />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon><Phone fontSize="small" color="primary" /></ListItemIcon>
+                        <ListItemText primary="Phone" secondary={userDetailDialog.user.phone || 'N/A'} />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon><CalendarToday fontSize="small" color="primary" /></ListItemIcon>
+                        <ListItemText primary="Joined" secondary={formatDate(userDetailDialog.user.createdAt)} />
+                      </ListItem>
+                    </List>
+                  </Card>
+                </Grid>
 
-              {/* Role and Status */}
-              <Card sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom fontWeight="bold">
-                    Role & Status
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Role" 
-                            secondary={
-                              <Chip 
-                                label={userDetailDialog.user.role.toUpperCase()} 
-                                color={
-                                  userDetailDialog.user.role === 'admin' ? 'success' : 
-                                  userDetailDialog.user.role === 'vendor' ? 'info' : 'default'
-                                } 
-                                size="small"
-                              />
-                            } 
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Status" 
-                            secondary={
-                              <Chip 
-                                label={userDetailDialog.user.status?.toUpperCase() || 'ACTIVE'} 
-                                color={
-                                  userDetailDialog.user.status === 'active' ? 'success' : 
-                                  userDetailDialog.user.status === 'inactive' ? 'warning' : 'error'
-                                } 
-                                size="small"
-                              />
-                            } 
-                          />
-                        </ListItem>
-                      </List>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      {userDetailDialog.user.role === 'vendor' && (
-                        <List dense>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Vendor Verification" 
-                              secondary={
-                                userDetailDialog.user.vendorVerified ? (
-                                  <Chip 
-                                    icon={<VerifiedUser />}
-                                    label="Verified" 
-                                    color="success" 
-                                    size="small" 
-                                  />
-                                ) : (
-                                  <Chip 
-                                    icon={<Warning />}
-                                    label="Not Verified" 
-                                    color="warning" 
-                                    size="small" 
-                                  />
-                                )
-                              } 
-                            />
-                          </ListItem>
-                        </List>
-                      )}
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
-              {/* Addresses */}
-              {userDetailDialog.user.addresses && userDetailDialog.user.addresses.length > 0 && (
-                <Card sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom fontWeight="bold">
-                      Addresses
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {userDetailDialog.user.addresses.map((address, index) => (
-                        <Grid item xs={12} key={index}>
-                          <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                              <Typography>
-                                {address.fullName} - {address.addressLine1}
-                                {address.isDefault && (
-                                  <Chip 
-                                    label="Default" 
-                                    size="small" 
-                                    color="primary" 
-                                    sx={{ ml: 1 }} 
-                                  />
-                                )}
-                              </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                              <List dense>
-                                <ListItem>
-                                  <ListItemIcon>
-                                    <LocationOn fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText 
-                                    primary="Address" 
-                                    secondary={`${address.addressLine1}${address.addressLine2 ? `, ${address.addressLine2}` : ''}, ${address.city}, ${address.state} ${address.postalCode}, ${address.country}`} 
-                                  />
-                                </ListItem>
-                                <ListItem>
-                                  <ListItemIcon>
-                                    <Phone fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText 
-                                    primary="Phone" 
-                                    secondary={address.phone || 'Not provided'} 
-                                  />
-                                </ListItem>
-                              </List>
-                            </AccordionDetails>
-                          </Accordion>
+                <Grid item xs={12} md={8}>
+                  <Stack spacing={3}>
+                    {/* Security & Access */}
+                    <Paper sx={{ p: 3, borderRadius: 3 }}>
+                      <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <VerifiedIcon color="primary" fontSize="small" /> Security & Access Control
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Account Verification</Typography>
+                          <Typography variant="body2">{userDetailDialog.user.emailVerified ? 'Verified' : 'Pending'}</Typography>
                         </Grid>
-                      ))}
-                    </Grid>
-                  </CardContent>
-                </Card>
-              )}
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Two-Factor Auth</Typography>
+                          <Typography variant="body2">{userDetailDialog.user.twoFactorEnabled ? 'Active' : 'Disabled'}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Login Failures</Typography>
+                          <Typography variant="body2" color={userDetailDialog.user.loginAttempts > 3 ? 'error.main' : 'inherit'}>
+                            {userDetailDialog.user.loginAttempts || 0} Attempts
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Last System Entry</Typography>
+                          <Typography variant="body2">{userDetailDialog.user.lastLoginAt ? formatDate(userDetailDialog.user.lastLoginAt) : 'None Recorded'}</Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
 
-              {/* Behavioral Data */}
-              {userDetailDialog.user.behaviorData && (
-                <Card sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom fontWeight="bold">
-                      Behavioral Data
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={4}>
-                        <List dense>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Session Count" 
-                              secondary={userDetailDialog.user.behaviorData.sessionData?.sessionCount || 0} 
-                            />
-                          </ListItem>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Wishlist Items" 
-                              secondary={userDetailDialog.user.wishlist?.length || 0} 
-                            />
-                          </ListItem>
-                        </List>
+                    {/* Behavior Analytics */}
+                    <Paper sx={{ p: 3, borderRadius: 3 }}>
+                      <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ShoppingCart color="primary" fontSize="small" /> Marketplace Activity
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">Wishlist</Typography>
+                          <Typography variant="body1" fontWeight={600}>{userDetailDialog.user.wishlist?.length || 0} Items</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">Session Count</Typography>
+                          <Typography variant="body1" fontWeight={600}>{userDetailDialog.user.behaviorData?.sessionData?.sessionCount || 0}</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">Cart Abandons</Typography>
+                          <Typography variant="body1" fontWeight={600} color="warning.main">{userDetailDialog.user.behaviorData?.sessionData?.cartAbandonmentCount || 0}</Typography>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={12} md={4}>
-                        <List dense>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Recently Viewed" 
-                              secondary={userDetailDialog.user.recentlyViewed?.length || 0} 
-                            />
-                          </ListItem>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Newsletter" 
-                              secondary={userDetailDialog.user.newsletterSubscribed ? 'Subscribed' : 'Not subscribed'} 
-                            />
-                          </ListItem>
-                        </List>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <List dense>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Cart Abandonment" 
-                              secondary={userDetailDialog.user.behaviorData.sessionData?.cartAbandonmentCount || 0} 
-                            />
-                          </ListItem>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Login Attempts" 
-                              secondary={userDetailDialog.user.loginAttempts || 0} 
-                            />
-                          </ListItem>
-                        </List>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              )}
+                    </Paper>
 
-              {/* Security Information */}
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom fontWeight="bold">
-                    Security Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Email Verified" 
-                            secondary={userDetailDialog.user.emailVerified ? 'Yes' : 'No'} 
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemText 
-                            primary="2FA Enabled" 
-                            secondary={userDetailDialog.user.twoFactorEnabled ? 'Yes' : 'No'} 
-                          />
-                        </ListItem>
-                      </List>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <List dense>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Account Locked" 
-                            secondary={userDetailDialog.user.isLocked ? 'Yes' : 'No'} 
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemText 
-                            primary="Password Changed" 
-                            secondary={userDetailDialog.user.passwordChangedAt ? formatDate(userDetailDialog.user.passwordChangedAt) : 'Never'} 
-                          />
-                        </ListItem>
-                      </List>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeUserDetailDialog} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+                    {/* Address Registry */}
+                    {userDetailDialog.user.addresses?.length > 0 && (
+                      <Paper sx={{ p: 3, borderRadius: 3 }}>
+                        <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LocationOn color="primary" fontSize="small" /> Address Registry
+                        </Typography>
+                        {userDetailDialog.user.addresses.map((addr, idx) => (
+                          <Box key={idx} sx={{ mb: 2, p: 1, bgcolor: '#f1f5f9', borderRadius: 2 }}>
+                            <Typography variant="body2" fontWeight={600}>{addr.fullName}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {addr.addressLine1}, {addr.city}, {addr.state} {addr.postalCode}
+                            </Typography>
+                            {addr.isDefault && <Chip label="Default Shipping" size="small" variant="soft" color="primary" sx={{ mt: 0.5 }} />}
+                          </Box>
+                        ))}
+                      </Paper>
+                    )}
+                  </Stack>
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ p: 2, borderTop: '1px solid #e2e8f0' }}>
+            <Button onClick={closeUserDetailDialog} variant="contained" disableElevation>Close Report</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </DocumentTitle>
   );
 };

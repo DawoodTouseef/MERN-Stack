@@ -31,7 +31,7 @@ router.delete("/:id", protect, adminOnly, deleteTaxRule);
 
 // Tax Calculation
 router.post("/calculate", protect, calculateTax); // Legacy endpoint
-router.post("/calculate-advanced", protect, calculateAdvancedTax); // Enhanced calculation
+router.post("/calculate-advanced", calculateAdvancedTax); // Enhanced calculation (Public for guest estimates)
 
 // Tax Exemptions
 router.post("/exemptions", protect, adminOnly, createTaxExemption);

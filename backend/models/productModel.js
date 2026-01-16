@@ -12,12 +12,12 @@ const reviewSchema = mongoose.Schema(
       required: true,
       ref: "User",
     },
-    
+
     // Purchase Verification
     isVerifiedPurchase: { type: Boolean, default: false },
     orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
     purchaseDate: { type: Date },
-    
+
     // Review Media
     images: [{
       url: { type: String },
@@ -30,7 +30,7 @@ const reviewSchema = mongoose.Schema(
       caption: { type: String },
       isApproved: { type: Boolean, default: true }
     }],
-    
+
     // Review Quality & Moderation
     isApproved: { type: Boolean, default: true },
     moderationStatus: {
@@ -41,7 +41,7 @@ const reviewSchema = mongoose.Schema(
     moderationReason: { type: String },
     moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     moderatedAt: { type: Date },
-    
+
     // Helpfulness Voting
     helpfulVotes: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -50,7 +50,7 @@ const reviewSchema = mongoose.Schema(
     }],
     helpfulCount: { type: Number, default: 0 },
     notHelpfulCount: { type: Number, default: 0 },
-    
+
     // Review Metrics
     viewCount: { type: Number, default: 0 },
     reportCount: { type: Number, default: 0 },
@@ -63,11 +63,11 @@ const reviewSchema = mongoose.Schema(
       description: { type: String },
       reportedAt: { type: Date, default: Date.now }
     }],
-    
+
     // Review Features
     pros: [{ type: String }],
     cons: [{ type: String }],
-    
+
     // Product Usage Context
     usageContext: {
       howLongUsed: {
@@ -80,7 +80,7 @@ const reviewSchema = mongoose.Schema(
         enum: ["highly_recommend", "recommend", "neutral", "not_recommend", "strongly_not_recommend"]
       }
     },
-    
+
     // Quality Indicators
     qualityScore: { type: Number, default: 0, min: 0, max: 100 },
     isEdited: { type: Boolean, default: false },
@@ -90,7 +90,7 @@ const reviewSchema = mongoose.Schema(
       previousRating: { type: Number },
       reason: { type: String }
     }],
-    
+
     // Retailer Response
     vendorResponse: {
       comment: { type: String },
@@ -107,7 +107,7 @@ const productSchema = mongoose.Schema({
   brand: { type: ObjectId, ref: "Brand", required: true },
   category: { type: ObjectId, ref: "Category", required: true },
   description: { type: String, required: true },
-  price:{type:Number,required:true},
+  price: { type: Number, required: true },
   // Multi-currency pricing
   currency: { type: String, default: "USD" },
   variants: [
@@ -132,8 +132,8 @@ const productSchema = mongoose.Schema({
       shippingClass: { type: String },
     }
   ],
-  countInStock:{type:Number,required:true},
-  quantity:{type:Number,required:true},
+  countInStock: { type: Number, required: true },
+  quantity: { type: Number, required: true },
   specifications: mongoose.Schema.Types.Mixed,
   tags: [String],
   warrantyPeriod: String,
@@ -148,7 +148,7 @@ const productSchema = mongoose.Schema({
   isTaxable: { type: Boolean, default: true },
   taxCategory: { type: String },
   taxExempt: { type: Boolean, default: false },
-  
+
   // Shipping information
   shippingWeight: { type: Number },
   shippingLength: { type: Number },
@@ -157,11 +157,21 @@ const productSchema = mongoose.Schema({
   shippingClass: { type: String },
 
   user: { type: ObjectId, required: true, ref: "User" },
-  vendor: { type: ObjectId, ref: "Vendor" },
+  vendor: { type: ObjectId, ref: "Organization" },
+
+  isActive: { type: Boolean, default: true },
+  deletedAt: { type: Date, default: null },
 }, { timestamps: true });
 
-// Add index for vendor field
+// Add indexes for performance
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ user: 1 });
 productSchema.index({ vendor: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ price: 1 });
+productSchema.index({ countInStock: 1 });
+productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

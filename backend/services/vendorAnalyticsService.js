@@ -1,4 +1,4 @@
-import Vendor from '../models/vendorModel.js';
+import Organization from '../models/organizationModel.js';
 import Product from '../models/productModel.js';
 import Order from '../models/orderModel.js';
 import mongoose from 'mongoose';
@@ -8,36 +8,36 @@ class VendorAnalyticsService {
   static async getVendorPerformance(vendorId, options = {}) {
     try {
       const { startDate, endDate, period = '30d' } = options;
-      
+
       // Calculate date range if not provided
       const end = endDate ? new Date(endDate) : new Date();
       const start = startDate ? new Date(startDate) : new Date(end.getTime() - (parseInt(period) * 24 * 60 * 60 * 1000));
-      
+
       // Validate dates
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         throw new Error('Invalid date parameters');
       }
-      
+
       // Get vendor products
       const vendorProducts = await Product.find({ vendor: vendorId });
       const productIds = vendorProducts.map(p => p._id);
-      
+
       if (productIds.length === 0) {
         return this.getEmptyVendorMetrics();
       }
-      
+
       // Get sales data
       const salesData = await this.getSalesData(productIds, start, end);
-      
+
       // Get product performance
       const productPerformance = await this.getProductPerformance(productIds);
-      
+
       // Get customer insights
       const customerInsights = await this.getCustomerInsights(productIds, start, end);
-      
+
       // Get inventory status
       const inventoryStatus = await this.getInventoryStatus(vendorProducts);
-      
+
       return {
         sales: salesData,
         products: productPerformance,
@@ -51,7 +51,7 @@ class VendorAnalyticsService {
       return this.getEmptyVendorMetrics();
     }
   }
-  
+
   // Get sales data for vendor products
   static async getSalesData(productIds, startDate, endDate) {
     try {
@@ -63,7 +63,7 @@ class VendorAnalyticsService {
           growth: { revenueGrowth: 0, orderGrowth: 0 }
         };
       }
-      
+
       const matchStage = {
         'orderItems.product': { $in: productIds },
         isPaid: true,
@@ -72,7 +72,7 @@ class VendorAnalyticsService {
           $lte: endDate
         }
       };
-      
+
       const salesAggregation = await Order.aggregate([
         { $match: matchStage },
         {
@@ -93,7 +93,7 @@ class VendorAnalyticsService {
           }
         }
       ]);
-      
+
       const dailySales = await Order.aggregate([
         { $match: matchStage },
         {
@@ -114,9 +114,9 @@ class VendorAnalyticsService {
         },
         { $sort: { _id: 1 } }
       ]);
-      
+
       const growthData = await this.calculateGrowth(productIds, startDate, endDate);
-      
+
       return {
         total: salesAggregation[0] || { totalRevenue: 0, totalOrders: 0, totalQuantity: 0, averageOrderValue: 0 },
         daily: dailySales,
@@ -132,7 +132,7 @@ class VendorAnalyticsService {
       };
     }
   }
-  
+
   // Calculate sales growth
   static async calculateGrowth(productIds, startDate, endDate) {
     try {
@@ -140,12 +140,12 @@ class VendorAnalyticsService {
       if (!productIds || productIds.length === 0) {
         return { revenueGrowth: 0, orderGrowth: 0 };
       }
-      
+
       // Validate dates
       if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
         return { revenueGrowth: 0, orderGrowth: 0 };
       }
-      
+
       // Calculate current period
       const currentPeriod = await Order.aggregate([
         {
@@ -174,12 +174,12 @@ class VendorAnalyticsService {
           }
         }
       ]);
-      
+
       // Calculate previous period
       const periodDiff = endDate.getTime() - startDate.getTime();
       const previousStart = new Date(startDate.getTime() - periodDiff);
       const previousEnd = new Date(endDate.getTime() - periodDiff);
-      
+
       const previousPeriod = await Order.aggregate([
         {
           $match: {
@@ -207,15 +207,15 @@ class VendorAnalyticsService {
           }
         }
       ]);
-      
+
       const currentRevenue = currentPeriod[0]?.revenue || 0;
       const previousRevenue = previousPeriod[0]?.revenue || 0;
       const revenueGrowth = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
-      
+
       const currentOrders = currentPeriod[0]?.orders || 0;
       const previousOrders = previousPeriod[0]?.orders || 0;
       const orderGrowth = previousOrders > 0 ? ((currentOrders - previousOrders) / previousOrders) * 100 : 0;
-      
+
       return {
         revenueGrowth: parseFloat(revenueGrowth.toFixed(2)),
         orderGrowth: parseFloat(orderGrowth.toFixed(2))
@@ -225,7 +225,7 @@ class VendorAnalyticsService {
       return { revenueGrowth: 0, orderGrowth: 0 };
     }
   }
-  
+
   // Get product performance metrics
   static async getProductPerformance(productIds) {
     try {
@@ -279,7 +279,7 @@ class VendorAnalyticsService {
         { $sort: { totalRevenue: -1 } },
         { $limit: 10 }
       ]);
-      
+
       return {
         topProducts,
         totalProducts: productIds.length,
@@ -289,7 +289,7 @@ class VendorAnalyticsService {
       throw new Error(`Failed to fetch product performance: ${error.message}`);
     }
   }
-  
+
   // Get customer insights
   static async getCustomerInsights(productIds, startDate, endDate) {
     try {
@@ -301,7 +301,7 @@ class VendorAnalyticsService {
           $lte: endDate
         }
       };
-      
+
       const customerAggregation = await Order.aggregate([
         { $match: matchStage },
         {
@@ -347,7 +347,7 @@ class VendorAnalyticsService {
           }
         }
       ]);
-      
+
       const segmentCounts = {};
       if (customerAggregation[0]?.customerSegments) {
         customerAggregation[0].customerSegments.forEach(customer => {
@@ -355,7 +355,7 @@ class VendorAnalyticsService {
           segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
         });
       }
-      
+
       return {
         total: customerAggregation[0]?.totalCustomers || 0,
         averageValue: customerAggregation[0]?.averageCustomerValue || 0,
@@ -365,18 +365,18 @@ class VendorAnalyticsService {
       throw new Error(`Failed to fetch customer insights: ${error.message}`);
     }
   }
-  
+
   // Get inventory status
   static async getInventoryStatus(products) {
     try {
       const totalProducts = products.length;
       const outOfStock = products.filter(p => p.countInStock === 0).length;
       const lowStock = products.filter(p => p.countInStock > 0 && p.countInStock <= 5).length;
-      
+
       const inventoryValue = products.reduce((sum, product) => {
         return sum + (product.countInStock * product.price);
       }, 0);
-      
+
       // Products needing restocking
       const restockProducts = products
         .filter(p => p.countInStock <= 5)
@@ -388,7 +388,7 @@ class VendorAnalyticsService {
           totalValue: p.countInStock * p.price
         }))
         .sort((a, b) => a.currentStock - b.currentStock);
-      
+
       return {
         totalProducts,
         outOfStock,
@@ -401,7 +401,7 @@ class VendorAnalyticsService {
       throw new Error(`Failed to fetch inventory status: ${error.message}`);
     }
   }
-  
+
   // Get empty vendor metrics for new vendors
   static getEmptyVendorMetrics() {
     return {
@@ -431,7 +431,7 @@ class VendorAnalyticsService {
       period: { start: new Date(), end: new Date() }
     };
   }
-  
+
   // Get vendor ranking based on performance
   static async getVendorRanking(limit = 10) {
     try {
@@ -485,7 +485,7 @@ class VendorAnalyticsService {
           $limit: limit
         }
       ]);
-      
+
       return vendorPerformance;
     } catch (error) {
       throw new Error(`Failed to fetch vendor ranking: ${error.message}`);

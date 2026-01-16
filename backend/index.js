@@ -32,6 +32,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import dynamicPricingRoutes from './routes/dynamicPricingRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
+import organizationRoutes from './routes/organizationRoutes.js';
 import currencyRoutes from './routes/currencyRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import notificationManager from './services/notificationService.js';
@@ -44,12 +45,12 @@ dotenv.config();
 if (process.env.NODE_ENV === 'production') {
   const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URL'];
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
+
   if (missingVars.length > 0) {
     console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
     process.exit(1);
   }
-  
+
   if (process.env.JWT_SECRET === 'admin123') {
     console.error('❌ JWT_SECRET cannot use default value in production');
     process.exit(1);
@@ -67,7 +68,7 @@ const server = createServer(app);
 
 // CORS configuration - MUST be before other middleware
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL, 'https://mern-stack-two-psi.vercel.app', 'https://mern-stack-two-psi.vercel.app/']
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
@@ -123,6 +124,7 @@ app.use('/api/location', locationRoutes);
 app.use('/api/pricing', dynamicPricingRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/currencies', currencyRoutes);
+app.use('/api/organizations', organizationRoutes);
 // app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
 
 // Security headers for config endpoints
@@ -195,11 +197,11 @@ socketService.initialize(server);
 
 server.listen(port, async () => {
   console.log(`Server running on port: ${port}`);
-  
+
   // Initialize notification service with the server
   notificationManager.initialize(server);
   console.log('Real-time notification service initialized');
-  
+
   // Initialize tax service manager
   try {
     await taxServiceManager.initialize();

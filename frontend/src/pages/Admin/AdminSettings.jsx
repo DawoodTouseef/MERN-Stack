@@ -2,12 +2,15 @@ import { useState } from "react";
 import PayPalSettings from "../Admin/SettingsTabs/PayPalSettings";
 import TaxJsSettings from "../Admin/SettingsTabs/TaxJsSettings";
 import ExchangeApiSettings from "../Admin/SettingsTabs/ExchangeApiSettings";
+import LogisticsSettings from "../Admin/SettingsTabs/LogisticsSettings";
 import { Box, Tabs, Tab, Typography, Paper, Divider } from "@mui/material";
 
 const tabs = [
   { id: "paypal", label: "PayPal Settings" },
   { id: "taxjs", label: "Tax Configuration" },
+  { id: "taxjs", label: "Tax Configuration" },
   { id: "exchange", label: "Exchange API" },
+  { id: "logistics", label: "Logistics Partners" },
 ];
 
 const SettingsPage = () => {
@@ -21,6 +24,8 @@ const SettingsPage = () => {
         return <TaxJsSettings />;
       case "exchange":
         return <ExchangeApiSettings />;
+      case "logistics":
+        return <LogisticsSettings />;
       default:
         return null;
     }

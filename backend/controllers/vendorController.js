@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import Vendor from '../models/vendorModel.js';
+import Organization from '../models/organizationModel.js';
 import Product from '../models/productModel.js';
 import Order from '../models/orderModel.js';
 import User from '../models/userModel.js';
@@ -14,9 +14,9 @@ export const getVendors = asyncHandler(async (req, res) => {
     const pageSize = Number(req.query.pageSize) || 10;
     const page = Number(req.query.pageNumber) || 1;
 
-    const count = await Vendor.countDocuments();
-    const vendors = await Vendor.find()
-      .populate('user', 'username email status vendorVerified') // Populate user info
+    const count = await Organization.countDocuments();
+    const vendors = await Organization.find()
+      .populate('owner', 'username email status vendorVerified') // Populate owner info
       .limit(pageSize)
       .skip(pageSize * (page - 1))
       .sort({ createdAt: -1 });
@@ -38,7 +38,7 @@ export const getVendors = asyncHandler(async (req, res) => {
 export const getVendorById = asyncHandler(async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.params.id).populate('user', 'username email status vendorVerified');
-    
+
     if (vendor) {
       res.json(vendor);
     } else {
@@ -66,7 +66,7 @@ export const createVendor = asyncHandler(async (req, res) => {
     } = req.body;
 
     const vendorExists = await Vendor.findOne({ email });
-    
+
     if (vendorExists) {
       res.status(400);
       throw new Error('Vendor already exists with this email');
@@ -95,18 +95,14 @@ export const createVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const updateVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Organization.findById(req.params.id);
 
     if (vendor) {
       vendor.name = req.body.name || vendor.name;
-      vendor.email = req.body.email || vendor.email;
-      vendor.phone = req.body.phone || vendor.phone;
-      vendor.address = req.body.address || vendor.address;
-      vendor.businessType = req.body.businessType || vendor.businessType;
-      vendor.taxId = req.body.taxId || vendor.taxId;
-      vendor.bankDetails = req.body.bankDetails || vendor.bankDetails;
-      vendor.contactPerson = req.body.contactPerson || vendor.contactPerson;
-      vendor.isActive = req.body.isActive !== undefined ? req.body.isActive : vendor.isActive;
+      // Update other fields as needed...
+      if (req.body.settings) {
+        vendor.settings = { ...vendor.settings, ...req.body.settings };
+      }
 
       const updatedVendor = await vendor.save();
       res.json(updatedVendor);
@@ -147,7 +143,7 @@ export const verifyVendor = asyncHandler(async (req, res) => {
       vendor.isVerified = true;
       vendor.isActive = true;
       const updatedVendor = await vendor.save();
-      
+
       // Also verify the user account if it exists
       if (vendor.user) {
         const user = await User.findById(vendor.user._id);
@@ -157,10 +153,10 @@ export const verifyVendor = asyncHandler(async (req, res) => {
           await user.save();
         }
       }
-      
+
       // Return detailed vendor information
-      res.json({ 
-        message: 'Vendor verified successfully', 
+      res.json({
+        message: 'Vendor verified successfully',
         vendor: {
           _id: updatedVendor._id,
           name: updatedVendor.name,
@@ -203,7 +199,7 @@ export const rejectVendor = asyncHandler(async (req, res) => {
       vendor.isVerified = false;
       vendor.isActive = false;
       const updatedVendor = await vendor.save();
-      
+
       // Also reject the user account if it exists
       if (vendor.user) {
         const user = await User.findById(vendor.user._id);
@@ -213,10 +209,10 @@ export const rejectVendor = asyncHandler(async (req, res) => {
           await user.save();
         }
       }
-      
+
       // Return detailed vendor information
-      res.json({ 
-        message: 'Vendor rejected successfully', 
+      res.json({
+        message: 'Vendor rejected successfully',
         vendor: {
           _id: updatedVendor._id,
           name: updatedVendor.name,
@@ -254,24 +250,24 @@ export const rejectVendor = asyncHandler(async (req, res) => {
 export const getVendorDashboard = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
-    
+
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
 
-    
+
     // Get comprehensive vendor performance metrics
     const performance = await VendorAnalyticsService.getVendorPerformance(vendorId, {
       period: '30d'
     });
-    
+
     // Get recent orders for vendor's products
     const recentOrders = await Order.find({
       'orderItems.product': { $in: products.map(p => p._id) }
     })
-    .populate('user', 'username email')
-    .sort({ createdAt: -1 })
-    .limit(10);
-    
+      .populate('user', 'username email')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
     res.json({
       products: products.length,
       recentOrders,
@@ -290,23 +286,23 @@ export const getVendorSalesAnalytics = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
     const { startDate, endDate, groupBy = 'day' } = req.query;
-    
+
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
+
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
-    
+
     // Check if dates are valid
     if (startDate && isNaN(start.getTime())) {
       return res.status(400).json({ message: 'Invalid startDate parameter' });
     }
-    
+
     if (endDate && isNaN(end.getTime())) {
       return res.status(400).json({ message: 'Invalid endDate parameter' });
     }
-    
+
     const matchStage = {
       'orderItems.product': { $in: products.map(p => p._id) },
       isPaid: true,
@@ -371,26 +367,26 @@ export const getVendorProductAnalytics = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
     const { startDate, endDate, limit = 20, sortBy = 'revenue' } = req.query;
-    
+
     // Validate limit parameter
     const parsedLimit = Math.min(parseInt(limit) || 20, 100); // Max 100 items
-    
+
     // Validate sortBy parameter
     const validSortFields = ['revenue', 'totalQuantitySold', 'totalOrders', 'averagePrice'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'revenue';
 
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
+
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
-    
+
     // Check if dates are valid
     if (startDate && isNaN(start.getTime())) {
       return res.status(400).json({ message: 'Invalid startDate parameter' });
     }
-    
+
     if (endDate && isNaN(end.getTime())) {
       return res.status(400).json({ message: 'Invalid endDate parameter' });
     }
@@ -475,16 +471,16 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
 
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
+
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
-    
+
     // Check if dates are valid
     if (startDate && isNaN(start.getTime())) {
       return res.status(400).json({ message: 'Invalid startDate parameter' });
     }
-    
+
     if (endDate && isNaN(end.getTime())) {
       return res.status(400).json({ message: 'Invalid endDate parameter' });
     }
@@ -599,7 +595,7 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
       segmentSummary,
       metrics: {
         totalCustomers: customerData.length,
-        averageLifetimeValue: customerData.length > 0 ? 
+        averageLifetimeValue: customerData.length > 0 ?
           customerData.reduce((sum, c) => sum + (c.totalSpent || 0), 0) / customerData.length : 0
       }
     });
@@ -615,15 +611,15 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
 export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
-    
+
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
+
     // Inventory metrics
     const totalProducts = products.length;
     const outOfStockProducts = products.filter(p => p.countInStock === 0).length;
     const lowStockProducts = products.filter(p => p.countInStock > 0 && p.countInStock <= 5).length;
-    
+
     // Top selling products by inventory
     const inventoryAnalysis = products.map(product => ({
       productId: product._id,
@@ -631,10 +627,10 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
       currentStock: product.countInStock,
       price: product.price,
       totalValue: product.countInStock * product.price,
-      status: product.countInStock === 0 ? 'Out of Stock' : 
-              product.countInStock <= 5 ? 'Low Stock' : 'In Stock'
+      status: product.countInStock === 0 ? 'Out of Stock' :
+        product.countInStock <= 5 ? 'Low Stock' : 'In Stock'
     })).sort((a, b) => a.currentStock - b.currentStock).slice(0, 20);
-    
+
     res.json({
       metrics: {
         totalProducts,
@@ -657,7 +653,7 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
 export const getVendorProfile = asyncHandler(async (req, res) => {
   try {
     const vendor = await Vendor.findOne({ user: req.user._id }).populate('user', 'username email');
-    
+
     if (vendor) {
       res.json(vendor);
     } else {
@@ -674,10 +670,10 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
 export const checkVendorProducts = asyncHandler(async (req, res) => {
   try {
     const vendorId = req.user._id;
-    
+
     // Get vendor products
     const products = await Product.find({ vendor: vendorId });
-    
+
     res.json({
       vendorId,
       productCount: products.length,

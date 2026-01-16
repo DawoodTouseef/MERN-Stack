@@ -42,6 +42,7 @@ import SimilarProducts from "../../components/SimilarProducts";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import DocumentTitle from "react-document-title";
 import { getVariant, getAvailableOptions, formatVariantAttributes, isVariantInStock, getVariantPrice, getVariantImages, hasVariants, getVariantSku, getVariantShippingDetails } from "../../Utils/variantUtils";
+import axios from "axios";
 
 const ProductDetails = () => {
   const { id: productId } = useParams();
@@ -52,17 +53,18 @@ const ProductDetails = () => {
   const [selectedVariant, setSelectedVariant] = useState(null); // Current selected variant
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [taxInfo, setTaxInfo] = useState(null);
 
   const { data: product, isLoading, refetch, error } = useGetProductDetailsQuery(productId);
   const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
-  
+
   const [offerpercent, setofferpercent] = useState({
     percentage: "",
     end: ""
   });
-  
+
   const { userInfo } = useSelector((state) => state.auth);
-  
+
   // Update variant when product or selected options change
   useEffect(() => {
     if (product && product.variants && product.variants.length > 0) {
@@ -72,7 +74,7 @@ const ProductDetails = () => {
       setSelectedVariant(null);
     }
   }, [product, selectedOptions]);
-  
+
   useEffect(() => {
     if (offers && product) {
       offers.forEach((offer) => {
@@ -99,7 +101,31 @@ const ProductDetails = () => {
       });
     }
   }, [offers, product]);
-  
+
+  useEffect(() => {
+    const fetchTaxInfo = async () => {
+      if (!product) return;
+      try {
+        // Use mock or user location if available
+        // For now, we'll let the backend use defaults or mock in the body
+        const { data } = await axios.post('/api/tax/calculate-advanced', {
+          productId: product._id,
+          price: getCurrentPrice(),
+          quantity: qty,
+          shippingAddress: {
+            country: 'US', // Default for estimation
+            zipCode: '10001' // Default for estimation
+          },
+          useThirdPartyService: true // Enable dynamic calc if services configured
+        });
+        setTaxInfo(data);
+      } catch (error) {
+        console.error("Failed to fetch tax info", error);
+      }
+    };
+    fetchTaxInfo();
+  }, [product, qty, selectedVariant]);
+
   const [createReview, { isLoading: loadingProductReview }] = useCreateReviewMutation();
 
   // Get current product/variant price
@@ -155,7 +181,7 @@ const ProductDetails = () => {
       toast.error("Please select all options before adding to cart");
       return;
     }
-    
+
     // Prepare cart item with variant information if applicable
     const cartItem = {
       ...product,
@@ -172,19 +198,19 @@ const ProductDetails = () => {
         selectedOptions: selectedOptions // Store selected options for display in cart
       })
     };
-    
+
     dispatch(addToCart(cartItem));
     toast.success("Added to cart!", { autoClose: 1800 });
     navigate("/cart");
   };
-  
+
   const addToShippingHandler = () => {
     // Check if product has variants but no variant is selected
     if (hasVariants(product) && !selectedVariant) {
       toast.error("Please select all options before buying now");
       return;
     }
-    
+
     // Prepare cart item with variant information if applicable
     const cartItem = {
       ...product,
@@ -201,11 +227,11 @@ const ProductDetails = () => {
         selectedOptions: selectedOptions // Store selected options for display in cart
       })
     };
-    
+
     dispatch(addToCart(cartItem));
     navigate("/shipping");
   };
-  
+
   const calculateDiscountedPrice = (product, offers) => {
     if (!product || !product.price) return 0; // Return 0 if product or price is undefined
     if (!offers || offers.length === 0) return product.price; // Return original price if no offers
@@ -236,12 +262,12 @@ const ProductDetails = () => {
 
     return discountedPrice;
   };
-  
+
   let discountedPrice = calculateDiscountedPrice(product, offers).toFixed(2);
-  
+
   // Get available options for the product
   const availableOptions = product ? getAvailableOptions(product) : { colors: [], sizes: [], storages: [] };
-  
+
   return (
     <DocumentTitle title={`${product?.name || "Product"} - Details`}>
       <Box sx={{ minHeight: "100vh", py: 4, bgcolor: "#f3f4f6" }}>
@@ -448,14 +474,14 @@ const ProductDetails = () => {
                       <br />
                       {product.description}
                     </Typography>
-                    
+
                     {/* Variant Selection */}
                     {hasVariants(product) && (
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>
                           Select Options:
                         </Typography>
-                        
+
                         {/* Color Selector */}
                         {availableOptions.colors.length > 0 && (
                           <Box sx={{ mb: 2 }}>
@@ -470,8 +496,8 @@ const ProductDetails = () => {
                                   onClick={() => handleOptionSelect('color', color)}
                                   color={selectedOptions.color === color ? "primary" : "default"}
                                   variant={selectedOptions.color === color ? "filled" : "outlined"}
-                                  sx={{ 
-                                    cursor: "pointer", 
+                                  sx={{
+                                    cursor: "pointer",
                                     mb: 1,
                                     minWidth: 40,
                                     height: 36,
@@ -486,7 +512,7 @@ const ProductDetails = () => {
                             </Stack>
                           </Box>
                         )}
-                        
+
                         {/* Size Selector */}
                         {availableOptions.sizes.length > 0 && (
                           <Box sx={{ mb: 2 }}>
@@ -501,8 +527,8 @@ const ProductDetails = () => {
                                   onClick={() => handleOptionSelect('size', size)}
                                   color={selectedOptions.size === size ? "primary" : "default"}
                                   variant={selectedOptions.size === size ? "filled" : "outlined"}
-                                  sx={{ 
-                                    cursor: "pointer", 
+                                  sx={{
+                                    cursor: "pointer",
                                     mb: 1,
                                     minWidth: 40,
                                     height: 36,
@@ -517,7 +543,7 @@ const ProductDetails = () => {
                             </Stack>
                           </Box>
                         )}
-                        
+
                         {/* Storage Selector */}
                         {availableOptions.storages.length > 0 && (
                           <Box sx={{ mb: 2 }}>
@@ -532,8 +558,8 @@ const ProductDetails = () => {
                                   onClick={() => handleOptionSelect('storage', storage)}
                                   color={selectedOptions.storage === storage ? "primary" : "default"}
                                   variant={selectedOptions.storage === storage ? "filled" : "outlined"}
-                                  sx={{ 
-                                    cursor: "pointer", 
+                                  sx={{
+                                    cursor: "pointer",
                                     mb: 1,
                                     minWidth: 40,
                                     height: 36,
@@ -548,7 +574,7 @@ const ProductDetails = () => {
                             </Stack>
                           </Box>
                         )}
-                        
+
                         {/* Selected Variant Info */}
                         {selectedVariant && (
                           <Box sx={{ mt: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 2 }}>
@@ -563,7 +589,7 @@ const ProductDetails = () => {
                                 Only {selectedVariant.countInStock} left in stock!
                               </Typography>
                             )}
-                            
+
                             {/* Shipping Info */}
                             {getVariantShippingDetails(selectedVariant).weight && (
                               <Typography variant="body2" sx={{ mt: 1 }}>
@@ -572,7 +598,7 @@ const ProductDetails = () => {
                             )}
                           </Box>
                         )}
-                        
+
                         {/* Warning when not all options are selected */}
                         {!selectedVariant && Object.keys(selectedOptions).length > 0 && (
                           <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
@@ -581,9 +607,9 @@ const ProductDetails = () => {
                         )}
                       </Box>
                     )}
-                    
+
                     <Divider sx={{ my: 2 }} />
-                    <MultiCurrencyPriceDisplay product={{...product, price: getCurrentPrice()}} />
+                    <MultiCurrencyPriceDisplay product={{ ...product, price: getCurrentPrice() }} />
                     {offerpercent.percentage > 0 && (
                       <Typography
                         variant="body2"
@@ -594,15 +620,26 @@ const ProductDetails = () => {
                           mt: 1,
                         }}
                       >
-                        Original Price: <MultiCurrencyPriceDisplay product={{...product, price: product.price}} showConversion={false} />
+                        Original Price: <MultiCurrencyPriceDisplay product={{ ...product, price: product.price }} showConversion={false} />
                       </Typography>
                     )}
-                    
-                    {/* Variant-specific price display */}
-                    {selectedVariant && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Variant Price: <MultiCurrencyPriceDisplay product={{...product, price: getVariantPrice(selectedVariant)}} showConversion={false} />
-                      </Typography>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Variant Price: <MultiCurrencyPriceDisplay product={{ ...product, price: getVariantPrice(selectedVariant) }} showConversion={false} />
+                    </Typography>
+
+
+                    {taxInfo && (
+                      <Box sx={{ mt: 2, p: 1, bgcolor: "#f0fdf4", borderRadius: 1, border: '1px solid #bbf7d0' }}>
+                        <Typography variant="body2" color="success.main">
+                          {taxInfo.isInclusive
+                            ? `Includes Tax (${taxInfo.rate}%)`
+                            : `+ Estimated Tax: $${taxInfo.tax} (${taxInfo.rate}%)`}
+                        </Typography>
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          based on 10001 (US)
+                        </Typography>
+                      </Box>
                     )}
                   </Paper>
                 </Grid>
@@ -622,7 +659,7 @@ const ProductDetails = () => {
                       <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
                         Buy Now
                       </Typography>
-                      <MultiCurrencyPriceDisplay product={{...product, price: getCurrentPrice()}} />
+                      <MultiCurrencyPriceDisplay product={{ ...product, price: getCurrentPrice() }} />
                       <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
                         {isInStock() ? (
                           <span style={{ color: "#22c55e" }}>In Stock</span>

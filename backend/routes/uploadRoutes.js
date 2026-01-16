@@ -10,6 +10,8 @@ const __dirname = path.resolve();
 const uploadsDir = path.join(__dirname, "uploads");
 const productsDir = path.join(uploadsDir, "products");
 
+const documentsDir = path.join(uploadsDir, "documents");
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -18,9 +20,18 @@ if (!fs.existsSync(productsDir)) {
   fs.mkdirSync(productsDir, { recursive: true });
 }
 
+if (!fs.existsSync(documentsDir)) {
+  fs.mkdirSync(documentsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, productsDir);
+    const type = req.query.type;
+    if (type === 'document') {
+      cb(null, documentsDir);
+    } else {
+      cb(null, productsDir);
+    }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -30,21 +41,37 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const filetypes = /jpe?g|png|webp/;
-  const mimetypes = /image\/jpe?g|image\/png|image\/webp/;
-  const extname = path.extname(file.originalname).toLowerCase();
-  const mimetype = file.mimetype;
+  const type = req.query.type;
 
-  if (filetypes.test(extname) && mimetypes.test(mimetype)) {
-    cb(null, true);
+  if (type === 'document') {
+    const filetypes = /jpe?g|png|webp|pdf/;
+    const mimetypes = /image\/jpe?g|image\/png|image\/webp|application\/pdf/;
+    const extname = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+
+    if (filetypes.test(extname) && mimetypes.test(mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, WEBP, or PDF files are allowed for documents"), false);
+    }
   } else {
-    cb(new Error("Only JPEG, PNG, or WEBP images are allowed"), false);
+    // Default to product images
+    const filetypes = /jpe?g|png|webp/;
+    const mimetypes = /image\/jpe?g|image\/png|image\/webp/;
+    const extname = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+
+    if (filetypes.test(extname) && mimetypes.test(mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, or WEBP images are allowed"), false);
+    }
   }
 };
 
 // Accept up to 5 images
-const uploadMultiple = multer({ 
-  storage, 
+const uploadMultiple = multer({
+  storage,
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
@@ -71,10 +98,14 @@ router.post("/", (req, res) => {
       return res.status(400).json({ message: "No image files provided" });
     }
 
-    const imagePaths = req.files.map((file) => `/uploads/products/${file.filename}`);
+    const type = req.query.type;
+    const folder = type === 'document' ? 'documents' : 'products';
+    const filePaths = req.files.map((file) => `/uploads/${folder}/${file.filename}`);
+
     return res.status(200).json({
-      message: "Images uploaded successfully",
-      images: imagePaths,
+      message: "Files uploaded successfully",
+      images: filePaths, // Keeping 'images' key for backward compatibility
+      files: filePaths
     });
   });
 });
@@ -82,7 +113,7 @@ router.post("/", (req, res) => {
 // Delete Image Route
 router.delete("/", (req, res) => {
   const { imagePath } = req.body;
-  
+
   if (!imagePath) {
     return res.status(400).json({ message: "Image path is required" });
   }

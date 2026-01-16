@@ -2,9 +2,11 @@ import mongoose from "mongoose";
 
 const orderSchema = mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
+  parentOrder: { type: mongoose.Schema.Types.ObjectId, ref: "ParentOrder" }, // Link to parent order
+  vendor: { type: mongoose.Schema.Types.ObjectId, ref: "Organization" }, // Vendor processing this order
 
   orderNumber: { type: String, unique: true },
-  
+
   orderItems: [
     {
       name: { type: String, required: true },
@@ -51,6 +53,10 @@ const orderSchema = mongoose.Schema({
   shippingPrice: { type: Number, required: true, default: 0.0 },
   totalPrice: { type: Number, required: true, default: 0.0 },
 
+  // Financial split
+  vendorEarnings: { type: Number, default: 0.0 },
+  platformFee: { type: Number, default: 0.0 },
+
   isPaid: { type: Boolean, required: true, default: false },
   paidAt: { type: Date },
 
@@ -59,7 +65,7 @@ const orderSchema = mongoose.Schema({
     enum: ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Returned", "Refunded"],
     default: "Placed"
   },
-  
+
   // Enhanced tracking information
   tracking: {
     trackingNumber: { type: String },
@@ -69,7 +75,7 @@ const orderSchema = mongoose.Schema({
     estimatedDelivery: { type: Date },
     actualDelivery: { type: Date },
     lastTrackedAt: { type: Date },
-    
+
     // Tracking events timeline
     events: [{
       timestamp: { type: Date, required: true },
@@ -88,21 +94,21 @@ const orderSchema = mongoose.Schema({
       updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     }]
   },
-  
+
   deliveredAt: { type: Date },
 
   // Legacy tracking fields (for backward compatibility)
   trackingNumber: String,
   shippingCarrier: String,
   trackingUrl: String,
-  
+
   // Enhanced order features
   priority: {
     type: String,
     enum: ["low", "normal", "high", "urgent"],
     default: "normal"
   },
-  
+
   // Delivery preferences
   deliveryPreferences: {
     preferredTimeSlot: {
@@ -114,7 +120,7 @@ const orderSchema = mongoose.Schema({
     leaveAtDoor: { type: Boolean, default: false },
     securityCode: String
   },
-  
+
   // Communication preferences
   notifications: {
     sms: { type: Boolean, default: true },
@@ -122,7 +128,7 @@ const orderSchema = mongoose.Schema({
     push: { type: Boolean, default: true },
     whatsapp: { type: Boolean, default: false }
   },
-  
+
   // Customer communication log
   communications: [{
     type: {
@@ -142,7 +148,7 @@ const orderSchema = mongoose.Schema({
   }],
 
   notes: String,
-  
+
   // Return and refund information
   returnInfo: {
     isReturned: { type: Boolean, default: false },
@@ -152,7 +158,7 @@ const orderSchema = mongoose.Schema({
     refundDate: Date,
     returnTrackingNumber: String
   },
-  
+
   // Customer feedback
   feedback: {
     rating: { type: Number, min: 1, max: 5 },
@@ -162,6 +168,14 @@ const orderSchema = mongoose.Schema({
   }
 
 }, { timestamps: true });
+
+// Indexes
+orderSchema.index({ user: 1 });
+orderSchema.index({ orderStatus: 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ 'orderItems.product': 1 });
+orderSchema.index({ vendor: 1, orderStatus: 1 }); // Optimized for vendor dashboard
+orderSchema.index({ parentOrder: 1 });
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;
