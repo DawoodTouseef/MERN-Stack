@@ -1,57 +1,51 @@
-import Message from "../../components/Message";
-import Loader from "../../components/Loader";
-import { Link } from "react-router-dom";
-import { useGetOrdersQuery, useDeleteOrderMutation, useGetMyOrdersQuery, useGetVendorOrdersQuery } from "../../redux/api/orderApiSlice";
-import { styled } from '@mui/material/styles';
-import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button,
-  CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide,
-  Chip, Tooltip, Box, Typography, Avatar, Stack, Grid, Card, CardContent
-} from "@mui/material";
 import { useState, useMemo } from "react";
-import { toast } from "react-toastify";
-import * as React from 'react';
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import PaymentIcon from "@mui/icons-material/Payment";
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
-import CancelIcon from "@mui/icons-material/Cancel";
-import InfoIcon from "@mui/icons-material/Info";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PendingIcon from "@mui/icons-material/Pending";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
+import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import { useGetOrdersQuery, useDeleteOrderMutation, useGetMyOrdersQuery, useGetVendorOrdersQuery } from "../../redux/api/orderApiSlice";
+import { DataGrid } from '@mui/x-data-grid';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Chip,
+  Tooltip,
+  Avatar,
+  Stack,
+  Grid,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  Fade
+} from "@mui/material";
+import {
+  LocalShipping as LocalShippingIcon,
+  Payment as PaymentIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+  Cancel as CancelIcon,
+  Info as InfoIcon,
+  CheckCircle as CheckCircleIcon,
+  Pending as PendingIcon,
+  AttachMoney as AttachMoneyIcon,
+  CreditCard as CreditCardIcon,
+  Visibility as VisibilityIcon,
+  Delete as DeleteIcon,
+  DeleteForever as DeleteForeverIcon
+} from "@mui/icons-material";
+import { FaSearch, FaFilter } from "react-icons/fa";
 import { useSelector } from "react-redux";
-
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  [`&.${TableCell.head}`]: {
-    background: "linear-gradient(90deg, #6366f1 0%, #ec4899 100%)",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 16,
-    letterSpacing: 1,
-    border: 0,
-  },
-  [`&.${TableCell.body}`]: {
-    fontSize: 14,
-    border: 0,
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  background: "#fff",
-  "&:hover": {
-    background: "linear-gradient(90deg, #e3eeff 60%, #f3e7e9 100%)",
-    transition: "background 0.2s",
-  },
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-}));
+import { toast } from "react-toastify";
+import DocumentTitle from "react-document-title";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -113,7 +107,6 @@ const StatusCard = ({ title, count, icon, color, bgColor }) => (
 );
 
 const OrderList = ({ isAdmin = false }) => {
-  // Get user info from Redux store
   const { userInfo } = useSelector((state) => state.auth);
 
   // Use different hooks based on user role
@@ -123,6 +116,7 @@ const OrderList = ({ isAdmin = false }) => {
     error: errorAll,
     refetch: refetchAll
   } = useGetOrdersQuery({}, { skip: !isAdmin });
+
   const {
     data: myOrders = [],
     isLoading: isLoadingMy,
@@ -160,10 +154,13 @@ const OrderList = ({ isAdmin = false }) => {
     refetch = refetchMy;
   }
 
-  const [deleteOrder, { isLoading: isDeleting }] = useDeleteOrderMutation();
-  const [deletingId, setDeletingId] = useState(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [deleteOrder] = useDeleteOrderMutation();
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, order: null });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
   // Calculate order statistics
   const orderStats = useMemo(() => {
@@ -176,26 +173,10 @@ const OrderList = ({ isAdmin = false }) => {
     };
 
     return orders.reduce((stats, order) => {
-      // Count pending orders (not delivered)
-      if (order.orderStatus !== "Delivered") {
-        stats.pending += 1;
-      }
-
-      // Count completed orders (delivered)
-      if (order.orderStatus === "Delivered") {
-        stats.completed += 1;
-      }
-
-      // Count COD orders
-      if (order.paymentMethod === "Cash on Delivery") {
-        stats.cod += 1;
-      }
-
-      // Count online payment orders
-      if (order.paymentMethod !== "Cash on Delivery") {
-        stats.online += 1;
-      }
-
+      if (order.orderStatus !== "Delivered") stats.pending += 1;
+      if (order.orderStatus === "Delivered") stats.completed += 1;
+      if (order.paymentMethod === "Cash on Delivery") stats.cod += 1;
+      if (order.paymentMethod !== "Cash on Delivery") stats.online += 1;
       return stats;
     }, {
       pending: 0,
@@ -206,233 +187,393 @@ const OrderList = ({ isAdmin = false }) => {
     });
   }, [orders]);
 
-  const handleDialogOpen = (orderId) => {
-    setSelectedOrderId(orderId);
-    setDialogOpen(true);
+  // Filter orders
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter((order) =>
+        order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((order) => order.orderStatus === statusFilter);
+    }
+
+    // Payment filter
+    if (paymentFilter !== "all") {
+      filtered = filtered.filter((order) => order.paymentStatus === paymentFilter);
+    }
+
+    return filtered;
+  }, [orders, searchTerm, statusFilter, paymentFilter]);
+
+  // Dialog handlers
+  const openDeleteDialog = (order) => {
+    setDeleteDialog({ open: true, order });
   };
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setSelectedOrderId(null);
+  const closeDeleteDialog = () => {
+    setDeleteDialog({ open: false, order: null });
   };
 
   const handleDelete = async () => {
-    setDeletingId(selectedOrderId);
+    const order = deleteDialog.order;
+    if (!order) return;
+
     try {
-      await deleteOrder(selectedOrderId).unwrap();
+      await deleteOrder(order._id).unwrap();
       toast.success("Order deleted successfully");
       refetch();
+      closeDeleteDialog();
     } catch (err) {
-      toast.error(err?.data?.message || err.error || "Delete failed");
+      toast.error(err?.data?.message || "Failed to delete order");
     }
-    setDeletingId(null);
-    setDialogOpen(false);
-    setSelectedOrderId(null);
   };
 
-  return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} color="primary.main" sx={{ mb: 3, letterSpacing: 1 }}>
-          {isAdmin ? "Order Management" : "My Orders"}
+  // Format date
+  const formatDate = (date) => {
+    return date ? format(new Date(date), 'MMM dd, yyyy') : 'N/A';
+  };
+
+  // DataGrid columns
+  const columns = [
+    {
+      field: 'orderItems',
+      headerName: 'Product',
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+          <Avatar
+            variant="rounded"
+            src={params.row.orderItems?.[0]?.media?.[0]?.url}
+            alt={params.row.orderItems?.[0]?.name}
+            sx={{ width: 50, height: 50, border: '2px solid #e2e8f0' }}
+          />
+          <Box sx={{ overflow: 'hidden' }}>
+            <Typography variant="body2" fontWeight={600} sx={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {params.row.orderItems?.[0]?.name || 'N/A'}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              Qty: {params.row.orderItems?.[0]?.qty || 0}
+            </Typography>
+          </Box>
+        </Box>
+      )
+    },
+    {
+      field: 'orderNumber',
+      headerName: 'Order #',
+      width: 130,
+      renderCell: (params) => (
+        <Chip
+          label={params.value || params.row._id.slice(-6)}
+          size="small"
+          color="secondary"
+          sx={{ fontWeight: 600 }}
+        />
+      )
+    },
+    {
+      field: 'user',
+      headerName: 'Customer',
+      width: 150,
+      valueGetter: (params) => params.value?.username || 'N/A'
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Date',
+      width: 130,
+      valueGetter: (params) => formatDate(params.value)
+    },
+    {
+      field: 'totalPrice',
+      headerName: 'Total',
+      width: 120,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight={700} color="primary.main">
+          ${params.value?.toFixed(2)}
         </Typography>
+      )
+    },
+    {
+      field: 'paymentStatus',
+      headerName: 'Payment',
+      width: 140,
+      renderCell: (params) => getPaymentChip(params.value)
+    },
+    {
+      field: 'orderStatus',
+      headerName: 'Status',
+      width: 160,
+      renderCell: (params) => (
+        <Box>
+          <Chip
+            icon={<LocalShippingIcon />}
+            label={params.value}
+            color={getStatusColor(params.value)}
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+          {params.value === "Delivered" && params.row.deliveredAt && (
+            <Typography variant="caption" color="success.main" sx={{ display: "block", mt: 0.5 }}>
+              {formatDate(params.row.deliveredAt)}
+            </Typography>
+          )}
+        </Box>
+      )
+    },
+    {
+      field: 'trackingNumber',
+      headerName: 'Tracking',
+      width: 130,
+      renderCell: (params) => {
+        if (params.value) {
+          return (
+            <Tooltip title={params.row.trackingCarrier || "Tracking"}>
+              <a
+                href={params.row.trackingUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#6366f1", textDecoration: "underline", fontWeight: 600 }}
+              >
+                {params.value}
+              </a>
+            </Tooltip>
+          );
+        }
+        return <Chip icon={<InfoIcon />} label="N/A" size="small" />;
+      }
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View Details">
+            <IconButton
+              size="small"
+              color="primary"
+              component={Link}
+              to={`/order/${params.row._id}`}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
 
-        {/* Status Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatusCard
-              title="Pending Orders"
-              count={orderStats.pending}
-              icon={<PendingIcon />}
-              color="#ff9800"
-              bgColor="#2d2d2d"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatusCard
-              title="Completed Orders"
-              count={orderStats.completed}
-              icon={<CheckCircleIcon />}
-              color="#4caf50"
-              bgColor="#2d2d2d"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatusCard
-              title="COD Orders"
-              count={orderStats.cod}
-              icon={<AttachMoneyIcon />}
-              color="#f44336"
-              bgColor="#2d2d2d"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatusCard
-              title="Online Payments"
-              count={orderStats.online}
-              icon={<CreditCardIcon />}
-              color="#2196f3"
-              bgColor="#2d2d2d"
-            />
-          </Grid>
-        </Grid>
-      </Box>
+          <Tooltip title="Delete Order">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => openDeleteDialog(params.row)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ];
 
-      {isLoading ? (
-        <Loader />
-      ) : error ? (
-        <Message variant="danger">
-          {error?.data?.message || error.error}
-        </Message>
-      ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: 4, boxShadow: 6 }}>
-          <Table sx={{ minWidth: 1100 }} aria-label="customized table">
-            <TableHead>
-              <TableRow>
-                <StyledTableCell align="center">Order</StyledTableCell>
-                <StyledTableCell align="center">Order No.</StyledTableCell>
-                <StyledTableCell align="center">User</StyledTableCell>
-                <StyledTableCell align="center">Date</StyledTableCell>
-                <StyledTableCell align="center">Total</StyledTableCell>
-                <StyledTableCell align="center">Payment</StyledTableCell>
-                <StyledTableCell align="center">Status</StyledTableCell>
-                <StyledTableCell align="center">Tracking</StyledTableCell>
-                <StyledTableCell align="center">Action</StyledTableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => (
-                <StyledTableRow key={order._id}>
-                  <StyledTableCell align="center">
-                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                      <Avatar
-                        src={order.orderItems[0]?.media[0].url}
-                        alt={order.orderItems[0]?.name}
-                        sx={{ width: 48, height: 48, border: "2px solid #ec4899" }}
-                        variant="rounded"
-                      />
-                      <Box>
-                        <Typography fontWeight={600} fontSize={14}>
-                          {order.orderItems[0]?.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          x{order.orderItems[0]?.qty}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Chip
-                      label={order.orderNumber || order._id.slice(-6)}
-                      color="secondary"
-                      size="small"
-                      sx={{ fontWeight: 700, fontSize: 13 }}
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    {order.user ? (
-                      <Tooltip title={order.user.email}>
-                        <span>{order.user.username}</span>
-                      </Tooltip>
-                    ) : (
-                      "N/A"
-                    )}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    {order.createdAt ? order.createdAt.substring(0, 10) : "N/A"}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography fontWeight={700} color="primary">
-                      ${order.totalPrice?.toFixed(2)}
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    {getPaymentChip(order.paymentStatus)}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Chip
-                      icon={<LocalShippingIcon />}
-                      label={order.orderStatus}
-                      color={getStatusColor(order.orderStatus)}
-                      size="small"
-                      sx={{ fontWeight: 600, fontSize: 13 }}
-                    />
-                    {order.orderStatus === "Delivered" && order.deliveredAt && (
-                      <Typography variant="caption" color="success.main" sx={{ display: "block" }}>
-                        {order.deliveredAt.substring(0, 10)}
-                      </Typography>
-                    )}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    {order.trackingNumber ? (
-                      <Tooltip title={order.trackingCarrier || "Tracking"}>
-                        <a
-                          href={order.trackingUrl || "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: "#6366f1", textDecoration: "underline", fontWeight: 600 }}
-                        >
-                          {order.trackingNumber}
-                        </a>
-                      </Tooltip>
-                    ) : (
-                      <Chip icon={<InfoIcon />} label="N/A" size="small" />
-                    )}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Link to={`/order/${order._id}`}>
-                      <Button variant="outlined" color="primary" size="small" sx={{ mr: 1 }}>
-                        More
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      size="small"
-                      onClick={() => handleDialogOpen(order._id)}
-                      disabled={isDeleting && deletingId === order._id}
+  return (
+    <DocumentTitle title={isAdmin ? "Order Management | Nexus Mart" : "My Orders | Nexus Mart"}>
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
+        <Fade in>
+          <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h4" fontWeight={800} color="text.primary">
+                {isAdmin ? "Order Management" : "My Orders"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {isAdmin ? "Manage all platform orders" : "Track and manage your orders"}
+              </Typography>
+            </Box>
+
+            {/* Status Cards */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatusCard
+                  title="Pending Orders"
+                  count={orderStats.pending}
+                  icon={<PendingIcon />}
+                  color="#ff9800"
+                  bgColor="#2d2d2d"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatusCard
+                  title="Completed Orders"
+                  count={orderStats.completed}
+                  icon={<CheckCircleIcon />}
+                  color="#4caf50"
+                  bgColor="#2d2d2d"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatusCard
+                  title="COD Orders"
+                  count={orderStats.cod}
+                  icon={<AttachMoneyIcon />}
+                  color="#f44336"
+                  bgColor="#2d2d2d"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatusCard
+                  title="Online Payments"
+                  count={orderStats.online}
+                  icon={<CreditCardIcon />}
+                  color="#2196f3"
+                  bgColor="#2d2d2d"
+                />
+              </Grid>
+            </Grid>
+
+            {/* Filters */}
+            <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    placeholder="Search by order #, customer..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: <FaSearch style={{ marginRight: 8, color: '#64748b' }} />,
+                      sx: { borderRadius: 2, bgcolor: 'white' }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Order Status</InputLabel>
+                    <Select
+                      value={statusFilter}
+                      label="Order Status"
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      sx={{ borderRadius: 2, bgcolor: 'white' }}
                     >
-                      {isDeleting && deletingId === order._id ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        "Delete"
-                      )}
-                    </Button>
-                  </StyledTableCell>
-                </StyledTableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+                      <MenuItem value="all">All Status</MenuItem>
+                      <MenuItem value="Placed">Placed</MenuItem>
+                      <MenuItem value="Confirmed">Confirmed</MenuItem>
+                      <MenuItem value="Packed">Packed</MenuItem>
+                      <MenuItem value="Shipped">Shipped</MenuItem>
+                      <MenuItem value="Out for Delivery">Out for Delivery</MenuItem>
+                      <MenuItem value="Delivered">Delivered</MenuItem>
+                      <MenuItem value="Cancelled">Cancelled</MenuItem>
+                      <MenuItem value="Returned">Returned</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Payment Status</InputLabel>
+                    <Select
+                      value={paymentFilter}
+                      label="Payment Status"
+                      onChange={(e) => setPaymentFilter(e.target.value)}
+                      sx={{ borderRadius: 2, bgcolor: 'white' }}
+                    >
+                      <MenuItem value="all">All Payments</MenuItem>
+                      <MenuItem value="Completed">Completed</MenuItem>
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="Failed">Failed</MenuItem>
+                      <MenuItem value="Refunded">Refunded</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="text"
+                    startIcon={<FaFilter />}
+                    onClick={() => {
+                      setSearchTerm("");
+                      setStatusFilter("all");
+                      setPaymentFilter("all");
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
 
-      <Dialog
-        open={dialogOpen}
-        TransitionComponent={Transition}
-        keepMounted
-        onClose={handleDialogClose}
-        aria-describedby="alert-dialog-slide-description"
-      >
-        <DialogTitle>{"Delete Order"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-slide-description">
-            Are you sure you want to delete this order?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDelete}
-            color="error"
-            disabled={isDeleting}
-          >
-            {isDeleting ? <CircularProgress size={20} color="inherit" /> : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+            {/* DataGrid */}
+            <Box sx={{ height: 650, width: '100%', '& .MuiDataGrid-root': { border: 'none' } }}>
+              {error ? (
+                <Alert severity="error" sx={{ mx: 'auto', mt: 4, maxWidth: 600 }}>
+                  {error?.data?.message || "Failed to load orders. Please try again later."}
+                </Alert>
+              ) : (
+                <DataGrid
+                  rows={filteredOrders}
+                  columns={columns}
+                  getRowId={(row) => row._id}
+                  loading={isLoading}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onPageSizeChange={(newSize) => setPageSize(newSize)}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  disableSelectionOnClick
+                  density="comfortable"
+                  sx={{
+                    '& .MuiDataGrid-columnHeaders': {
+                      bgcolor: '#f8fafc',
+                      color: '#475569',
+                      fontWeight: 700,
+                      borderBottom: '1px solid #e2e8f0',
+                    },
+                    '& .MuiDataGrid-row': {
+                      borderBottom: '1px solid #f1f5f9',
+                      '&:hover': { bgcolor: '#f1f5f9' },
+                    },
+                    '& .MuiDataGrid-footerContainer': {
+                      borderTop: '1px solid #e2e8f0',
+                    },
+                  }}
+                />
+              )}
+            </Box>
+          </Paper>
+        </Fade>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialog.open} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+            <DeleteForeverIcon /> Confirm Deletion
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Are you sure you want to delete order <strong>#{deleteDialog.order?.orderNumber || deleteDialog.order?._id?.slice(-6)}</strong>?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              This action cannot be undone. All order data will be permanently removed.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={closeDeleteDialog}>Cancel</Button>
+            <Button onClick={handleDelete} variant="contained" color="error" sx={{ borderRadius: 2 }}>
+              Confirm Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </DocumentTitle>
   );
 };
 

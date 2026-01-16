@@ -76,7 +76,7 @@ import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import AdminBannerCarousels from './pages/Admin/BannerCarousels.jsx'
 import Pages from "./pages/Admin/Pages.jsx";
 import AdminOffer from "./pages/Admin/AdminOffer.jsx";
-import UserEditPage from "./pages/Admin/Users.jsx";
+
 import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
 import BrandManagement from "./pages/Admin/Brand.jsx";
 
@@ -140,7 +140,6 @@ const router = createBrowserRouter(
         <Route path="pages" element={<Pages />} />
         <Route path="offer" element={<AdminOffer />} />
         <Route path="categorylist" element={<CategoryList />} />
-        <Route path="user/edit/:id" element={<UserEditPage />} />
         <Route path="currencies" element={<CurrencyManagement />} />
         <Route path="product/add" element={<AddProduct />} />
         <Route path="productlist" element={<AllProducts />} />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Typography,
@@ -8,24 +8,42 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
-  Paper,
-  Stack,
-  Tooltip,
   IconButton,
+  Paper,
+  Tooltip,
+  Chip,
+  Stack,
+  Grid,
+  Alert,
+  Fade,
+  MenuItem
 } from "@mui/material";
+import { DataGrid } from '@mui/x-data-grid';
 import { useFetchPagesQuery, useCreatePageMutation, useUpdatePageMutation, useDeletePageMutation } from "../../redux/api/PagesApiSlice";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import AddIcon from "@mui/icons-material/Add";
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+  DeleteForever as DeleteForeverIcon,
+  Article as ArticleIcon,
+  Visibility as VisibilityIcon
+} from "@mui/icons-material";
+import { toast } from "react-toastify";
+import { format } from "date-fns";
+import DocumentTitle from "react-document-title";
 
 const Pages = () => {
-  const { data: pages, isLoading, isError, error } = useFetchPagesQuery();
-  const [createPage] = useCreatePageMutation();
-  const [updatePage] = useUpdatePageMutation();
+  const { data: pages = [], isLoading, isError, error, refetch } = useFetchPagesQuery();
+  const [createPage, { isLoading: isCreating }] = useCreatePageMutation();
+  const [updatePage, { isLoading: isUpdating }] = useUpdatePageMutation();
   const [deletePage] = useDeletePageMutation();
 
-  const [openDialog, setOpenDialog] = useState(false);
+  // State management
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [addDialog, setAddDialog] = useState(false);
+  const [editDialog, setEditDialog] = useState({ open: false, page: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, page: null });
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -35,33 +53,9 @@ const Pages = () => {
     publishDate: "",
     expiryDate: "",
   });
-  const [editMode, setEditMode] = useState(false);
-  const [pageId, setPageId] = useState(null);
 
-  const handleOpenDialog = (page = null) => {
-    if (page) {
-      setEditMode(true);
-      setPageId(page._id);
-      setFormData({ ...page });
-    } else {
-      setEditMode(false);
-      setFormData({
-        title: "",
-        slug: "",
-        route: "",
-        content: "",
-        status: "draft",
-        publishDate: "",
-        expiryDate: "",
-      });
-    }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditMode(false);
-    setPageId(null);
+  // Dialog handlers
+  const openAddDialog = () => {
     setFormData({
       title: "",
       slug: "",
@@ -71,196 +65,438 @@ const Pages = () => {
       publishDate: "",
       expiryDate: "",
     });
+    setAddDialog(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const closeAddDialog = () => {
+    setAddDialog(false);
   };
 
-  const handleSubmit = async () => {
+  const openEditDialog = (pageData) => {
+    setFormData({
+      title: pageData.title || "",
+      slug: pageData.slug || "",
+      route: pageData.route || "",
+      content: pageData.content || "",
+      status: pageData.status || "draft",
+      publishDate: pageData.publishDate ? pageData.publishDate.substring(0, 10) : "",
+      expiryDate: pageData.expiryDate ? pageData.expiryDate.substring(0, 10) : "",
+    });
+    setEditDialog({ open: true, page: pageData });
+  };
+
+  const closeEditDialog = () => {
+    setEditDialog({ open: false, page: null });
+  };
+
+  const openDeleteDialog = (pageData) => {
+    setDeleteDialog({ open: true, page: pageData });
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({ open: false, page: null });
+  };
+
+  // CRUD operations
+  const handleAdd = async () => {
     try {
-      if (editMode) {
-        await updatePage({ id: pageId, pageData: formData }).unwrap();
-      } else {
-        await createPage(formData).unwrap();
-      }
-      handleCloseDialog();
-    } catch (error) {
-      console.error(error);
+      await createPage(formData).unwrap();
+      toast.success("Page created successfully!");
+      refetch();
+      closeAddDialog();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to create page");
     }
   };
 
-  const handleDeletePage = async (id) => {
-    if (window.confirm("Are you sure you want to delete this page?")) {
-      try {
-        await deletePage(id).unwrap();
-      } catch (error) {
-        console.error(error);
-      }
+  const handleUpdate = async () => {
+    try {
+      await updatePage({ id: editDialog.page._id, pageData: formData }).unwrap();
+      toast.success("Page updated successfully!");
+      refetch();
+      closeEditDialog();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to update page");
     }
   };
+
+  const handleDelete = async () => {
+    const pageData = deleteDialog.page;
+    if (!pageData) return;
+
+    try {
+      await deletePage(pageData._id).unwrap();
+      toast.success("Page deleted successfully!");
+      refetch();
+      closeDeleteDialog();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete page");
+    }
+  };
+
+  // Format date
+  const formatDate = (date) => {
+    return date ? format(new Date(date), 'MMM dd, yyyy') : 'N/A';
+  };
+
+  // DataGrid columns
+  const columns = [
+    {
+      field: 'title',
+      headerName: 'Page Title',
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight={600}>
+            {params.value}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {params.row.route}
+          </Typography>
+        </Box>
+      )
+    },
+    {
+      field: 'slug',
+      headerName: 'Slug',
+      width: 150,
+      renderCell: (params) => (
+        <Chip label={params.value} size="small" variant="outlined" />
+      )
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value?.toUpperCase()}
+          color={params.value === 'published' ? 'success' : 'default'}
+          size="small"
+          sx={{ fontWeight: 600 }}
+        />
+      )
+    },
+    {
+      field: 'publishDate',
+      headerName: 'Publish Date',
+      width: 130,
+      valueGetter: (params) => formatDate(params.value)
+    },
+    {
+      field: 'expiryDate',
+      headerName: 'Expiry Date',
+      width: 130,
+      valueGetter: (params) => formatDate(params.value)
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View Page">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => window.open(params.row.route, '_blank')}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Edit Page">
+            <IconButton
+              size="small"
+              onClick={() => openEditDialog(params.row)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete Page">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => openDeleteDialog(params.row)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ];
 
   return (
-    <Box sx={{ maxWidth: "1200px", mx: "auto", mt: 6, px: 2 }}>
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        sx={{ mb: 4, textAlign: "center", color: "primary.main" }}
-      >
-        Manage Pages
-      </Typography>
-
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            textTransform: "none",
-            fontWeight: "bold",
-            borderRadius: 2,
-          }}
-        >
-          Add Page
-        </Button>
-      </Box>
-
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-          <CircularProgress />
-        </Box>
-      ) : isError ? (
-        <Typography variant="body1" color="error" sx={{ textAlign: "center" }}>
-          {error?.data?.message || "Failed to load pages"}
-        </Typography>
-      ) : (
-        <Stack spacing={3}>
-          {pages.map((page) => (
-            <Paper
-              key={page._id}
-              elevation={3}
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-                bgcolor: "background.paper",
-              }}
-            >
+    <DocumentTitle title="Pages Management | Nexus Mart">
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
+        <Fade in>
+          <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>
+            {/* Header */}
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Box>
-                <Typography variant="h6" fontWeight="bold" sx={{ color: "primary.main" }}>
-                  {page.title}
+                <Typography variant="h4" fontWeight={800} color="text.primary">
+                  Static Pages Management
                 </Typography>
-                <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
-                  Route: {page.route}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
-                  Status: {page.status}
+                <Typography variant="body2" color="text.secondary">
+                  Manage static content pages (About, Terms, Privacy, etc.)
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <Tooltip title="Edit Page">
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleOpenDialog(page)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete Page">
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeletePage(page._id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Paper>
-          ))}
-        </Stack>
-      )}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={openAddDialog}
+                sx={{ borderRadius: 2, fontWeight: 600 }}
+              >
+                Add Page
+              </Button>
+            </Box>
 
-      {/* Add/Edit Page Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>{editMode ? "Edit Page" : "Add Page"}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Slug"
-            name="slug"
-            value={formData.slug}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Route"
-            name="route"
-            value={formData.route}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Content"
-            name="content"
-            value={formData.content}
-            onChange={handleInputChange}
-            multiline
-            rows={4}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleInputChange}
-            select
-            sx={{ mb: 2 }}
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </TextField>
-          <TextField
-            fullWidth
-            label="Publish Date"
-            name="publishDate"
-            type="date"
-            value={formData.publishDate}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Expiry Date"
-            name="expiryDate"
-            type="date"
-            value={formData.expiryDate}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
-            {editMode ? "Update" : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            {/* DataGrid */}
+            <Box sx={{ height: 600, width: '100%', '& .MuiDataGrid-root': { border: 'none' } }}>
+              {isError ? (
+                <Alert severity="error" sx={{ mx: 'auto', mt: 4, maxWidth: 600 }}>
+                  {error?.data?.message || "Failed to load pages. Please try again later."}
+                </Alert>
+              ) : (
+                <DataGrid
+                  rows={pages}
+                  columns={columns}
+                  getRowId={(row) => row._id}
+                  loading={isLoading}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onPageSizeChange={(newSize) => setPageSize(newSize)}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  disableSelectionOnClick
+                  density="comfortable"
+                  sx={{
+                    '& .MuiDataGrid-columnHeaders': {
+                      bgcolor: '#f8fafc',
+                      color: '#475569',
+                      fontWeight: 700,
+                      borderBottom: '1px solid #e2e8f0',
+                    },
+                    '& .MuiDataGrid-row': {
+                      borderBottom: '1px solid #f1f5f9',
+                      '&:hover': { bgcolor: '#f1f5f9' },
+                    },
+                    '& .MuiDataGrid-footerContainer': {
+                      borderTop: '1px solid #e2e8f0',
+                    },
+                  }}
+                />
+              )}
+            </Box>
+          </Paper>
+        </Fade>
+
+        {/* Add Page Dialog */}
+        <Dialog open={addDialog} onClose={closeAddDialog} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Create New Page</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Page Title"
+                  fullWidth
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Slug"
+                  fullWidth
+                  required
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  placeholder="about-us"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Route"
+                  fullWidth
+                  required
+                  value={formData.route}
+                  onChange={(e) => setFormData({ ...formData, route: e.target.value })}
+                  placeholder="/about"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Content"
+                  fullWidth
+                  multiline
+                  rows={6}
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="Page content..."
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Status"
+                  select
+                  fullWidth
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Publish Date"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={formData.publishDate}
+                  onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Expiry Date"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={formData.expiryDate}
+                  onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={closeAddDialog}>Cancel</Button>
+            <Button
+              onClick={handleAdd}
+              variant="contained"
+              disabled={isCreating || !formData.title || !formData.slug}
+              sx={{ borderRadius: 2 }}
+            >
+              {isCreating ? "Creating..." : "Create Page"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Page Dialog */}
+        <Dialog open={editDialog.open} onClose={closeEditDialog} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Edit Page</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Page Title"
+                  fullWidth
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Slug"
+                  fullWidth
+                  required
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Route"
+                  fullWidth
+                  required
+                  value={formData.route}
+                  onChange={(e) => setFormData({ ...formData, route: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Content"
+                  fullWidth
+                  multiline
+                  rows={6}
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Status"
+                  select
+                  fullWidth
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Publish Date"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={formData.publishDate}
+                  onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Expiry Date"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={formData.expiryDate}
+                  onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={closeEditDialog}>Cancel</Button>
+            <Button
+              onClick={handleUpdate}
+              variant="contained"
+              disabled={isUpdating || !formData.title || !formData.slug}
+              sx={{ borderRadius: 2 }}
+            >
+              {isUpdating ? "Updating..." : "Update Page"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialog.open} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+            <DeleteForeverIcon /> Confirm Deletion
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Are you sure you want to delete the page <strong>{deleteDialog.page?.title}</strong>?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={closeDeleteDialog}>Cancel</Button>
+            <Button onClick={handleDelete} variant="contained" color="error" sx={{ borderRadius: 2 }}>
+              Confirm Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </DocumentTitle>
   );
 };
 
