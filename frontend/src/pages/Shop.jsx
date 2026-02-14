@@ -73,16 +73,16 @@ const Shop = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
+
   // Pagination state
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  
+
   // Infinite scroll state
   const [enableInfiniteScroll, setEnableInfiniteScroll] = useState(false);
-  
+
   // Advanced filtering state
   const [advancedFilters, setAdvancedFilters] = useState({
     category: [],
@@ -103,7 +103,7 @@ const Shop = () => {
     checked,
     radio,
   });
-  
+
   const {
     data: facetedSearchData,
     isLoading: isFacetedSearchLoading,
@@ -167,7 +167,7 @@ const Shop = () => {
 
   const loadMoreProducts = () => {
     if (!hasMore || loadingMore) return;
-    
+
     setLoadingMore(true);
     // Simulate loading more products
     setTimeout(() => {
@@ -182,7 +182,7 @@ const Shop = () => {
       dispatch(setCategories(categoriesQuery.data));
     }
   }, [categoriesQuery.data, dispatch]);
-  
+
   useEffect(() => {
     if (showAdvancedFilters && facetedSearchData) {
       dispatch(setProducts(facetedSearchData.products || []));
@@ -202,7 +202,7 @@ const Shop = () => {
       }
     }
   }, [checked, radio, filteredProductsQuery.data, dispatch, priceFilter, facetedSearchData, showAdvancedFilters]);
-  
+
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredProducts(products);
@@ -224,7 +224,7 @@ const Shop = () => {
     if (isMobile) setShowFilters(false);
     setPage(1); // Reset to first page when filters change
   };
-  
+
   const handleAdvancedFilterClear = () => {
     setAdvancedFilters({
       category: [],
@@ -240,28 +240,28 @@ const Shop = () => {
     setShowAdvancedFilters(false);
     setPage(1); // Reset to first page when filters are cleared
   };
-  
+
   const handleSearch = (query) => {
     dispatch(setSearchQuery(query));
     setPage(1); // Reset to first page when search changes
     setShowSuggestions(false);
   };
-  
+
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
     setPage(1); // Reset to first page when sort changes
   };
-  
+
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
   };
 
   const handleFilterToggle = () => setShowFilters((prev) => !prev);
-  
+
   const handlePageChange = (event, value) => {
     setPage(value);
   };
-  
+
   const handleItemsPerPageChange = (event) => {
     setItemsPerPage(event.target.value);
     setPage(1); // Reset to first page when items per page changes
@@ -273,7 +273,7 @@ const Shop = () => {
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(startIndex, endIndex);
   }, [filteredProducts, startIndex, endIndex]);
-  
+
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   // Get active filters count
@@ -303,13 +303,13 @@ const Shop = () => {
       <DocumentTitle title="Shop Products" />
       <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3, md: 4 } }}>
         {/* Enhanced Header Section */}
-        <Paper 
+        <Paper
           elevation={0}
-          sx={{ 
+          sx={{
             p: { xs: 2, sm: 3, md: 4 },
-            mb: 4, 
+            mb: 4,
             borderRadius: 3,
-            background: theme.palette.mode === 'dark' 
+            background: theme.palette.mode === 'dark'
               ? `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.1)} 0%, ${alpha(theme.palette.secondary.dark, 0.1)} 100%)`
               : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.05)} 0%, ${alpha(theme.palette.secondary.light, 0.05)} 100%)`,
             position: 'relative',
@@ -338,8 +338,8 @@ const Shop = () => {
                   boxShadow: `0 4px 8px ${alpha(theme.palette.primary.main, 0.1)}`
                 }}
               >
-                <FaTags style={{ 
-                  color: theme.palette.primary.main, 
+                <FaTags style={{
+                  color: theme.palette.primary.main,
                   fontSize: { xs: '1.25rem', sm: '1.5rem' }
                 }} />
               </Box>
@@ -388,12 +388,12 @@ const Shop = () => {
                 />
               </Zoom>
             </Stack>
-            
-            <Stack 
-              direction="row" 
-              spacing={1} 
+
+            <Stack
+              direction="row"
+              spacing={1}
               alignItems="center"
-              sx={{ 
+              sx={{
                 mt: { xs: 1, md: 0 },
                 width: { xs: '100%', md: 'auto' },
                 justifyContent: { xs: 'space-between', md: 'flex-end' }
@@ -403,7 +403,7 @@ const Shop = () => {
                 <IconButton
                   onClick={() => handleViewModeChange('grid')}
                   color={viewMode === 'grid' ? 'primary' : 'default'}
-                  sx={{ 
+                  sx={{
                     borderRadius: 2,
                     p: 1.25,
                     backgroundColor: viewMode === 'grid' ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
@@ -417,12 +417,12 @@ const Shop = () => {
                   <FaThLarge />
                 </IconButton>
               </Tooltip>
-              
+
               <Tooltip title="List View" arrow>
                 <IconButton
                   onClick={() => handleViewModeChange('list')}
                   color={viewMode === 'list' ? 'primary' : 'default'}
-                  sx={{ 
+                  sx={{
                     borderRadius: 2,
                     p: 1.25,
                     backgroundColor: viewMode === 'list' ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
@@ -436,7 +436,7 @@ const Shop = () => {
                   <FaBars />
                 </IconButton>
               </Tooltip>
-              
+
               <Button
                 variant="contained"
                 color="primary"
@@ -460,7 +460,7 @@ const Shop = () => {
               </Button>
             </Stack>
           </Stack>
-          
+
           {/* Enhanced Search Bar */}
           <Box sx={{ position: 'relative', mb: 3 }}>
             <SmartSearchSuggestions
@@ -511,10 +511,10 @@ const Shop = () => {
               }} />
             </Box>
           </Box>
-          
+
           {/* Enhanced Sorting Chips */}
-          <Box sx={{ 
-            overflowX: 'auto', 
+          <Box sx={{
+            overflowX: 'auto',
             pb: 1,
             '&::-webkit-scrollbar': {
               height: 6,
@@ -532,10 +532,10 @@ const Shop = () => {
               }
             }
           }}>
-            <Stack 
-              direction="row" 
-              spacing={1.5} 
-              sx={{ 
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{
                 minWidth: 'max-content',
                 p: 0.5
               }}
@@ -548,7 +548,7 @@ const Shop = () => {
                   color={sortBy === sort ? 'primary' : 'default'}
                   variant={sortBy === sort ? 'filled' : 'outlined'}
                   icon={sortBy === sort ? <FaSortAmountDown /> : undefined}
-                  sx={{ 
+                  sx={{
                     px: 2,
                     height: 36,
                     fontSize: '0.875rem',
@@ -567,11 +567,11 @@ const Shop = () => {
             </Stack>
           </Box>
         </Paper>
-        
+
         <Grid container spacing={{ xs: 2, md: 4 }}>
           {/* Enhanced Filter Sidebar - Only show on desktop/tablet, hidden on mobile by default */}
-          <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Box sx={{ 
+          <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' }, justifyContent: 'center' }}>
+            <Box sx={{
               position: 'sticky',
               top: 24,
               maxHeight: 'calc(100vh - 48px)',
@@ -593,7 +593,7 @@ const Shop = () => {
                 }
               }
             }}>
-              <Box sx={{ 
+              <Box sx={{
                 mb: 2,
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -601,10 +601,10 @@ const Shop = () => {
               }}>
                 <Typography variant="h6" fontWeight="700" sx={{ fontSize: '1.25rem' }}>Filters</Typography>
                 {activeFiltersCount > 0 && (
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={handleAdvancedFilterClear}
-                    sx={{ 
+                    sx={{
                       textTransform: 'none',
                       color: theme.palette.error.main,
                       fontWeight: 600,
@@ -622,16 +622,16 @@ const Shop = () => {
               />
             </Box>
           </Grid>
-          
+
           {/* Enhanced Product Grid */}
           <Grid item xs={12} md={9}>
             <Box>
               {/* Enhanced Controls Bar */}
-              <Stack 
+              <Stack
                 direction={{ xs: 'column', sm: 'row' }}
-                justifyContent="space-between" 
-                alignItems={{ xs: 'flex-start', sm: 'center' }} 
-                sx={{ 
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                sx={{
                   mb: 3,
                   p: 2,
                   borderRadius: 2,
@@ -642,8 +642,8 @@ const Shop = () => {
                 spacing={2}
               >
                 <Box>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     color="text.primary"
                     sx={{
                       fontWeight: 600,
@@ -665,8 +665,8 @@ const Shop = () => {
                     )}
                   </Typography>
                   {activeFiltersCount > 0 && (
-                    <Typography 
-                      variant="body2" 
+                    <Typography
+                      variant="body2"
                       color="text.secondary"
                       sx={{ mt: 0.5 }}
                     >
@@ -674,12 +674,12 @@ const Shop = () => {
                     </Typography>
                   )}
                 </Box>
-                
-                <Stack 
-                  direction="row" 
-                  spacing={2} 
+
+                <Stack
+                  direction="row"
+                  spacing={2}
                   alignItems="center"
-                  sx={{ 
+                  sx={{
                     width: { xs: '100%', sm: 'auto' },
                     justifyContent: { xs: 'space-between', sm: 'flex-end' }
                   }}
@@ -699,12 +699,12 @@ const Shop = () => {
                       <MenuItem value={48}>48 per page</MenuItem>
                     </Select>
                   </FormControl>
-                  
+
                   <Button
                     variant={enableInfiniteScroll ? "contained" : "outlined"}
                     size="small"
                     onClick={toggleInfiniteScroll}
-                    sx={{ 
+                    sx={{
                       textTransform: 'none',
                       borderRadius: 2,
                       fontWeight: 500,
@@ -716,12 +716,12 @@ const Shop = () => {
                   >
                     {enableInfiniteScroll ? "Disable Infinite Scroll" : "Enable Infinite Scroll"}
                   </Button>
-                  
+
                   {facetedSearchError && (
-                    <Alert 
-                      severity="error" 
+                    <Alert
+                      severity="error"
                       variant="outlined"
-                      sx={{ 
+                      sx={{
                         borderRadius: 2,
                         '& .MuiAlert-icon': {
                           fontSize: '1.25rem'
@@ -733,36 +733,36 @@ const Shop = () => {
                   )}
                 </Stack>
               </Stack>
-              
+
               {/* Product Grid with Enhanced Loading States */}
               {(isFacetedSearchLoading || filteredProductsQuery.isLoading) ? (
                 <Grid container spacing={3}>
                   {[...Array(itemsPerPage <= 12 ? 8 : 12)].map((_, index) => (
-                    <Grid 
-                      item 
-                      xs={12} 
-                      sm={6} 
-                      md={viewMode === 'list' ? 12 : 6} 
-                      lg={viewMode === 'list' ? 12 : 4} 
-                      xl={viewMode === 'list' ? 12 : 3} 
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      md={viewMode === 'list' ? 12 : 6}
+                      lg={viewMode === 'list' ? 12 : 4}
+                      xl={viewMode === 'list' ? 12 : 3}
                       key={index}
                     >
-                      <Skeleton 
-                        variant="rectangular" 
-                        height={viewMode === 'list' ? 200 : 400} 
-                        sx={{ 
+                      <Skeleton
+                        variant="rectangular"
+                        height={viewMode === 'list' ? 200 : 400}
+                        sx={{
                           borderRadius: 3,
                           transform: 'scale(0.98)',
                           transformOrigin: 'center'
-                        }} 
+                        }}
                       />
                     </Grid>
                   ))}
                 </Grid>
               ) : filteredProducts.length === 0 ? (
-                <Paper 
-                  sx={{ 
-                    p: { xs: 4, sm: 6 }, 
+                <Paper
+                  sx={{
+                    p: { xs: 4, sm: 6 },
                     textAlign: 'center',
                     borderRadius: 3,
                     backgroundColor: theme.palette.background.paper,
@@ -783,30 +783,30 @@ const Shop = () => {
                       mb: 3
                     }}
                   >
-                    <FaSearch style={{ 
-                      color: theme.palette.primary.main, 
+                    <FaSearch style={{
+                      color: theme.palette.primary.main,
                       fontSize: { xs: '1.5rem', sm: '2rem' }
                     }} />
                   </Box>
-                  <Typography 
-                    variant="h5" 
+                  <Typography
+                    variant="h5"
                     color="text.primary"
                     sx={{ mb: 2, fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
                   >
                     No products found
                   </Typography>
-                  <Typography 
-                    variant="body1" 
+                  <Typography
+                    variant="body1"
                     color="text.secondary"
                     sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}
                   >
                     We couldn't find any products matching your search or filters. Try adjusting your filters or search terms.
                   </Typography>
-                  <Button 
+                  <Button
                     onClick={handleAdvancedFilterClear}
                     variant="contained"
                     size="large"
-                    sx={{ 
+                    sx={{
                       mt: 2,
                       borderRadius: 2,
                       textTransform: 'none',
@@ -827,13 +827,13 @@ const Shop = () => {
                     {paginatedProducts
                       .filter((p) => !categoriesId || p.category?._id === categoriesId)
                       .map((p) => (
-                        <Grid 
-                          item 
-                          xs={12} 
-                          sm={6} 
-                          md={viewMode === 'list' ? 12 : 6} 
-                          lg={viewMode === 'list' ? 12 : 4} 
-                          xl={viewMode === 'list' ? 12 : 3} 
+                        <Grid
+                          item
+                          xs={12}
+                          sm={6}
+                          md={viewMode === 'list' ? 12 : 6}
+                          lg={viewMode === 'list' ? 12 : 4}
+                          xl={viewMode === 'list' ? 12 : 3}
                           key={p._id}
                         >
                           <Fade in timeout={300}>
@@ -876,23 +876,23 @@ const Shop = () => {
                       ))
                     }
                   </Grid>
-                  
+
                   {/* Infinite Scroll Loading Indicator */}
                   {enableInfiniteScroll && loadingMore && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
                       <CircularProgress size={32} thickness={4} />
                     </Box>
                   )}
-                  
+
                   {/* Enhanced Pagination */}
                   {!enableInfiniteScroll && totalPages > 1 && (
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
                       mt: 5,
                       mb: 3
                     }}>
-                      <Pagination 
+                      <Pagination
                         count={totalPages}
                         page={page}
                         onChange={handlePageChange}
@@ -935,7 +935,7 @@ const Shop = () => {
           </Grid>
         </Grid>
       </Container>
-      
+
       {/* Mobile Filter Drawer */}
       <Drawer
         anchor="left"
@@ -965,7 +965,7 @@ const Shop = () => {
           onClearFilters={handleAdvancedFilterClear}
         />
       </Drawer>
-      
+
       {/* Enhanced Scroll to Top Button */}
       <Zoom in={showScrollTop}>
         <Fab

@@ -45,12 +45,12 @@ import { useFetchCategoriesQuery } from '../redux/api/categoryApiSlice';
 import { useGetBrandsQuery } from '../redux/api/brandApiSlice';
 import { useDebounce } from '../Utils/useDebounce';
 
-const AdvancedFilterPanel = ({ 
-  filters, 
-  onFiltersChange, 
+const AdvancedFilterPanel = ({
+  filters,
+  onFiltersChange,
   onClearFilters,
   isVisible = true,
-  appliedFiltersCount = 0 
+  appliedFiltersCount = 0
 }) => {
   const theme = useTheme();
   const [localFilters, setLocalFilters] = useState(filters);
@@ -147,10 +147,10 @@ const AdvancedFilterPanel = ({
   ];
 
   const FilterSection = ({ title, children, panelKey, defaultExpanded = false }) => (
-    <Accordion 
+    <Accordion
       expanded={expandedPanels.has(panelKey)}
       onChange={() => handlePanelToggle(panelKey)}
-      sx={{ 
+      sx={{
         boxShadow: 'none',
         '&:before': { display: 'none' },
         borderRadius: 2,
@@ -166,7 +166,7 @@ const AdvancedFilterPanel = ({
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
-        sx={{ 
+        sx={{
           minHeight: 48,
           '& .MuiAccordionSummary-content': { margin: '8px 0' },
           bgcolor: alpha(theme.palette.primary.main, 0.03),
@@ -198,8 +198,8 @@ const AdvancedFilterPanel = ({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <Paper 
-        sx={{ 
+      <Paper
+        sx={{
           p: { xs: 1.5, sm: 2 },
           borderRadius: 3,
           position: 'sticky',
@@ -241,7 +241,7 @@ const AdvancedFilterPanel = ({
             onClick={handleClearAll}
             startIcon={<ClearIcon />}
             disabled={appliedFiltersCount === 0}
-            sx={{ 
+            sx={{
               fontSize: { xs: "0.7rem", sm: "0.8rem" },
               minWidth: { xs: 60, sm: 70 },
               borderRadius: 2,
@@ -275,7 +275,7 @@ const AdvancedFilterPanel = ({
                       {range.label}
                     </Typography>
                   }
-                  sx={{ 
+                  sx={{
                     '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
                     mb: 0.5,
                     py: 0.75,
@@ -293,7 +293,7 @@ const AdvancedFilterPanel = ({
               ))}
             </RadioGroup>
           </FormControl>
-          
+
           {/* Custom Price Range Slider */}
           <Box sx={{ mt: 2, px: 1 }}>
             <Typography variant="body2" gutterBottom sx={{ fontSize: "0.8rem", fontWeight: 500, mb: 1 }}>
@@ -310,7 +310,7 @@ const AdvancedFilterPanel = ({
               min={0}
               max={10000}
               step={25}
-              sx={{ 
+              sx={{
                 mt: 1,
                 color: theme.palette.primary.main,
                 '& .MuiSlider-thumb': {
@@ -357,7 +357,7 @@ const AdvancedFilterPanel = ({
 
         {/* Customer Rating */}
         <FilterSection title="Customer Rating" panelKey="rating">
-          <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {[4, 3, 2, 1].map((rating) => (
               <FormControlLabel
                 key={rating}
@@ -372,7 +372,7 @@ const AdvancedFilterPanel = ({
                       handleFilterChange('customerRating', newRatings);
                     }}
                     size="small"
-                    sx={{ 
+                    sx={{
                       color: theme.palette.warning.main,
                       '&.Mui-checked': {
                         color: theme.palette.warning.main,
@@ -386,7 +386,7 @@ const AdvancedFilterPanel = ({
                     <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>& up</Typography>
                   </Box>
                 }
-                sx={{ 
+                sx={{
                   mb: 0.5,
                   py: 0.75,
                   px: 1,
@@ -435,7 +435,7 @@ const AdvancedFilterPanel = ({
                       {category.name}
                     </Typography>
                   }
-                  sx={{ 
+                  sx={{
                     '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
                     mb: 0.5,
                     py: 0.75,
@@ -452,10 +452,10 @@ const AdvancedFilterPanel = ({
                 />
               ))}
               {categories?.length > 8 && (
-                <Button 
-                  size="small" 
-                  sx={{ 
-                    justifyContent: 'flex-start', 
+                <Button
+                  size="small"
+                  sx={{
+                    justifyContent: 'flex-start',
                     pl: 1,
                     fontSize: "0.8rem",
                     textTransform: 'none',
@@ -500,7 +500,7 @@ const AdvancedFilterPanel = ({
                     label={option.name}
                     size="small"
                     {...getTagProps({ index })}
-                    sx={{ 
+                    sx={{
                       m: 0.5,
                       height: 24,
                       '& .MuiChip-label': {
@@ -543,7 +543,7 @@ const AdvancedFilterPanel = ({
                   In Stock Only
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -577,7 +577,7 @@ const AdvancedFilterPanel = ({
                   Free Shipping
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -611,7 +611,7 @@ const AdvancedFilterPanel = ({
                   On Sale
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -642,7 +642,7 @@ const AdvancedFilterPanel = ({
                       {option.label}
                     </Typography>
                   }
-                  sx={{ 
+                  sx={{
                     '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
                     mb: 0.5,
                     py: 0.75,
@@ -679,7 +679,7 @@ const AdvancedFilterPanel = ({
                       {seller.label}
                     </Typography>
                   }
-                  sx={{ 
+                  sx={{
                     '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
                     mb: 0.5,
                     py: 0.75,
@@ -723,7 +723,7 @@ const AdvancedFilterPanel = ({
                     {offer.label}
                   </Typography>
                 }
-                sx={{ 
+                sx={{
                   '& .MuiFormControlLabel-label': { fontSize: { xs: "0.75rem", sm: "0.8rem" } },
                   mb: 0.5,
                   py: 0.75,
@@ -758,7 +758,7 @@ const AdvancedFilterPanel = ({
                   New Arrivals
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -785,7 +785,7 @@ const AdvancedFilterPanel = ({
                   Best Sellers
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -812,7 +812,7 @@ const AdvancedFilterPanel = ({
                   Easy Returns
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,
@@ -839,7 +839,7 @@ const AdvancedFilterPanel = ({
                   Warranty Included
                 </Typography>
               }
-              sx={{ 
+              sx={{
                 mb: 0.5,
                 py: 0.75,
                 px: 1,

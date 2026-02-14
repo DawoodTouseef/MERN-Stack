@@ -3,7 +3,7 @@ import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-const MONGO_URI = process.env.MONGODB_URL || "mongodb://localhost:27017/eCommerce";
+const MONGO_URI = process.env.MONGODB_URL || "mongodb://admin:yourStrongPass123@localhost:27017/eCommerce?authSource=admin";
 
 const connectDB = async () => {
   try {
@@ -21,10 +21,10 @@ const connectDB = async () => {
 
     await mongoose.connect(MONGO_URI, options);
     console.log(`✓ Successfully connected to MongoDB 👍`);
-    
+
     // Create default admin with secure password
     await createDefaultAdmin();
-    
+
   } catch (error) {
     console.error(`❌ MongoDB connection error: ${error.message}`);
     process.exit(1);
@@ -35,22 +35,22 @@ const createDefaultAdmin = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "admin07@gmail.com";
     let adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-    
+
     // Generate secure random password if not provided
     if (!adminPassword || adminPassword === "admin") {
       adminPassword = crypto.randomBytes(16).toString('hex');
       console.warn(`⚠️  Generated random admin password: ${adminPassword}`);
       console.warn('⚠️  Please save this password and set ADMIN_PASSWORD environment variable');
     }
-    
+
     // Check if admin already exists
     const adminExists = await User.findOne({ email: adminEmail, role: "admin" });
-    
+
     if (!adminExists) {
       // Hash password with secure salt rounds
       const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(adminPassword, salt);
-      
+
       const newAdmin = new User({
         username: "Administrator",
         email: adminEmail,
@@ -63,10 +63,10 @@ const createDefaultAdmin = async () => {
         recentlyViewed: [],
         newsletterSubscribed: false,
       });
-      
+
       await newAdmin.save();
       console.log(`✓ Default admin account created successfully`);
-      
+
       // Log security event
       console.log(`🔒 Admin account security info:`);
       console.log(`   Email: ${adminEmail}`);
