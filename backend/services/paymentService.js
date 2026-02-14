@@ -12,20 +12,25 @@ class PaymentService {
 
   async initializeGateways() {
     try {
+      this.gateways.clear();
       const activeGateways = await PaymentGateway.find({ isActive: true });
 
       for (const gateway of activeGateways) {
         switch (gateway.name) {
           case 'stripe':
-            this.gateways.set('stripe', new Stripe(gateway.configuration.secretKey, {
-              apiVersion: '2023-10-16'
-            }));
+            if (gateway.configuration?.secretKey) {
+              this.gateways.set('stripe', new Stripe(gateway.configuration.secretKey, {
+                apiVersion: '2023-10-16'
+              }));
+            }
             break;
           case 'razorpay':
-            this.gateways.set('razorpay', new Razorpay({
-              key_id: gateway.configuration.publicKey,
-              key_secret: gateway.configuration.secretKey
-            }));
+            if (gateway.configuration?.publicKey && gateway.configuration?.secretKey) {
+              this.gateways.set('razorpay', new Razorpay({
+                key_id: gateway.configuration.publicKey,
+                key_secret: gateway.configuration.secretKey
+              }));
+            }
             break;
           case 'paypal':
             // PayPal SDK initialization would go here

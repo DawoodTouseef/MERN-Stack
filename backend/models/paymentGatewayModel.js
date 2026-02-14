@@ -4,7 +4,7 @@ const paymentGatewaySchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    enum: ['stripe', 'razorpay', 'paypal', 'payu', 'instamojo', 'ccavenue', 'paytm']
+    enum: ['stripe', 'razorpay', 'paypal', 'upi', 'payu', 'instamojo', 'ccavenue', 'paytm']
   },
   displayName: {
     type: String,
