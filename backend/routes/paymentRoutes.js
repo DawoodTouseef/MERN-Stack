@@ -8,6 +8,49 @@ import rateLimit from 'express-rate-limit';
 const router = express.Router();
 const paymentService = new PaymentService();
 
+
+const defaultGatewayTemplates = [
+  {
+    name: 'upi',
+    displayName: 'UPI',
+    isActive: true,
+    supportedMethods: ['upi'],
+    configuration: { merchantId: '', publicKey: '', secretKey: '', webhookSecret: '', environment: 'sandbox' }
+  },
+  {
+    name: 'paypal',
+    displayName: 'PayPal',
+    isActive: true,
+    supportedMethods: ['wallet', 'international', 'credit_card', 'debit_card'],
+    configuration: { merchantId: '', publicKey: '', secretKey: '', webhookSecret: '', environment: 'sandbox' }
+  },
+  {
+    name: 'stripe',
+    displayName: 'Stripe',
+    isActive: true,
+    supportedMethods: ['credit_card', 'debit_card', 'international', 'wallet'],
+    configuration: { merchantId: '', publicKey: '', secretKey: '', webhookSecret: '', environment: 'sandbox' }
+  },
+  {
+    name: 'razorpay',
+    displayName: 'Razorpay',
+    isActive: true,
+    supportedMethods: ['upi', 'credit_card', 'debit_card', 'net_banking', 'wallet'],
+    configuration: { merchantId: '', publicKey: '', secretKey: '', webhookSecret: '', environment: 'sandbox' }
+  }
+];
+
+const ensureDefaultGateways = async () => {
+  for (const template of defaultGatewayTemplates) {
+    await PaymentGateway.findOneAndUpdate(
+      { name: template.name },
+      { $setOnInsert: template },
+      { upsert: true, new: false }
+    );
+  }
+};
+
+
 // Rate limiting for payment endpoints
 const paymentRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -260,7 +303,10 @@ router.get('/gateways', authenticate, async (req, res) => {
       });
     }
 
-    const gateways = await PaymentGateway.find()
+    await ensureDefaultGateways();
+
+    const gateways = await PaymentGateway.find({ name: { $in: ['upi', 'paypal', 'stripe', 'razorpay'] } })
+      .sort({ name: 1 })
       .select('-configuration.secretKey -configuration.webhookSecret');
 
     res.json({
@@ -287,11 +333,40 @@ router.put('/gateways/:id', authenticate, async (req, res) => {
     }
 
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = req.body || {};
+
+    // Prevent changing gateway identity via update payload
+    delete updateData.name;
+
+    const existingGateway = await PaymentGateway.findById(id);
+    if (!existingGateway) {
+      return res.status(404).json({
+        success: false,
+        message: 'Gateway not found'
+      });
+    }
+
+    const mergedConfiguration = {
+      ...(existingGateway.configuration?.toObject ? existingGateway.configuration.toObject() : existingGateway.configuration || {}),
+      ...(updateData.configuration || {}),
+    };
+
+    // Keep existing secrets when frontend submits blank values
+    if (!updateData.configuration?.secretKey) {
+      mergedConfiguration.secretKey = existingGateway.configuration?.secretKey || '';
+    }
+    if (!updateData.configuration?.webhookSecret) {
+      mergedConfiguration.webhookSecret = existingGateway.configuration?.webhookSecret || '';
+    }
+
+    const payload = {
+      ...updateData,
+      configuration: mergedConfiguration,
+    };
 
     const gateway = await PaymentGateway.findByIdAndUpdate(
       id,
-      updateData,
+      payload,
       { new: true, runValidators: true }
     ).select('-configuration.secretKey -configuration.webhookSecret');
 

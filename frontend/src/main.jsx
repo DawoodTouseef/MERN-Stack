@@ -8,6 +8,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
+import applyCSRFHeader from './Utils/axiosSetup';
 
 import PrivateRoute from "./components/PrivateRoute";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -69,6 +70,7 @@ import Terms from "./pages/terms.jsx";
 import ShippingPolicy from "./pages/shippingPolicy.jsx";
 // 404 Page
 import NotFound from "./pages/NotFound.jsx";
+import Unauthorized from "./pages/Unauthorized.jsx";
 // Admin
 import AdminRoute from "./pages/Admin/AdminRoute"
 import AdminLogin from "./pages/Admin/AdminLogin"
@@ -79,6 +81,8 @@ import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 
 import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
 import BrandManagement from "./pages/Admin/Brand.jsx";
+
+applyCSRFHeader();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -153,6 +157,7 @@ const router = createBrowserRouter(
         <Route path="product/update/:_id" element={<ProductUpdate />} />
         <Route path="product/add" element={<AddProduct />} />
       </Route>
+      <Route path="/unauthorized" element={<Unauthorized />} />
       {/* Catch-all route for 404 */}
       <Route path="*" element={<NotFound />} />
     </Route>

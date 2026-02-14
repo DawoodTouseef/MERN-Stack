@@ -7,7 +7,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 
 // Security imports
-import { securityMiddleware, createRateLimiters, sanitizeInput, requestSizeLimits } from './middlewares/securityMiddleware.js';
+import { securityMiddleware, createRateLimiters, sanitizeInput, requestSizeLimits, csrfProtection } from './middlewares/securityMiddleware.js';
 
 // Utiles
 import connectDB from "./config/db.js";
@@ -34,6 +34,7 @@ import dynamicPricingRoutes from './routes/dynamicPricingRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import currencyRoutes from './routes/currencyRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import notificationManager from './services/notificationService.js';
 import taxServiceManager from './services/thirdPartyTaxService.js';
@@ -102,6 +103,27 @@ app.use(sanitizeInput);
 // Apply general rate limiting
 app.use(generalLimiter);
 
+
+// CSRF bootstrap middleware (double-submit cookie pattern)
+app.use((req, res, next) => {
+  if (!req.cookies['csrf-token']) {
+    const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    res.cookie('csrf-token', token, {
+      httpOnly: false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+  }
+  next();
+});
+
+// Enforce CSRF validation for state-changing requests except trusted webhooks
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/payments/webhook/')) return next();
+  return csrfProtection(req, res, next);
+});
+
 // Routes with specific rate limiting
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authLimiter, authenticationRoutes);
@@ -125,7 +147,8 @@ app.use('/api/pricing', dynamicPricingRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/organizations', organizationRoutes);
-// app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
+app.use('/api/settings', settingsRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Security headers for config endpoints
 app.get("/api/config/paypal", (req, res) => {
