@@ -7,7 +7,6 @@ import { setCredentials } from "../../redux/features/auth/authSlice";
 import { toast } from "react-toastify";
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -15,8 +14,19 @@ import {
   IconButton,
   InputAdornment,
   Divider,
+  Paper,
+  Stack,
+  useTheme,
+  useMediaQuery,
+  alpha
 } from "@mui/material";
-import { Visibility, VisibilityOff, Google, Microsoft } from "@mui/icons-material";
+import { 
+  Visibility, 
+  VisibilityOff, 
+  Google, 
+  Microsoft,
+  Login as LoginIcon
+} from "@mui/icons-material";
 import { logout } from "../../redux/features/auth/authSlice";
 import { useLogoutMutation } from "../../redux/api/usersApiSlice";
 
@@ -25,6 +35,9 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const MICROSOFT_CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
 
 const Login = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,51 +55,49 @@ const Login = () => {
   const redirect = sp.get("redirect") || "/";
 
   useEffect(() => {
-      if (userInfo?.role==="customer") {
-        navigate("/");
-      }
-    }, [navigate, userInfo]);
-  
+    if (userInfo?.role === "customer") {
+      navigate("/");
+    }
+  }, [navigate, userInfo]);
+
   const handleLogout = async () => {
-        try {
-          let api;
-          if (userInfo.role==="vendor"){
-              api="/vendor/login"
-          }
-          await logoutApiCall().unwrap();
-          dispatch(logout());
-          navigate(api || '/login');
-        } catch (error) {
-          // handle error
-        }
-  
-      };
-  const submitHandler = async (e) => {
-      e.preventDefault();
-      try {
-        const res = await login({ email, password }).unwrap();
-        if (res.role !== "customer") {
-          toast.error("Access denied. Customer only.");
-          handleLogout();
-          return;
-        }
-        dispatch(setCredentials({ ...res }));
-        navigate(redirect);
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
+    try {
+      let api;
+      if (userInfo.role === "vendor") {
+        api = "/vendor/login"
       }
+      await logoutApiCall().unwrap();
+      dispatch(logout());
+      navigate(api || '/login');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await login({ email, password }).unwrap();
+      if (res.role !== "customer") {
+        toast.error("Access denied. Customer only.");
+        handleLogout();
+        return;
+      }
+      dispatch(setCredentials({ ...res }));
+      navigate(redirect);
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
-  // Google Auth Handler
   const handleGoogleAuth = () => {
     if (!GOOGLE_CLIENT_ID) return;
     const redirectUri = window.location.origin + "/auth/google/callback";
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile`;
   };
 
-  // Microsoft Auth Handler
   const handleMicrosoftAuth = () => {
     if (!MICROSOFT_CLIENT_ID) return;
     const redirectUri = window.location.origin + "/auth/microsoft/callback";
@@ -94,208 +105,198 @@ const Login = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#181818",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      className="min-h-screen"
-    >
-      <Grid container sx={{ maxWidth: 1000, boxShadow: 6, borderRadius: 4, overflow: "hidden" }}>
-        <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            p: 4,
-            bgcolor: "#181818",
-          }}
-        >
-          <Paper
-            elevation={6}
-            sx={{
-              p: 5,
-              width: "100%",
-              maxWidth: 420,
-              bgcolor: "#222",
-              color: "#fff",
-              borderRadius: 4,
-              boxShadow: "0 8px 32px 0 rgba(236,72,153,0.10)",
-            }}
-            className="shadow-xl"
-          >
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              sx={{
-                mb: 3,
-                color: "#fff",
-                letterSpacing: 1,
-                textAlign: "center",
-                textShadow: "2px 2px 8px #f3e7e9",
-              }}
-            >
-              Sign In
+    <Box sx={{ 
+      minHeight: "100vh", 
+      display: "flex",
+      bgcolor: theme.palette.background.default
+    }}>
+      <Grid container>
+        {/* Left Side - Image/Brand */}
+        <Grid item xs={12} md={6} sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          bgcolor: 'primary.main',
+          color: 'white',
+          p: 4,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Ambient Background Effect */}
+          <Box sx={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%)',
+            zIndex: 1
+          }} />
+          
+          <Box sx={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 480 }}>
+            <Typography variant="h2" fontWeight="800" sx={{ mb: 2 }}>
+              Welcome Back!
             </Typography>
-            <form onSubmit={submitHandler}>
-              <TextField
-                label="Email Address"
-                type="email"
-                fullWidth
-                required
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                sx={{
-                  input: { color: "#fff" },
-                  label: { color: "#fff" },
-                  mb: 2,
-                  bgcolor: "#18181b",
-                  borderRadius: 2,
-                }}
-                InputLabelProps={{ style: { color: "#fff" } }}
-              />
-              <TextField
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                fullWidth
-                required
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                sx={{
-                  input: { color: "#fff" },
-                  label: { color: "#fff" },
-                  mb: 2,
-                  bgcolor: "#18181b",
-                  borderRadius: 2,
-                }}
-                InputLabelProps={{ style: { color: "#fff" } }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                        onClick={handleClickShowPassword}
-                        edge="end"
-                        sx={{ color: "#fff" }}
+            <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400 }}>
+              Access your account to manage orders, track shipments, and explore the latest products.
+            </Typography>
+            
+            <Box 
+              component="img" 
+              src="/placeholder-auth.png" 
+              onError={(e) => { e.target.style.display = 'none' }} // Hide if missing
+              sx={{ mt: 6, maxWidth: '80%', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' }} 
+            />
+          </Box>
+        </Grid>
+
+        {/* Right Side - Form */}
+        <Grid item xs={12} md={6} sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: { xs: 3, sm: 6, md: 8 }
+        }}>
+          <Paper elevation={0} sx={{ 
+            width: '100%', 
+            maxWidth: 480,
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3,
+            border: `1px solid ${alpha(theme.palette.divider, 0.5)}`
+          }}>
+            <Stack spacing={3}>
+              <Box sx={{ textAlign: 'center', mb: 1 }}>
+                <Typography variant="h4" fontWeight="700" color="text.primary">
+                  Sign In
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Enter your credentials to access your account
+                </Typography>
+              </Box>
+
+              <form onSubmit={submitHandler}>
+                <Stack spacing={2.5}>
+                  <TextField
+                    label="Email Address"
+                    type="email"
+                    fullWidth
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    variant="outlined"
+                    InputProps={{
+                      sx: { borderRadius: 2 }
+                    }}
+                  />
+                  
+                  <TextField
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    fullWidth
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    variant="outlined"
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleClickShowPassword}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    disabled={isLoading}
+                    startIcon={!isLoading && <LoginIcon />}
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      boxShadow: 2,
+                      textTransform: 'none',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {isLoading ? <Loader size={24} color="inherit" /> : "Sign In"}
+                  </Button>
+                </Stack>
+              </form>
+
+              {(GOOGLE_CLIENT_ID || MICROSOFT_CLIENT_ID) && (
+                <Box>
+                  <Divider sx={{ my: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+                      OR CONTINUE WITH
+                    </Typography>
+                  </Divider>
+                  
+                  <Stack spacing={1.5}>
+                    {GOOGLE_CLIENT_ID && (
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<Google />}
+                        onClick={handleGoogleAuth}
+                        sx={{ 
+                          py: 1.2, 
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          color: 'text.primary',
+                          borderColor: alpha(theme.palette.divider, 0.8)
+                        }}
                       >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                color="secondary"
-                fullWidth
-                sx={{
-                  mt: 2,
-                  fontWeight: "bold",
-                  fontSize: "1.1rem",
-                  borderRadius: 2,
-                  letterSpacing: 1,
-                  py: 1.3,
-                  boxShadow: 3,
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "scale(1.04)",
-                    boxShadow: 6,
-                  },
-                }}
-                className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing In..." : "Sign In"}
-              </Button>
-              {isLoading && (
-                <Box sx={{ mt: 2 }}>
-                  <Loader />
+                        Google
+                      </Button>
+                    )}
+                    {MICROSOFT_CLIENT_ID && (
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<Microsoft />}
+                        onClick={handleMicrosoftAuth}
+                        sx={{ 
+                          py: 1.2, 
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          color: 'text.primary',
+                          borderColor: alpha(theme.palette.divider, 0.8)
+                        }}
+                      >
+                        Microsoft
+                      </Button>
+                    )}
+                  </Stack>
                 </Box>
               )}
-            </form>
-            {(GOOGLE_CLIENT_ID || MICROSOFT_CLIENT_ID) && (
-              <>
-                <Divider sx={{ my: 3, bgcolor: "#bbb" }}>
-                  <Typography color="#bbb" fontWeight={600} fontSize="1rem">
-                    OR
-                  </Typography>
-                </Divider>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {GOOGLE_CLIENT_ID && (
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<Google />}
-                      onClick={handleGoogleAuth}
-                      sx={{
-                        borderRadius: 2,
-                        fontWeight: 700,
-                        color: "#fff",
-                        borderColor: "#fff",
-                        bgcolor: "#18181b",
-                        "&:hover": {
-                          bgcolor: "#fff",
-                          color: "#18181b",
-                          borderColor: "#ec4899",
-                        },
-                        transition: "all 0.2s",
-                      }}
-                      className="hover:bg-white hover:text-black"
-                    >
-                      Sign in with Google
-                    </Button>
-                  )}
-                  {MICROSOFT_CLIENT_ID && (
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<Microsoft />}
-                      onClick={handleMicrosoftAuth}
-                      sx={{
-                        borderRadius: 2,
-                        fontWeight: 700,
-                        color: "#fff",
-                        borderColor: "#fff",
-                        bgcolor: "#18181b",
-                        "&:hover": {
-                          bgcolor: "#fff",
-                          color: "#18181b",
-                          borderColor: "#6366f1",
-                        },
-                        transition: "all 0.2s",
-                      }}
-                      className="hover:bg-white hover:text-black"
-                    >
-                      Sign in with Microsoft
-                    </Button>
-                  )}
+
+              <Stack 
+                direction="row" 
+                justifyContent="space-between" 
+                alignItems="center"
+                sx={{ fontSize: '0.875rem', mt: 2 }}
+              >
+                <Link to={`/forgot-password?redirect=${redirect}`} style={{ color: theme.palette.primary.main, textDecoration: 'none', fontWeight: 500 }}>
+                  Forgot Password?
+                </Link>
+                <Box sx={{ color: 'text.secondary' }}>
+                  New here?{' '}
+                  <Link to={`/register?redirect=${redirect}`} style={{ color: theme.palette.primary.main, textDecoration: 'none', fontWeight: 600 }}>
+                    Create Account
+                  </Link>
                 </Box>
-              </>
-            )}
-            <Box sx={{ mt: 3, textAlign: "center" }}>
-              <Typography variant="body2" color="#ccc">
-                Don't have an account?{" "}
-                <Link to={`/register?redirect=${redirect}`} style={{ color: "#ec4899", textDecoration: "underline" }}>
-                  Register
-                </Link>
-              </Typography>
-              <Typography variant="body2" color="#ccc" mt={1}>
-                <Link to={`/forgot-password?redirect=${redirect}`} style={{ color: "#ec4899", textDecoration: "underline" }}>
-                  Forgot Password
-                </Link>
-              </Typography>
-            </Box>
+              </Stack>
+            </Stack>
           </Paper>
         </Grid>
       </Grid>

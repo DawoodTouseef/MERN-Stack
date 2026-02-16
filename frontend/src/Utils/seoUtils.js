@@ -1,3 +1,5 @@
+import { APP_NAME } from '../redux/constants';
+
 /**
  * Generate meta tags for SEO
  * @param {Object} options - SEO options
@@ -15,13 +17,13 @@ export const generateMetaTags = ({
   url,
   image,
   type = 'website',
-  siteName = 'Nexus Mart'
+  siteName = APP_NAME
 }) => {
   return [
     // Basic meta tags
     { name: 'title', content: title },
     { name: 'description', content: description },
-    
+
     // Open Graph / Facebook
     { property: 'og:type', content: type },
     { property: 'og:url', content: url },
@@ -29,7 +31,7 @@ export const generateMetaTags = ({
     { property: 'og:description', content: description },
     { property: 'og:image', content: image },
     { property: 'og:site_name', content: siteName },
-    
+
     // Twitter
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:url', content: url },
@@ -110,7 +112,7 @@ export const generateProductSchema = (product) => {
       'availability': product.countInStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       'seller': {
         '@type': 'Organization',
-        'name': 'Nexus Mart'
+        'name': APP_NAME
       }
     },
     'aggregateRating': {

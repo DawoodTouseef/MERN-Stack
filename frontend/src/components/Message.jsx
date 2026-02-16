@@ -1,16 +1,38 @@
+import { Alert, AlertTitle, Box } from '@mui/material';
+
 const Message = ({ variant, children }) => {
-  const getVariantClass = () => {
+  const getSeverity = () => {
     switch (variant) {
-      case "success":  // Fixed typo: "succcess" -> "success"
-        return "bg-green-100 text-green-800";
+      case "success":
+        return "success";
       case "error":
-        return "bg-red-100 text-red-800";
+      case "danger":
+        return "error";
+      case "warning":
+        return "warning";
       default:
-        return "bg-blue-100 text-blue-800";
+        return "info";
     }
   };
 
-  return <div className={`p-4 rounded ${getVariantClass()}`}>{children}</div>;
+  return (
+    <Box sx={{ my: 2, width: '100%' }}>
+      <Alert
+        severity={getSeverity()}
+        variant="outlined"
+        sx={{
+          borderRadius: 3,
+          fontWeight: 500,
+          borderWidth: '2px',
+          '& .MuiAlert-icon': {
+            fontSize: '1.5rem'
+          }
+        }}
+      >
+        {children}
+      </Alert>
+    </Box>
+  );
 };
 
 export default Message;

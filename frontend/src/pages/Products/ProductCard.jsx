@@ -43,24 +43,24 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
   const { data: offers, isLoading: offersLoading } = useFetchOffersQuery();
   const { shouldReduceAnimations, shouldReduceImageQuality } = usePerformance();
   const { isKeyboardMode } = useAccessibility();
-  
+
   const [offerpercent, setofferpercent] = useState({
     percentage: 0,
     end: "",
     type: ""
   });
-  
+
   useEffect(() => {
     if (offers && product) {
       let bestOffer = null;
       let bestDiscount = 0;
-      
+
       offers.forEach((offer) => {
         const isProductInOffer =
           offer.products.some((p) => p._id === product._id) ||
           offer.categories.some((c) => c._id === product.category?._id) ||
           (offer.brand && offer.brand._id === product.brand?._id);
-          
+
         if (isProductInOffer) {
           if (offer.discountUnit === "percent" && offer.discountValue > bestDiscount) {
             bestDiscount = offer.discountValue;
@@ -71,7 +71,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
           }
         }
       });
-      
+
       if (bestOffer) {
         setofferpercent({
           percentage: bestOffer.discountValue,
@@ -81,7 +81,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
       }
     }
   }, [offers, product]);
-  
+
   const getCurrencySymbol = () => {
     try {
       const formatter = new Intl.NumberFormat('en', {
@@ -97,7 +97,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
       return currency; // fallback if currency code is invalid
     }
   };
-  
+
   const addToCartHandler = (product, qty) => {
     dispatch(addToCart({ ...product, qty }));
     toast.success("Item added to cart", {
@@ -107,7 +107,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
   };
 
   const hasDiscount = offerpercent.percentage > 0;
-  
+
   const calculateDiscountedPrice = (product, offers) => {
     if (!product || !product.price) return 0;
     if (!offers || offers.length === 0) return product.price * price;
@@ -117,7 +117,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
     // Find the best discount for this product
     let bestDiscount = 0;
     let bestDiscountType = null;
-    
+
     offers.forEach((offer) => {
       const isProductInOffer =
         offer.products.some((p) => p._id === product._id) ||
@@ -143,25 +143,25 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
 
     return discountedPrice * price;
   };
-  
+
   const discountedPrice = useMemo(() => calculateDiscountedPrice(product, offers), [product, offers, price]);
   const originalPrice = useMemo(() => product.price * price, [product, price]);
-  
+
   // Format prices
   const formattedDiscountedPrice = useMemo(() => new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency
   }).format(discountedPrice), [discountedPrice, currency]);
-  
+
   const formattedOriginalPrice = useMemo(() => new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency
   }).format(originalPrice), [originalPrice, currency]);
-  
+
   // Calculate savings
   const savings = useMemo(() => originalPrice - discountedPrice, [originalPrice, discountedPrice]);
   const savingsPercentage = useMemo(() => originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0, [originalPrice, savings]);
-  
+
   if (viewMode === 'list') {
     // List view design
     return (
@@ -186,23 +186,23 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
             }}
           >
             {/* Image Section */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 width: { xs: '100%', sm: 200 },
                 height: { xs: 200, sm: 'auto' },
                 position: "relative",
                 flexShrink: 0
               }}
             >
-              <Link 
+              <Link
                 to={`/product/${product._id}`}
                 aria-label={`View details for ${product.name}`}
               >
                 {!imageLoaded && (
-                  <Skeleton 
-                    variant="rectangular" 
-                    width="100%" 
-                    height="100%" 
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height="100%"
                     sx={{ borderRadius: 0 }}
                   />
                 )}
@@ -222,7 +222,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   loading="lazy"
                 />
               </Link>
-              
+
               {/* Discount Badge */}
               {hasDiscount && (
                 <Chip
@@ -243,13 +243,13 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   }}
                 />
               )}
-              
+
               {/* Wishlist Icon */}
               <Box sx={{ position: "absolute", top: 12, right: 12 }}>
                 <HeartIcon product={product} />
               </Box>
             </Box>
-            
+
             {/* Content Section */}
             <CardContent sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
               <Stack spacing={1.5}>
@@ -291,7 +291,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     />
                   )}
                 </Stack>
-                
+
                 {/* Product Name */}
                 <Tooltip title={product.name}>
                   <Typography
@@ -317,15 +317,15 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     {product.name}
                   </Typography>
                 </Tooltip>
-                
+
                 {/* Rating */}
                 {product.rating > 0 && (
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Rating 
-                      value={product.rating} 
-                      precision={0.1} 
-                      readOnly 
-                      size="small" 
+                    <Rating
+                      value={product.rating}
+                      precision={0.1}
+                      readOnly
+                      size="small"
                       aria-label={`Rating: ${product.rating} out of 5 stars`}
                     />
                     <Typography variant="caption" color="text.secondary">
@@ -333,10 +333,10 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     </Typography>
                   </Stack>
                 )}
-                
+
                 {/* Description */}
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   color="text.secondary"
                   sx={{
                     overflow: "hidden",
@@ -347,13 +347,13 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 >
                   {product.description}
                 </Typography>
-                
+
                 {/* Pricing */}
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
+                    <Typography
+                      variant="h6"
+                      sx={{
                         fontWeight: 700,
                         color: theme.palette.primary.main,
                         fontSize: '1.25rem'
@@ -362,9 +362,9 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                       {formattedDiscountedPrice}
                     </Typography>
                     {hasDiscount && (
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           textDecoration: "line-through",
                           color: theme.palette.text.secondary
                         }}
@@ -392,7 +392,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     )}
                   </Stack>
                 </Box>
-                
+
                 {/* Stock Status */}
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Chip
@@ -414,7 +414,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     </Typography>
                   )}
                 </Stack>
-                
+
                 {/* Action Buttons */}
                 <CardActions sx={{ p: 0, mt: 1 }}>
                   <Stack direction="row" spacing={1.5}>
@@ -423,7 +423,8 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                       size="small"
                       sx={{
                         borderRadius: 2,
-                        px: 2,
+                        minWidth: 40,
+                        px: 1,
                         py: 1,
                         fontWeight: 600,
                         textTransform: "none",
@@ -434,12 +435,11 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                         height: 36
                       }}
                       onClick={() => addToCartHandler(product, 1)}
-                      startIcon={<AiOutlineShoppingCart />}
                       aria-label={`Add ${product.name} to cart`}
                     >
-                      Add to Cart
+                      <AiOutlineShoppingCart size={20} />
                     </Button>
-                    
+
                     <Button
                       component={Link}
                       to={`/product/${product._id}`}
@@ -447,8 +447,10 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                       size="small"
                       sx={{
                         borderRadius: 2,
-                        px: 2,
+                        minWidth: 0,
+                        px: 1,
                         py: 1,
+                        flex: 1,
                         fontWeight: 600,
                         textTransform: "none",
                         borderColor: alpha(theme.palette.primary.main, 0.5),
@@ -459,12 +461,11 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                         },
                         height: 36
                       }}
-                      startIcon={<AiOutlineEye />}
                       aria-label={`View details for ${product.name}`}
                     >
-                      View Details
+                      Details
                     </Button>
-                    
+
                     <Button
                       variant="outlined"
                       size="small"
@@ -491,17 +492,17 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 </CardActions>
               </Stack>
             </CardContent>
-          </Card>
-        </Fade>
-        <QuickView 
-          product={product} 
-          open={quickViewOpen} 
-          onClose={() => setQuickViewOpen(false)} 
+          </Card >
+        </Fade >
+        <QuickView
+          product={product}
+          open={quickViewOpen}
+          onClose={() => setQuickViewOpen(false)}
         />
       </>
     );
   }
-  
+
   // Grid view design (default)
   return (
     <>
@@ -529,15 +530,15 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
         >
           {/* Image Section */}
           <Box sx={{ position: "relative", height: { xs: 200, sm: 220, md: 240 } }}>
-            <Link 
+            <Link
               to={`/product/${product._id}`}
               aria-label={`View details for ${product.name}`}
             >
               {!imageLoaded && (
-                <Skeleton 
-                  variant="rectangular" 
-                  width="100%" 
-                  height="100%" 
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height="100%"
                   sx={{ borderRadius: 0 }}
                 />
               )}
@@ -558,30 +559,30 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 loading="lazy"
               />
             </Link>
-            
+
             {/* Additional Images Preview */}
             {product.media?.length > 1 && (
               <Stack direction="row" spacing={0.5} sx={{ position: "absolute", bottom: 12, left: 12 }}>
                 {product.media.slice(1, 4).map((m, i) => (
                   m.type === "image" && (
-                    <Avatar 
-                      key={i} 
-                      src={m.url} 
-                      sx={{ 
-                        width: { xs: 24, sm: 28, md: 32 }, 
+                    <Avatar
+                      key={i}
+                      src={m.url}
+                      sx={{
+                        width: { xs: 24, sm: 28, md: 32 },
                         height: { xs: 24, sm: 28, md: 32 },
                         border: `2px solid ${theme.palette.background.paper}`,
                         boxShadow: 1,
                         borderRadius: 1
-                      }} 
-                      variant="rounded" 
-                      alt={`Additional view ${i+1} of ${product.name}`}
+                      }}
+                      variant="rounded"
+                      alt={`Additional view ${i + 1} of ${product.name}`}
                     />
                   )
                 ))}
               </Stack>
             )}
-            
+
             {/* Discount Badge */}
             {hasDiscount && (
               <Chip
@@ -601,7 +602,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 }}
               />
             )}
-            
+
             {/* Brand Badge */}
             {product.brand?.name && (
               <Chip
@@ -623,16 +624,16 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 }}
               />
             )}
-            
+
             {/* Wishlist Icon */}
             <Box sx={{ position: "absolute", top: 12, right: 12 }}>
               <HeartIcon product={product} />
             </Box>
-            
+
             {/* Quick Actions on Hover */}
             {hovered && (
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   position: "absolute",
                   top: "50%",
                   left: "50%",
@@ -667,7 +668,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     <AiOutlineEye size={20} />
                   </IconButton>
                 </Tooltip>
-                
+
                 <Tooltip title="Add to Cart">
                   <IconButton
                     onClick={(e) => {
@@ -695,7 +696,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 </Tooltip>
               </Box>
             )}
-            
+
             {/* Overlay on Hover */}
             {hovered && (
               <Box
@@ -740,15 +741,15 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   {product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name}
                 </Typography>
               </Tooltip>
-              
+
               {/* Rating */}
               {product.rating > 0 && (
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Rating 
-                    value={product.rating} 
-                    precision={0.1} 
-                    readOnly 
-                    size="small" 
+                  <Rating
+                    value={product.rating}
+                    precision={0.1}
+                    readOnly
+                    size="small"
                     aria-label={`Rating: ${product.rating} out of 5 stars`}
                   />
                   <Typography variant="caption" color="text.secondary">
@@ -756,13 +757,13 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   </Typography>
                 </Stack>
               )}
-              
+
               {/* Pricing */}
               <Box>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    sx={{
                       fontWeight: 700,
                       color: theme.palette.primary.main,
                       fontSize: '1.25rem'
@@ -771,9 +772,9 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                     {formattedDiscountedPrice}
                   </Typography>
                   {hasDiscount && (
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         textDecoration: "line-through",
                         color: theme.palette.text.secondary
                       }}
@@ -783,8 +784,8 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   )}
                 </Stack>
                 {hasDiscount && (
-                  <Typography 
-                    variant="caption" 
+                  <Typography
+                    variant="caption"
                     color="success.main"
                     sx={{ fontWeight: 600 }}
                   >
@@ -795,7 +796,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   </Typography>
                 )}
               </Box>
-              
+
               {/* Category and Stock */}
               <Stack direction="row" spacing={1} flexWrap="wrap">
                 {product.category?.name && (
@@ -830,7 +831,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   }}
                 />
               </Stack>
-              
+
               {/* Action Buttons */}
               <CardActions sx={{ p: 0, mt: 1 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
@@ -858,7 +859,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                   >
                     Details
                   </Button>
-                  
+
                   <Tooltip title="Add to Cart">
                     <IconButton
                       onClick={() => addToCartHandler(product, 1)}
@@ -886,10 +887,10 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
           </CardContent>
         </Card>
       </Fade>
-      <QuickView 
-        product={product} 
-        open={quickViewOpen} 
-        onClose={() => setQuickViewOpen(false)} 
+      <QuickView
+        product={product}
+        open={quickViewOpen}
+        onClose={() => setQuickViewOpen(false)}
       />
     </>
   );

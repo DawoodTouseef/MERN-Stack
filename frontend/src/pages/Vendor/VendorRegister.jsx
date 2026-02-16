@@ -17,9 +17,6 @@ import {
   Divider,
   Fade,
   Avatar,
-  Stepper,
-  Step,
-  StepLabel,
 } from "@mui/material";
 import {
   Visibility,
@@ -33,24 +30,16 @@ import {
   Email,
   Person,
 } from "@mui/icons-material";
+import { APP_NAME } from "../../redux/constants";
 
 const VendorRegister = () => {
-  // Stepper state
-  const [activeStep, setActiveStep] = useState(0);
-
-  // Step 1: User Info
+  // Basic user info
   const [username, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Step 2: Business Info
-  const [companyName, setCompanyName] = useState("");
-  const [taxId, setTaxId] = useState("");
-  const [gstId, setGstId] = useState("");
-  const [businessAddress, setBusinessAddress] = useState("");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -68,44 +57,34 @@ const VendorRegister = () => {
     }
   }, [navigate, redirect, userInfo]);
 
-  // Step 1 validation
-  const handleNext = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
+
+    // Validation
     if (!username || !email || !phone || !password || !confirmPassword) {
       toast.error("Please fill all fields");
       return;
     }
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
-    setActiveStep(1);
-  };
 
-  // Step 2 submit
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    if (!companyName || !taxId || !gstId || !businessAddress) {
-      toast.error("Please fill all business fields");
-      return;
-    }
     try {
       const res = await register({
         username,
         email,
+        phone,
         password,
         role: "vendor",
-        status: "inactive",
-        VendorProfile: {
-          companyName,
-          taxId,
-          gstId,
-          address: businessAddress,
-        },
       }).unwrap();
+
       dispatch(setCredentials({ ...res }));
-      navigate(redirect);
-      toast.success("Vendor successfully registered");
+      toast.success("Registration successful! Please create your organization.");
+
+      // Redirect to create organization page
+      navigate("/vendor/create-organization");
     } catch (err) {
       toast.error(err?.data?.message || "Registration failed");
     }
@@ -117,14 +96,15 @@ const VendorRegister = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
+        bgcolor: "#f8fafc",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        py: 4,
+        py: 8,
+        px: 2,
       }}
     >
-      <Grid container sx={{ maxWidth: 1100, boxShadow: 8, borderRadius: 4 }}>
+      <Grid container sx={{ maxWidth: 1100, borderRadius: 6, overflow: 'hidden', border: '1px solid #e2e8f0', bgcolor: '#fff', boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
         <Grid
           item
           xs={12}
@@ -133,303 +113,161 @@ const VendorRegister = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            p: { xs: 2, md: 5 },
-            bgcolor: "rgba(24,24,27,0.98)",
-            borderRadius: { xs: "16px 16px 0 0", md: "16px 0 0 16px" },
+            p: { xs: 3, md: 6 },
             position: "relative",
-            overflow: "hidden",
           }}
         >
-          {/* Decorative circle */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: -60,
-              left: -60,
-              width: 180,
-              height: 180,
-              bgcolor: "#ec4899",
-              opacity: 0.13,
-              borderRadius: "50%",
-              zIndex: 0,
-            }}
-          />
           <Fade in>
-            <Paper
-              elevation={12}
-              sx={{
-                p: { xs: 3, md: 5 },
-                width: "100%",
-                maxWidth: 440,
-                bgcolor: "rgba(34,34,40,0.98)",
-                color: "#fff",
-                borderRadius: 4,
-                boxShadow: "0 8px 32px 0 rgba(236,72,153,0.13)",
-                zIndex: 1,
-                position: "relative",
-              }}
-            >
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
+            <Box sx={{ width: "100%", maxWidth: 440 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
                 <Avatar
                   sx={{
-                    bgcolor: "#fff",
-                    width: 70,
-                    height: 70,
-                    boxShadow: 3,
-                    border: "3px solid #ec4899",
-                    mb: 1,
+                    bgcolor: "#f5f3ff",
+                    width: 72,
+                    height: 72,
+                    border: "2px solid #6366f1",
+                    mb: 2,
                   }}
                 >
-                  <Storefront sx={{ color: "#ec4899", fontSize: 40 }} />
+                  <Storefront sx={{ color: "#6366f1", fontSize: 40 }} />
                 </Avatar>
                 <Typography
                   variant="h4"
-                  fontWeight="bold"
+                  fontWeight={900}
                   sx={{
                     mb: 1,
-                    color: "#fff",
+                    color: "#1e293b",
                     textAlign: "center",
-                    letterSpacing: 2,
-                    textShadow: "2px 2px 8px #ec4899",
                   }}
                 >
-                  Vendor Registration
+                  Become a Vendor
                 </Typography>
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   sx={{
-                    color: "#a1a1aa",
+                    color: "#64748b",
                     mb: 2,
                     fontWeight: 500,
                     textAlign: "center",
                   }}
                 >
-                  Join as a Vendor and grow your business with us!
+                  Join {APP_NAME} and start selling today
                 </Typography>
               </Box>
-              <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
-                <Step>
-                  <StepLabel sx={{ color: "#fff" }}>Account</StepLabel>
-                </Step>
-                <Step>
-                  <StepLabel sx={{ color: "#fff" }}>Business</StepLabel>
-                </Step>
-              </Stepper>
-              <Divider sx={{ mb: 2, bgcolor: "#ec4899", opacity: 0.3 }} />
-              {activeStep === 0 && (
-                <form onSubmit={handleNext}>
-                  <TextField
-                    label="Full Name"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={username}
-                    onChange={(e) => setName(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Person sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Email Address"
-                    type="email"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Email sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Phone"
-                    type="tel"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Phone sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={handleClickShowPassword}
-                            edge="end"
-                            sx={{ color: "#ec4899" }}
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Confirm Password"
-                    type={showPassword ? "text" : "password"}
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    sx={textFieldStyle}
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="secondary"
-                    fullWidth
-                    sx={submitButtonStyle}
-                  >
-                    Next
-                  </Button>
-                </form>
-              )}
-              {activeStep === 1 && (
-                <form onSubmit={submitHandler}>
-                  <Typography variant="subtitle1" sx={{ color: "#ec4899", mb: 1, fontWeight: 700 }}>
-                    Business Information
-                  </Typography>
-                  <TextField
-                    label="Company Name"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Business sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Tax ID"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={taxId}
-                    onChange={(e) => setTaxId(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Assignment sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="GST ID"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={gstId}
-                    onChange={(e) => setGstId(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Badge sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    label="Business Address"
-                    fullWidth
-                    required
-                    margin="normal"
-                    value={businessAddress}
-                    onChange={(e) => setBusinessAddress(e.target.value)}
-                    sx={textFieldStyle}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <LocationOn sx={{ color: "#fff" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      fullWidth
-                      sx={{
-                        ...submitButtonStyle,
-                        background: "none",
-                        color: "#ec4899",
-                        border: "2px solid #ec4899",
-                        "&:hover": {
-                          background: "#ec4899",
-                          color: "#fff",
-                        },
-                      }}
-                      onClick={() => setActiveStep(0)}
-                      type="button"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="secondary"
-                      fullWidth
-                      sx={submitButtonStyle}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Registering..." : "Submit"}
-                    </Button>
-                  </Box>
-                  {isLoading && (
-                    <Box sx={{ mt: 2 }}>
-                      <Loader />
-                    </Box>
-                  )}
-                </form>
-              )}
-              <Divider sx={{ my: 3, bgcolor: "#bbb" }} />
-              <Typography variant="body2" color="#fff" sx={{ textAlign: "center" }}>
-                Already have an account?{" "}
-                <Link
-                  to={redirect ? `/Vendor/login?redirect=${redirect}` : "/Vendor/login"}
-                  style={{ color: "#ec4899", textDecoration: "underline", fontWeight: 600 }}
+
+              <form onSubmit={submitHandler}>
+                <TextField
+                  label="Full Name"
+                  fullWidth
+                  required
+                  margin="normal"
+                  value={username}
+                  onChange={(e) => setName(e.target.value)}
+                  sx={textFieldStyle}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: "#6366f1" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  label="Email Address"
+                  type="email"
+                  fullWidth
+                  required
+                  margin="normal"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  sx={textFieldStyle}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email sx={{ color: "#6366f1" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  label="Phone Number"
+                  type="tel"
+                  fullWidth
+                  required
+                  margin="normal"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  sx={textFieldStyle}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Phone sx={{ color: "#6366f1" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  label="Create Password"
+                  type={showPassword ? "text" : "password"}
+                  fullWidth
+                  required
+                  margin="normal"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  sx={textFieldStyle}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={handleClickShowPassword}
+                          edge="end"
+                          sx={{ color: "#6366f1" }}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  label="Confirm Password"
+                  type={showPassword ? "text" : "password"}
+                  fullWidth
+                  required
+                  margin="normal"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  sx={textFieldStyle}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  sx={submitButtonStyle}
+                  disabled={isLoading}
                 >
-                  Login
+                  {isLoading ? "Creating Account..." : "Register as Vendor"}
+                </Button>
+                {isLoading && (
+                  <Box sx={{ mt: 2, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Setting up your vendor account...
+                    </Typography>
+                  </Box>
+                )}
+              </form>
+
+              <Divider sx={{ my: 4, borderColor: "#f1f5f9" }} />
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", fontWeight: 500 }}>
+                Already a vendor?{" "}
+                <Link
+                  to={redirect ? `/vendor/login?redirect=${redirect}` : "/vendor/login"}
+                  style={{ color: "#6366f1", textDecoration: "none", fontWeight: 700 }}
+                >
+                  Sign in here
                 </Link>
               </Typography>
-            </Paper>
+            </Box>
           </Fade>
         </Grid>
         <Grid
@@ -438,49 +276,67 @@ const VendorRegister = () => {
           sx={{
             display: { xs: "none", md: "block" },
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=1964&q=80')",
+              "url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            borderRadius: "0 16px 16px 0",
-            minHeight: 700,
             position: "relative",
             "&:after": {
               content: '""',
               position: "absolute",
               inset: 0,
-              bgcolor: "rgba(99,102,241,0.25)",
-              borderRadius: "0 16px 16px 0",
+              background: "linear-gradient(180deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.4) 100%)",
             },
           }}
-        />
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 40,
+              left: 40,
+              right: 40,
+              zIndex: 2,
+              color: "#fff",
+              p: 3,
+              bgcolor: "rgba(255,255,255,0.1)",
+              backdropFilter: "blur(12px)",
+              borderRadius: 4,
+              border: "1px solid rgba(255,255,255,0.2)",
+            }}
+          >
+            <Typography variant="h5" fontWeight={800} gutterBottom>
+              Start Your Business Journey
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              After registration, you'll create your organization and verify your business documents to unlock full access.
+            </Typography>
+          </Box>
+        </Grid>
       </Grid>
     </Box>
   );
 };
 
 const textFieldStyle = {
-  input: { color: "#fff" },
-  label: { color: "#fff" },
   mb: 2,
-  bgcolor: "#18181b",
-  borderRadius: 2,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 3,
+    bgcolor: "#f8fafc",
+  }
 };
 
 const submitButtonStyle = {
   mt: 2,
-  fontWeight: "bold",
-  fontSize: "1.1rem",
-  borderRadius: 2,
-  letterSpacing: 1,
-  py: 1.3,
-  boxShadow: 3,
-  background: "linear-gradient(90deg, #6366f1 0%, #ec4899 100%)",
+  fontWeight: 800,
+  fontSize: "1rem",
+  borderRadius: 3,
+  py: 1.5,
+  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
+  background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
   textTransform: "none",
-  transition: "transform 0.2s, box-shadow 0.2s",
+  transition: "all 0.2s",
   "&:hover": {
-    transform: "scale(1.04)",
-    boxShadow: 6,
-    background: "linear-gradient(90deg, #ec4899 0%, #6366f1 100%)",
+    background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+    transform: "translateY(-1px)",
   },
 };
 

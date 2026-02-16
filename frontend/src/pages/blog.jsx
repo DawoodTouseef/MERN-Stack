@@ -21,6 +21,7 @@ import {
 import { useState, useEffect } from "react";
 import { Search, CalendarToday, Person, Category } from "@mui/icons-material";
 import { useFetchBlogPostsQuery } from "../redux/api/blogApiSlice";
+import { APP_NAME } from "../redux/constants";
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,9 +79,9 @@ const Blog = () => {
             textAlign: { xs: "center", md: "left" },
           }}
         >
-          Nexus Mart Blog
+          {APP_NAME} Blog
         </Typography>
-        
+
         <Typography
           variant="subtitle1"
           sx={{ color: "#6366f1", mb: 4, textAlign: { xs: "center", md: "left" } }}
@@ -159,10 +160,10 @@ const Blog = () => {
                 <Grid container spacing={4}>
                   {posts.map((post) => (
                     <Grid item xs={12} sm={6} md={4} key={post._id}>
-                      <Card 
-                        sx={{ 
-                          height: '100%', 
-                          display: 'flex', 
+                      <Card
+                        sx={{
+                          height: '100%',
+                          display: 'flex',
                           flexDirection: 'column',
                           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                           '&:hover': {
@@ -185,44 +186,44 @@ const Blog = () => {
                               {post.title}
                             </Typography>
                             {post.category && (
-                              <Chip 
-                                label={post.category} 
-                                color="primary" 
-                                size="small" 
+                              <Chip
+                                label={post.category}
+                                color="primary"
+                                size="small"
                               />
                             )}
                           </Box>
-                          
+
                           {post.content?.excerpt && (
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                               {post.content.excerpt}
                             </Typography>
                           )}
-                          
+
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                             {post.category && (
-                              <Chip 
-                                icon={<Category />} 
-                                label={post.category} 
-                                size="small" 
-                                variant="outlined" 
+                              <Chip
+                                icon={<Category />}
+                                label={post.category}
+                                size="small"
+                                variant="outlined"
                               />
                             )}
-                            <Chip 
-                              icon={<CalendarToday />} 
-                              label={formatDate(post.publishDate || post.createdAt)} 
-                              size="small" 
-                              variant="outlined" 
+                            <Chip
+                              icon={<CalendarToday />}
+                              label={formatDate(post.publishDate || post.createdAt)}
+                              size="small"
+                              variant="outlined"
                             />
                             {post.tags && post.tags.length > 0 && (
-                              <Chip 
-                                label={`${post.tags.length} tags`} 
-                                size="small" 
-                                variant="outlined" 
+                              <Chip
+                                label={`${post.tags.length} tags`}
+                                size="small"
+                                variant="outlined"
                               />
                             )}
                           </Box>
-                          
+
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Person fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
@@ -231,11 +232,11 @@ const Blog = () => {
                           </Box>
                         </CardContent>
                         <CardActions sx={{ mt: 'auto', p: 2, pt: 0 }}>
-                          <Button 
-                            size="small" 
-                            variant="contained" 
+                          <Button
+                            size="small"
+                            variant="contained"
                             fullWidth
-                            sx={{ 
+                            sx={{
                               fontWeight: 'bold',
                               borderRadius: 2,
                               py: 1
@@ -252,11 +253,11 @@ const Blog = () => {
 
                 {totalPages > 1 && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-                    <Pagination 
-                      count={totalPages} 
-                      page={currentPage} 
-                      onChange={handlePageChange} 
-                      color="primary" 
+                    <Pagination
+                      count={totalPages}
+                      page={currentPage}
+                      onChange={handlePageChange}
+                      color="primary"
                       size="large"
                     />
                   </Box>
@@ -275,12 +276,12 @@ const Blog = () => {
           <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
             Subscribe to our newsletter and get the latest blog posts delivered to your inbox
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             size="large"
-            sx={{ 
-              px: 4, 
-              py: 1.5, 
+            sx={{
+              px: 4,
+              py: 1.5,
               fontWeight: 'bold',
               borderRadius: 3,
               bgcolor: "primary.main",
@@ -296,10 +297,10 @@ const Blog = () => {
             Write for Us
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Interested in contributing to the Nexus Mart Blog? We're always looking for passionate writers to share their expertise and insights.
+            Interested in contributing to the {APP_NAME} Blog? We're always looking for passionate writers to share their expertise and insights.
           </Typography>
           <Typography variant="body1">
-            For guest post inquiries, please contact our editorial team at 
+            For guest post inquiries, please contact our editorial team at
             <Link href="mailto:blog@nexusmart.com"> blog@nexusmart.com</Link>.
           </Typography>
         </Box>

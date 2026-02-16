@@ -9,21 +9,31 @@ const organizationSchema = mongoose.Schema({
     // Business Details (Merged from Vendor model)
     businessType: {
         type: String,
-        enum: ['Individual', 'Corporation', 'Partnership', 'LLC', 'Other'],
-        default: 'Individual'
+        enum: ['Proprietorship', 'Partnership', 'LLP', 'Private Limited', 'Public Limited'],
+        required: true
+    },
+    productCategory: {
+        type: String,
+        // required: true // Optional for now to avoid breaking existing
     },
     taxId: { type: String, trim: true },
+    gstNumber: { type: String, trim: true },
+    panNumber: { type: String, trim: true },
+
     bankDetails: {
         accountName: String,
         accountNumber: String,
         bankName: String,
-        routingNumber: String,
-        swiftCode: String
+        ifsc: String,
+        branch: String,
+        routingNumber: String, // Keep legacy
+        swiftCode: String      // Keep legacy
     },
     contactPerson: {
         name: String,
         email: String,
-        phone: String
+        phone: String,
+        designation: String
     },
 
     // Verification
@@ -38,8 +48,15 @@ const organizationSchema = mongoose.Schema({
         url: { type: String, required: true },
         status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
         uploadedAt: { type: Date, default: Date.now },
-        rejectionReason: String
+        rejectionReason: String,
+        kybVerificationId: String,
+        kybConfidence: Number,
+        kybProvider: String,
+        extractedData: Object
     }],
+    kybAttempts: { type: Number, default: 0 },
+    lastKybAttempt: Date,
+    kybFailureReason: String,
 
     // Custom User Groups / Roles within the Org
     userGroups: [{
@@ -66,6 +83,20 @@ const organizationSchema = mongoose.Schema({
         zipCode: String
     },
 
+    // GeoJSON Location
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            index: '2dsphere'
+        },
+        formattedAddress: String
+    },
+
     // Settings
     settings: {
         currency: { type: String, default: 'USD' },
@@ -86,6 +117,7 @@ organizationSchema.index({ name: 1 });
 organizationSchema.index({ slug: 1 });
 organizationSchema.index({ owner: 1 });
 organizationSchema.index({ verificationStatus: 1 });
+organizationSchema.index({ "location.coordinates": "2dsphere" });
 
 const Organization = mongoose.model("Organization", organizationSchema);
 export default Organization;

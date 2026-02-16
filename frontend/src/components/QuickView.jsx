@@ -29,7 +29,7 @@ const QuickView = ({ product, open, onClose }) => {
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const { data: offers } = useFetchOffersQuery();
-  
+
   // Check if product is in favorites
   const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
   const isFavorite = favorites.some((p) => p._id === product?._id);
@@ -65,7 +65,7 @@ const QuickView = ({ product, open, onClose }) => {
     let discountedPrice = product.price;
     let bestDiscount = 0;
     let bestDiscountType = null;
-    
+
     offers.forEach((offer) => {
       const isProductInOffer =
         offer.products.some((p) => p._id === product._id) ||
@@ -138,19 +138,19 @@ const QuickView = ({ product, open, onClose }) => {
         >
           <FaTimes />
         </IconButton>
-        
+
         <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-          <Stack 
-            direction={{ xs: 'column', md: 'row' }} 
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
             spacing={{ xs: 3, md: 4 }}
-            sx={{ 
+            sx={{
               position: 'relative',
               minHeight: { xs: 'auto', md: 400 }
             }}
           >
             {/* Product Image */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 flex: { md: 1 },
                 display: 'flex',
                 alignItems: 'center',
@@ -172,7 +172,7 @@ const QuickView = ({ product, open, onClose }) => {
                   border: `1px solid ${theme.palette.divider}`,
                 }}
               />
-              
+
               {/* Favorite Button */}
               <IconButton
                 onClick={toggleFavorites}
@@ -191,7 +191,7 @@ const QuickView = ({ product, open, onClose }) => {
               >
                 {isFavorite ? <FaHeart /> : <FaRegHeart />}
               </IconButton>
-              
+
               {/* Stock Status */}
               <Chip
                 label={product.countInStock > 0 ? "In Stock" : "Out of Stock"}
@@ -210,36 +210,36 @@ const QuickView = ({ product, open, onClose }) => {
                 }}
               />
             </Box>
-            
+
             {/* Product Details */}
             <Box sx={{ flex: { md: 1 } }}>
-              <Typography 
-                variant={isMobile ? "h5" : "h4"} 
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
                 fontWeight={800}
-                sx={{ 
+                sx={{
                   mb: 1,
                   color: theme.palette.text.primary
                 }}
               >
                 {product.name}
               </Typography>
-              
+
               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                <Rating 
-                  value={product.rating || 0} 
-                  precision={0.1} 
-                  readOnly 
-                  size="small" 
+                <Rating
+                  value={product.rating || 0}
+                  precision={0.1}
+                  readOnly
+                  size="small"
                 />
                 <Typography variant="body2" color="text.secondary">
                   ({product.numReviews || 0} reviews)
                 </Typography>
               </Stack>
-              
-              <Typography 
-                variant="body2" 
+
+              <Typography
+                variant="body2"
                 color="text.secondary"
-                sx={{ 
+                sx={{
                   mb: 3,
                   overflow: "hidden",
                   display: "-webkit-box",
@@ -249,18 +249,18 @@ const QuickView = ({ product, open, onClose }) => {
               >
                 {product.description}
               </Typography>
-              
+
               <Box sx={{ mb: 3 }}>
-                <MultiCurrencyPriceDisplay 
-                  product={{...product, price: discountedPrice}} 
+                <MultiCurrencyPriceDisplay
+                  product={{ ...product, price: discountedPrice }}
                   showOriginal={product.price !== discountedPrice}
                   originalPrice={product.price}
                 />
               </Box>
-              
+
               <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                <Chip 
-                  label={product.brand?.name || "Unknown Brand"} 
+                <Chip
+                  label={product.brand?.name || "Unknown Brand"}
                   variant="outlined"
                   sx={{
                     borderColor: alpha(theme.palette.primary.main, 0.3),
@@ -268,8 +268,8 @@ const QuickView = ({ product, open, onClose }) => {
                     fontWeight: 500
                   }}
                 />
-                <Chip 
-                  label={product.category?.name || "Uncategorized"} 
+                <Chip
+                  label={product.category?.name || "Uncategorized"}
                   variant="outlined"
                   sx={{
                     borderColor: alpha(theme.palette.secondary.main, 0.3),
@@ -278,7 +278,7 @@ const QuickView = ({ product, open, onClose }) => {
                   }}
                 />
               </Stack>
-              
+
               {/* Quantity Selector - Only show if in stock */}
               {product.countInStock > 0 && (
                 <Box sx={{ mb: 3 }}>
@@ -325,7 +325,7 @@ const QuickView = ({ product, open, onClose }) => {
                   </Stack>
                 </Box>
               )}
-              
+
               {/* Action Buttons */}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <Button
@@ -339,11 +339,12 @@ const QuickView = ({ product, open, onClose }) => {
                     py: 1.5,
                     fontWeight: 600,
                     textTransform: "none",
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
-                    boxShadow: 3,
+                    background: 'linear-gradient(45deg, #6366f1 30%, #8b5cf6 90%)',
+                    boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.39)',
                     '&:hover': {
-                      boxShadow: 6,
-                      transform: 'translateY(-2px)'
+                      boxShadow: '0 6px 20px rgba(99, 102, 241, 0.23)',
+                      transform: 'translateY(-2px)',
+                      filter: 'brightness(1.1)'
                     },
                     '&:disabled': {
                       bgcolor: 'action.disabled',
@@ -354,7 +355,7 @@ const QuickView = ({ product, open, onClose }) => {
                 >
                   {product.countInStock === 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
-                
+
                 <Button
                   variant="outlined"
                   size={isMobile ? "medium" : "large"}

@@ -15,23 +15,34 @@ import {
   Grid,
   Divider,
   Chip,
+  Stack,
+  Avatar,
+  IconButton,
+  alpha
 } from "@mui/material";
+import {
+  LocalShipping as ShippingIcon,
+  Payment as PaymentIcon,
+  Receipt as OrderIcon,
+  Home as HomeIcon,
+  CheckCircle as CheckedIcon
+} from "@mui/icons-material";
 import Message from "../../components/Message";
 import Loader from "../../components/Loader";
 import { formatVariantAttributes, getVariantSku } from "../../Utils/variantUtils";
+import useCurrency from "../../hooks/useCurrency";
 
 const PlaceOrder = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const cart = useSelector((state) => state.cart);
-  const currency = useSelector((state) => state.currency.selectedCurrency);
-  const price = useSelector((state) => state.currency.price);
+  const { format, symbol, selectedCurrency: currentCurrencyCode } = useCurrency();
 
   const [createOrder, { isLoading, error }] = useCreateOrderMutation();
   const { data: paypal } = useGetPaypalClientIdQuery();
   const { data: offers } = useFetchOffersQuery();
-  
+
   const [isPaid, setIsPaid] = useState(false); // Track payment status
   const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
 
@@ -41,23 +52,9 @@ const PlaceOrder = () => {
       navigate("/shipping");
     }
   }, [cart.shippingAddress, navigate]);
-  
-  const getCurrencySymbol = () => {
-    try {
-      const formatter = new Intl.NumberFormat('en', {
-        style: 'currency',
-        currency: currency,
-        currencyDisplay: 'symbol',
-      });
 
-      const parts = formatter.formatToParts(1);
-      const symbol = parts.find(part => part.type === 'currency')?.value;
-      return symbol || currency;
-    } catch (err) {
-      return currency; // fallback if currency code is invalid
-    }
-  };
-  
+
+
   // Load PayPal script if payment method is PayPal
   useEffect(() => {
     if (cart.paymentMethod === "PayPal" && paypal?.clientId) {
@@ -135,152 +132,179 @@ const PlaceOrder = () => {
   };
 
   return (
-    <>
-      <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
-          Place Order
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6 }}>
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: 3 }}>
+        <Typography variant="h4" fontWeight={900} color="#1e293b" sx={{ mb: 4 }}>
+          Final Review
         </Typography>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 4 }}>
-          <Grid container spacing={3}>
-            {/* Shipping Info */}
-            <Grid item xs={12} md={8}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Shipping
-              </Typography>
-              <Typography>
-                <strong>Address:</strong> {cart.shippingAddress?.street}, {cart.shippingAddress?.city},{" "}
-                {cart.shippingAddress?.state}, {cart.shippingAddress?.country} -{" "}
-                {cart.shippingAddress?.postalCode}
-              </Typography>
-              <Divider sx={{ my: 2 }} />
 
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Payment Method
-              </Typography>
-              <Typography>
-                <strong>Method:</strong> {cart.paymentMethod}
-              </Typography>
-              <Divider sx={{ my: 2 }} />
+        <Grid container spacing={4}>
+          <Grid item xs={12} lg={8}>
+            <Stack spacing={3}>
+              {/* Shipping & Payment Section */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
+                <Grid container spacing={4}>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
+                      <ShippingIcon sx={{ color: '#6366f1' }} />
+                      <Typography variant="h6" fontWeight={800} color="#1e293b">Shipping Address</Typography>
+                    </Box>
+                    <Typography variant="body2" color="#475569" sx={{ lineHeight: 1.7 }}>
+                      {cart.shippingAddress?.street}<br />
+                      {cart.shippingAddress?.city}, {cart.shippingAddress?.state}<br />
+                      {cart.shippingAddress?.country} - {cart.shippingAddress?.postalCode}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
+                      <PaymentIcon sx={{ color: '#6366f1' }} />
+                      <Typography variant="h6" fontWeight={800} color="#1e293b">Payment Method</Typography>
+                    </Box>
+                    <Chip
+                      label={cart.paymentMethod}
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 800,
+                        color: '#6366f1',
+                        borderColor: alpha('#6366f1', 0.5),
+                        bgcolor: alpha('#6366f1', 0.05)
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
 
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Order Items
-              </Typography>
-              {cart.cartItems.map((item) => (
-                <Box
-                  key={item._id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 2,
-                    pb: 2,
-                    borderBottom: "1px solid #eee",
-                  }}
-                >
-                  <img
-                    src={item.media?.[0]?.url}
-                    alt={item.name}
-                    style={{
-                      width: 60,
-                      height: 60,
-                      objectFit: "cover",
-                      borderRadius: 4,
-                      marginRight: 16,
-                    }}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Link
-                      to={`/product/${item.product || item.productId || item._id.split('-')[0]}`}
-                      style={{ textDecoration: "none", color: "inherit" }}
+              {/* Order Items */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1.5 }}>
+                  <OrderIcon sx={{ color: '#6366f1' }} />
+                  <Typography variant="h6" fontWeight={800} color="#1e293b">Order Items</Typography>
+                </Box>
+                <Stack spacing={2}>
+                  {cart.cartItems.map((item) => (
+                    <Box
+                      key={item._id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        p: 2,
+                        borderRadius: 3,
+                        border: '1px solid #f1f5f9',
+                        '&:hover': { bgcolor: '#f8fafc' }
+                      }}
                     >
-                      <Typography variant="body1" fontWeight="bold">
-                        {item.name}
-                      </Typography>
-                    </Link>
-                    
-                    {/* Variant Information */}
-                    {item.variantId && (
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                          {formatVariantAttributes({ 
-                            color: item.selectedOptions?.color,
-                            size: item.selectedOptions?.size,
-                            storage: item.selectedOptions?.storage
-                          })}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                          SKU: {item.sku || getVariantSku(item)}
+                      <Avatar
+                        src={item.media?.[0]?.url}
+                        variant="rounded"
+                        sx={{ width: 64, height: 64, borderRadius: 2 }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Link to={`/product/${item.product || item.productId || item._id.split('-')[0]}`} style={{ textDecoration: 'none' }}>
+                          <Typography variant="subtitle1" fontWeight={800} color="#1e293b" sx={{ '&:hover': { color: '#6366f1' } }}>
+                            {item.name}
+                          </Typography>
+                        </Link>
+                        {item.variantId && (
+                          <Typography variant="caption" color="text.secondary">
+                            {formatVariantAttributes(item.selectedOptions)}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ mt: 0.5 }}>
+                          {item.qty} x {format(item.price)}
                         </Typography>
                       </Box>
-                    )}
-                    
-                    <Typography variant="body2">
-                      {item.qty} x {getCurrencySymbol()}{(item.price * price).toFixed(2)} ={" "}
-                      {getCurrencySymbol()}{(item.qty * item.price * price).toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Grid>
-
-            {/* Order Summary */}
-            <Grid item xs={12} md={4}>
-              <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Order Summary
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Items:</strong> {getCurrencySymbol()}{Number(cart.itemsPrice || 0).toFixed(2)}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Shipping:</strong> {getCurrencySymbol()}{Number(cart.shippingPrice || 0).toFixed(2)}
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  <strong>Total:</strong> {getCurrencySymbol()}{Number(cart.totalPrice || 0).toFixed(2)}
-                </Typography>
+                      <Typography variant="subtitle1" fontWeight={900} color="#1e293b">
+                        {format(item.qty * item.price)}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
               </Paper>
-            </Grid>
+            </Stack>
           </Grid>
-          <Divider sx={{ my: 3 }} />
-          {error && (
-            <Message variant="danger">{error.data?.message || error.error}</Message>
-          )}
-          {cart.paymentMethod === "PayPal" ? (
-            <Box mt={2}>
-              {isPending ? (
-                <Loader />
-              ) : (
-                <PayPalButtons createOrder={handlePayPalPayment} onApprove={handlePayPalPayment} />
+
+          {/* summary Panel */}
+          <Grid item xs={12} lg={4}>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', position: 'sticky', top: 20 }}>
+              <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b' }}>Order Summary</Typography>
+              <Stack spacing={2} sx={{ mb: 4 }}>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">Items Subtotal</Typography>
+                  <Typography variant="body2" fontWeight={700}>{format(Number(cart.itemsPrice || 0))}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">Shipping Fee</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#10b981">{Number(cart.shippingPrice) === 0 ? 'FREE' : format(Number(cart.shippingPrice))}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">Estimated Tax</Typography>
+                  <Typography variant="body2" fontWeight={700}>{format(Number(cart.taxPrice || 0))}</Typography>
+                </Stack>
+                <Divider />
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="h6" fontWeight={900}>Total Amount</Typography>
+                  <Typography variant="h6" fontWeight={900} color="#6366f1">{format(Number(cart.totalPrice || 0))}</Typography>
+                </Stack>
+              </Stack>
+
+              {error && (
+                <Box sx={{ mb: 3 }}>
+                  <Message variant="danger">{error.data?.message || error.error}</Message>
+                </Box>
               )}
-            </Box>
-          ) : (
-            <Button
-              type="button"
-              variant="contained"
-              color="primary"
-              fullWidth
-              size="large"
-              sx={{
-                borderRadius: 4,
-                fontWeight: "bold",
-                fontSize: "1.1rem",
-                mt: 2,
-                background: "#6366f1",
-                "&:hover": { background: "#4f46e5" },
-              }}
-              disabled={cart.paymentMethod === "PayPal" && !isPaid}
-              onClick={placeOrderHandler}
-            >
-              Place Order
-            </Button>
-          )}
-          {isLoading && (
-            <Box sx={{ mt: 2 }}>
-              <Loader />
-            </Box>
-          )}
-        </Paper>
+
+              {cart.paymentMethod === "PayPal" ? (
+                <Box>
+                  {isPending ? <Loader /> : (
+                    <PayPalButtons
+                      style={{ layout: 'vertical', shape: 'rect', label: 'pay' }}
+                      createOrder={(data, actions) => {
+                        return actions.order.create({
+                          purchase_units: [{
+                            amount: {
+                              value: cart.totalPrice.toString(),
+                              currency_code: 'USD'
+                            }
+                          }]
+                        });
+                      }}
+                      onApprove={handlePayPalPayment}
+                    />
+                  )}
+                </Box>
+              ) : (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={isLoading}
+                  onClick={placeOrderHandler}
+                  sx={{
+                    borderRadius: 3,
+                    py: 2,
+                    fontWeight: 800,
+                    textTransform: 'none',
+                    bgcolor: '#6366f1',
+                    '&:hover': { bgcolor: '#4f46e5' },
+                    boxShadow: '0 8px 20px rgba(99, 102, 241, 0.2)'
+                  }}
+                >
+                  {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Confirm & Place Order'}
+                </Button>
+              )}
+
+              <Box sx={{ mt: 3, p: 2, borderRadius: 3, bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <CheckedIcon color="success" fontSize="small" />
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  By placing this order, you agree to our terms of service
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
       </Box>
-    </>
+    </Box>
   );
 };
 

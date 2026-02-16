@@ -3,14 +3,14 @@ import mongoose from "mongoose";
 // User Behavior Tracking Schema
 const userBehaviorSchema = mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  
+
   // Behavior Events
   events: [{
     type: {
       type: String,
       enum: [
         "view", "click", "add_to_cart", "purchase", "like", "share", "search", "filter",
-        "page_view", "view_section", "product_click", "favorite", "feedback"
+        "page_view", "view_section", "product_click", "favorite", "feedback", "review", "location_detected"
       ],
       required: true
     },
@@ -21,14 +21,14 @@ const userBehaviorSchema = mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
     sessionId: { type: String, required: true },
     duration: { type: Number }, // Time spent in seconds
-    source: { 
-      type: String, 
-      enum: ["homepage", "search", "category", "product_page", "cart", "recommendations"],
+    source: {
+      type: String,
+      enum: ["homepage", "search", "category", "product_page", "product_details", "cart", "recommendations"],
       default: "homepage"
     },
     metadata: { type: mongoose.Schema.Types.Mixed }
   }],
-  
+
   // Session Information
   sessions: [{
     sessionId: { type: String, required: true },
@@ -45,7 +45,7 @@ const userBehaviorSchema = mongoose.Schema({
     pageViews: { type: Number, default: 0 },
     totalDuration: { type: Number, default: 0 } // in seconds
   }],
-  
+
   // Preferences (learned from behavior)
   preferences: {
     categories: [{
@@ -68,7 +68,7 @@ const userBehaviorSchema = mongoose.Schema({
       score: { type: Number, default: 0 }
     }]
   },
-  
+
   // Behavioral Patterns
   patterns: {
     shoppingTimes: [{
@@ -86,7 +86,7 @@ const userBehaviorSchema = mongoose.Schema({
 // Product Similarity Schema
 const productSimilaritySchema = mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-  
+
   // Similar products with similarity scores
   similarProducts: [{
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -105,7 +105,7 @@ const productSimilaritySchema = mongoose.Schema({
       userBehavior: { type: Number, default: 0 }
     }
   }],
-  
+
   // Metadata
   lastCalculated: { type: Date, default: Date.now },
   totalSimilarProducts: { type: Number, default: 0 },
@@ -115,7 +115,7 @@ const productSimilaritySchema = mongoose.Schema({
 // User Similarity Schema (for collaborative filtering)
 const userSimilaritySchema = mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  
+
   // Similar users
   similarUsers: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -124,14 +124,14 @@ const userSimilaritySchema = mongoose.Schema({
     sharedCategories: { type: Number, default: 0 },
     sharedBrands: { type: Number, default: 0 }
   }],
-  
+
   lastCalculated: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 // Recommendation Results Schema
 const recommendationSchema = mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  
+
   // Different types of recommendations
   recommendations: {
     // For you - personalized based on behavior
@@ -139,13 +139,13 @@ const recommendationSchema = mongoose.Schema({
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
       score: { type: Number, min: 0, max: 1 },
       reason: { type: String }, // "Based on your interest in Electronics"
-      algorithm: { 
-        type: String, 
+      algorithm: {
+        type: String,
         enum: ["content_based", "collaborative", "hybrid", "trending", "popular"],
         default: "hybrid"
       }
     }],
-    
+
     // Recently viewed based
     basedOnViewed: [{
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -153,7 +153,7 @@ const recommendationSchema = mongoose.Schema({
       baseProduct: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // What it's based on
       reason: { type: String }
     }],
-    
+
     // Category-based
     categoryBased: [{
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -161,14 +161,14 @@ const recommendationSchema = mongoose.Schema({
       category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
       reason: { type: String }
     }],
-    
+
     // Trending products
     trending: [{
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
       score: { type: Number, min: 0, max: 1 },
       trendingFactor: { type: String } // "High demand", "Fast selling", etc.
     }],
-    
+
     // Frequently bought together
     frequentlyBoughtTogether: [{
       baseProduct: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -177,7 +177,7 @@ const recommendationSchema = mongoose.Schema({
         coOccurrenceScore: { type: Number, min: 0, max: 1 }
       }]
     }],
-    
+
     // Cart recommendations (for checkout)
     cartBased: [{
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -186,7 +186,7 @@ const recommendationSchema = mongoose.Schema({
       reason: { type: String }
     }]
   },
-  
+
   // Metadata
   generatedAt: { type: Date, default: Date.now },
   expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) }, // 24 hours
@@ -208,7 +208,7 @@ const recommendationSchema = mongoose.Schema({
 const modelPerformanceSchema = mongoose.Schema({
   modelName: { type: String, required: true },
   version: { type: String, required: true },
-  
+
   // Performance metrics
   metrics: {
     precision: { type: Number, min: 0, max: 1 },
@@ -219,7 +219,7 @@ const modelPerformanceSchema = mongoose.Schema({
     diversityScore: { type: Number, min: 0, max: 1 },
     noveltyScore: { type: Number, min: 0, max: 1 }
   },
-  
+
   // Training data info
   trainingData: {
     totalUsers: { type: Number },
@@ -230,7 +230,7 @@ const modelPerformanceSchema = mongoose.Schema({
       end: { type: Date }
     }
   },
-  
+
   // Test results
   testResults: [{
     testDate: { type: Date, default: Date.now },
@@ -239,9 +239,9 @@ const modelPerformanceSchema = mongoose.Schema({
     avgResponseTime: { type: Number }, // in ms
     errorCount: { type: Number, default: 0 }
   }],
-  
-  status: { 
-    type: String, 
+
+  status: {
+    type: String,
     enum: ["training", "active", "deprecated", "testing"],
     default: "training"
   },

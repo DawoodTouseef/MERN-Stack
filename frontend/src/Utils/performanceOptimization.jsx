@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Container, Button, CircularProgress } from '@mui/material';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { withLazyLoading } from './lazyLoading';
+import { APP_NAME } from '../redux/constants';
 
 /**
  * Performance monitoring hook
@@ -71,7 +72,7 @@ const AppPerformanceWrapper = ({ children }) => {
   return (
     <ErrorBoundary>
       {children}
-      
+
       {isDevelopment && (
         <Box
           sx={{
@@ -177,21 +178,21 @@ export const PWAInstallBanner = () => {
       }}
     >
       <Typography variant="body2">
-        Install Nexus Mart for a better shopping experience
+        Install {APP_NAME} for a better shopping experience
       </Typography>
       <Box>
-        <Button 
-          variant="outlined" 
-          color="inherit" 
-          size="small" 
+        <Button
+          variant="outlined"
+          color="inherit"
+          size="small"
           onClick={installPWA}
           sx={{ mr: 1 }}
         >
           Install
         </Button>
-        <Button 
-          variant="text" 
-          color="inherit" 
+        <Button
+          variant="text"
+          color="inherit"
           size="small"
           onClick={() => window.dispatchEvent(new Event('beforeinstallprompt'))}
         >
@@ -210,7 +211,7 @@ export const preloadCriticalResources = () => {
   if (import.meta.env.DEV || import.meta.env.NODE_ENV === 'development') {
     return;
   }
-  
+
   const criticalImages = [
     '/images/logo.png',
     '/images/banner-1.jpg',
@@ -257,17 +258,17 @@ export const useConnectionQuality = () => {
   useEffect(() => {
     if ('connection' in navigator) {
       const connection = navigator.connection;
-      
+
       const updateConnectionInfo = () => {
         const { effectiveType, downlink, rtt } = connection;
-        
+
         let quality = 'good';
         if (effectiveType === 'slow-2g' || effectiveType === '2g') {
           quality = 'poor';
         } else if (effectiveType === '3g' || downlink < 1.5) {
           quality = 'moderate';
         }
-        
+
         setConnectionQuality(quality);
       };
 
@@ -286,7 +287,7 @@ export const useConnectionQuality = () => {
  */
 export const useAdaptiveLoading = () => {
   const connectionQuality = useConnectionQuality();
-  
+
   const loadingStrategy = {
     poor: {
       imageQuality: 'low',
@@ -317,10 +318,10 @@ export const useAdaptiveLoading = () => {
 export const withPerformanceOptimization = (Component) => {
   return React.memo((props) => {
     const adaptiveSettings = useAdaptiveLoading();
-    
+
     return (
-      <Component 
-        {...props} 
+      <Component
+        {...props}
         adaptiveSettings={adaptiveSettings}
       />
     );

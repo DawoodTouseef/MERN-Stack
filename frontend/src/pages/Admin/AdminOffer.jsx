@@ -41,6 +41,7 @@ import {
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import DocumentTitle from "react-document-title";
+import { APP_NAME } from "../../redux/constants";
 
 const AdminOffer = () => {
   const { data: offers = [], isLoading, isError, error, refetch } = useFetchOffersQuery();
@@ -411,7 +412,7 @@ const AdminOffer = () => {
   );
 
   return (
-    <DocumentTitle title="Offer Management | Nexus Mart">
+    <DocumentTitle title={`Offer Management | ${APP_NAME}`}>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
         <Fade in>
           <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>

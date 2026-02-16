@@ -1,8 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
+import Organization from '../models/organizationModel.js';
 import Product from '../models/productModel.js';
 import Order from '../models/orderModel.js';
-import Vendor from '../models/vendorModel.js';
 import axios from 'axios';
 
 // @desc    Get current user location data
@@ -11,7 +11,7 @@ import axios from 'axios';
 const getCurrentLocation = asyncHandler(async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    
+
     if (!user.location && req.headers['x-forwarded-for']) {
       // Get location from IP if not set
       const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -43,46 +43,58 @@ const getCurrentLocation = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Update user location
+// @desc    Update organization location
 // @route   POST /api/location/update
-// @access  Private
-const updateUserLocation = asyncHandler(async (req, res) => {
+// @access  Private (Vendor only)
+const updateOrganizationLocation = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
-    
+
     // Reverse geocoding to get city and country
-    let locationData = { latitude, longitude };
-    
-    try {
-      const response = await axios.get(
-        `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.OPENCAGE_API_KEY}`
-      );
-      
-      if (response.data.results.length > 0) {
-        const result = response.data.results[0];
-        locationData = {
-          ...locationData,
-          city: result.components.city || result.components.town || result.components.village,
-          country: result.components.country,
-          state: result.components.state,
-          timezone: result.annotations.timezone.name
-        };
+    let locationData = {
+      type: 'Point',
+      coordinates: [parseFloat(longitude), parseFloat(latitude)]
+    };
+    let formattedAddress = '';
+
+    // Only attempt reverse geocoding if API key is configured
+    if (process.env.OPENCAGE_API_KEY) {
+      try {
+        const response = await axios.get(
+          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.OPENCAGE_API_KEY}`
+        );
+
+        if (response.data.results.length > 0) {
+          const result = response.data.results[0];
+          formattedAddress = result.formatted;
+          // You might want to update address fields too, but let's keep it checking location first
+        }
+      } catch (error) {
+        console.log('Reverse geocoding failed:', error.message);
       }
-    } catch (error) {
-      console.log('Reverse geocoding failed:', error);
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { location: locationData },
+    const organization = await Organization.findOneAndUpdate(
+      { owner: req.user._id },
+      {
+        location: {
+          ...locationData,
+          formattedAddress
+        }
+      },
       { new: true }
     );
 
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
     res.json({
       message: 'Location updated successfully',
-      location: user.location
+      location: organization.location
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Failed to update location' });
   }
 });
@@ -93,14 +105,14 @@ const updateUserLocation = asyncHandler(async (req, res) => {
 const getLocationBasedProducts = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, limit = 12, category, priceRange } = req.query;
-    
+
     let query = {};
-    
+
     // Add category filter if specified
     if (category) {
       query.category = category;
     }
-    
+
     // Add price range filter if specified
     if (priceRange) {
       const [min, max] = priceRange.split('-').map(Number);
@@ -109,10 +121,11 @@ const getLocationBasedProducts = asyncHandler(async (req, res) => {
 
     // Get products with location-based scoring
     let products;
-    
+
     if (latitude && longitude) {
-      // Find products from nearby vendors
-      const nearbyVendors = await Vendor.find({
+      // Find products from nearby organizations (vendors)
+      const nearbyOrgs = await Organization.find({
+        type: 'vendor',
         'location.coordinates': {
           $near: {
             $geometry: {
@@ -123,10 +136,14 @@ const getLocationBasedProducts = asyncHandler(async (req, res) => {
           }
         }
       }).select('_id');
-      
-      const vendorIds = nearbyVendors.map(v => v._id);
-      if (vendorIds.length > 0) {
-        query.vendor = { $in: vendorIds };
+
+      if (nearbyOrgs.length > 0) {
+        // Product.vendor references Organization model
+        query.vendor = { $in: nearbyOrgs.map(org => org._id) };
+      } else {
+        // If no nearby vendors found, return empty or fallback
+        // Current logic below handles empty result by returning popular products
+        // so we can just ensure query finds nothing specific to location if no vendors
       }
     }
 
@@ -158,7 +175,7 @@ const getLocationBasedProducts = asyncHandler(async (req, res) => {
 const getLocationOffers = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, limit = 10 } = req.query;
-    
+
     // For now, return general offers
     // In a full implementation, you would have location-specific offers
     const offers = await Product.find({
@@ -167,10 +184,10 @@ const getLocationOffers = asyncHandler(async (req, res) => {
         { 'pricing.compareAtPrice': { $gt: '$pricing.price' } }
       ]
     })
-    .populate('category', 'name')
-    .populate('brand', 'name')
-    .sort({ discount: -1 })
-    .limit(parseInt(limit));
+      .populate('category', 'name')
+      .populate('brand', 'name')
+      .sort({ discount: -1 })
+      .limit(parseInt(limit));
 
     res.json(offers);
   } catch (error) {
@@ -184,14 +201,14 @@ const getLocationOffers = asyncHandler(async (req, res) => {
 const getTrendingByLocation = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, timeframe = '7d', limit = 12 } = req.query;
-    
+
     // Calculate date range for trending analysis
     const days = timeframe === '1d' ? 1 : timeframe === '7d' ? 7 : 30;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - days);
 
     let products;
-    
+
     if (latitude && longitude) {
       // Get trending products from recent orders in the area
       const recentOrders = await Order.find({
@@ -219,7 +236,7 @@ const getTrendingByLocation = asyncHandler(async (req, res) => {
 
       // Get top trending products
       const trendingProductIds = Object.entries(productCounts)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, parseInt(limit))
         .map(([id]) => id);
 
@@ -249,12 +266,13 @@ const getTrendingByLocation = asyncHandler(async (req, res) => {
 const getNearbyVendors = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, radius = 10, limit = 20 } = req.query;
-    
+
     if (!latitude || !longitude) {
       return res.status(400).json({ message: 'Location coordinates required' });
     }
 
-    const vendors = await Vendor.find({
+    const vendors = await Organization.find({
+      type: 'vendor',
       'location.coordinates': {
         $near: {
           $geometry: {
@@ -265,11 +283,12 @@ const getNearbyVendors = asyncHandler(async (req, res) => {
         }
       }
     })
-    .select('name description location rating totalOrders')
-    .limit(parseInt(limit));
+      .select('name description location rating totalOrders owner')
+      .limit(parseInt(limit));
 
     res.json(vendors);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Failed to get nearby vendors' });
   }
 });
@@ -280,7 +299,7 @@ const getNearbyVendors = asyncHandler(async (req, res) => {
 const getDeliveryOptions = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, productIds } = req.query;
-    
+
     // Mock delivery options based on location
     const deliveryOptions = [
       {
@@ -318,7 +337,7 @@ const getDeliveryOptions = asyncHandler(async (req, res) => {
 const getRegionalPreferences = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude } = req.query;
-    
+
     // Mock regional preferences
     const preferences = {
       popularCategories: [
@@ -348,14 +367,14 @@ const getRegionalPreferences = asyncHandler(async (req, res) => {
 const getLocationPricing = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, productIds } = req.query;
-    
+
     if (!productIds) {
       return res.status(400).json({ message: 'Product IDs required' });
     }
 
     const ids = JSON.parse(productIds);
     const products = await Product.find({ _id: { $in: ids } });
-    
+
     // Apply location-based pricing adjustments
     const pricingData = products.map(product => ({
       productId: product._id,
@@ -378,7 +397,7 @@ const getLocationPricing = asyncHandler(async (req, res) => {
 const getWeatherBasedProducts = asyncHandler(async (req, res) => {
   try {
     const { latitude, longitude, limit = 8 } = req.query;
-    
+
     // Mock weather-based recommendations
     // In a real implementation, you would call a weather API
     const weatherProducts = await Product.find({
@@ -387,9 +406,9 @@ const getWeatherBasedProducts = asyncHandler(async (req, res) => {
         { name: { $regex: /(winter|warm|coat|jacket|sweater)/i } }
       ]
     })
-    .populate('category', 'name')
-    .populate('brand', 'name')
-    .limit(parseInt(limit));
+      .populate('category', 'name')
+      .populate('brand', 'name')
+      .limit(parseInt(limit));
 
     res.json(weatherProducts);
   } catch (error) {
@@ -403,7 +422,7 @@ const getWeatherBasedProducts = asyncHandler(async (req, res) => {
 const trackLocationEvent = asyncHandler(async (req, res) => {
   try {
     const { eventType, location, metadata } = req.body;
-    
+
     // Store location-based analytics
     // In a real implementation, you would save this to an analytics collection
     console.log('Location Event:', {
@@ -422,7 +441,7 @@ const trackLocationEvent = asyncHandler(async (req, res) => {
 
 export {
   getCurrentLocation,
-  updateUserLocation,
+  updateOrganizationLocation,
   getLocationBasedProducts,
   getLocationOffers,
   getTrendingByLocation,

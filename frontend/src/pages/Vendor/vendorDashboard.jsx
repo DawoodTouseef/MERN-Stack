@@ -7,15 +7,17 @@ import EnhancedVendorDashboard from "../../components/vendor/EnhancedVendorDashb
 import VendorDebugTest from "../../components/vendor/VendorDebugTest";
 import ApiTestComponent from "../../components/vendor/ApiTestComponent";
 import { Box, Typography, Button, Tabs, Tab, Chip, Grid, Paper, Avatar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Fade, Zoom } from "@mui/material";
-import { 
-  Dashboard as DashboardIcon, 
-  Assessment as AssessmentIcon, 
+import {
+  Dashboard as DashboardIcon,
+  Assessment as AssessmentIcon,
   ShoppingCart as ShoppingCartIcon,
   Inventory as InventoryIcon,
   People as PeopleIcon,
   TrendingUp as TrendingUpIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Storefront as StoreIcon
 } from "@mui/icons-material";
+import VendorShopSettings from "../../components/vendor/VendorShopSettings";
 import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 import { useGetMyOrdersQuery } from "../../redux/api/orderApiSlice";
 import { IoAdd } from "react-icons/io5";
@@ -24,6 +26,9 @@ import Loader from "../../components/Loader";
 import Message from "../../components/Message";
 import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
 import OrderList from "../../pages/Seller/OrderList";
+import AllProducts from "../../pages/Seller/AllProducts";
+import useCurrency from "../../hooks/useCurrency";
+import { APP_NAME } from "../../redux/constants";
 
 const VendorDashBoard = () => {
   const navigate = useNavigate();
@@ -31,78 +36,34 @@ const VendorDashBoard = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState(0);
   const { data: products = [], isLoading: isProductLoading, isError, refetch } = useAllProductsQuery();
-    const [refreshFlag, setRefreshFlag] = useState(false);
-    const [filteredProducts, setfilteredProducts] = useState([]);
-    // Listen for product add/update/delete events in localStorage
-    useEffect(() => {
-      const handleStorage = (e) => {
-        if (e.key === "productChanged") {
-          setRefreshFlag((f) => !f);
-          refetch();
-        }
-      };
-      window.addEventListener("storage", handleStorage);
-      return () => window.removeEventListener("storage", handleStorage);
-    }, [refetch]);
-    useEffect(() => {
-      if (userInfo && products) {
-        const filter = products.filter((p) => (p.user === userInfo._id || p.user?._id === userInfo._id));
-        setfilteredProducts(filter);
+  const [refreshFlag, setRefreshFlag] = useState(false);
+  const [filteredProducts, setfilteredProducts] = useState([]);
+  // Listen for product add/update/delete events in localStorage
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "productChanged") {
+        setRefreshFlag((f) => !f);
+        refetch();
       }
-    }, [products, userInfo]);
-    // Optionally, trigger refetch on focus (for single tab)
-    useEffect(() => {
-      const onFocus = () => refetch();
-      window.addEventListener("focus", onFocus);
-      return () => window.removeEventListener("focus", onFocus);
-    }, [refetch]);
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
+  useEffect(() => {
+    if (userInfo && products) {
+      const filter = products.filter((p) => (p.user === userInfo._id || p.user?._id === userInfo._id));
+      setfilteredProducts(filter);
+    }
+  }, [products, userInfo]);
+
   useEffect(() => {
     if (userInfo && userInfo.role !== "vendor") {
       navigate("/unauthorized");
     }
   }, [userInfo, navigate]);
   const { data: orders = [], isLoading: isOrderLoading, error } = useGetMyOrdersQuery();
-    const currency = useSelector((state) => state.currency.selectedCurrency);
-        const price = useSelector((state) => state.currency.price);
-        const getCurrencySymbol = () => {
-                try {
-                  const formatter = new Intl.NumberFormat('en', {
-                    style: 'currency',
-                    currency: currency,
-                    currencyDisplay: 'symbol',
-                  });
-            
-                  const parts = formatter.formatToParts(1);
-                  const symbol = parts.find(part => part.type === 'currency')?.value;
-                  return symbol || currency;
-                } catch (err) {
-                  return currency; // fallback if currency code is invalid
-                }
-              };
-  const { selectedCurrency } = useSelector((state) => state.currency);
-  const { data: currencies = [] } = useGetCurrenciesQuery();
-  
-  // Function to convert amount to selected currency
-  const convertToSelectedCurrency = (amount, fromCurrency = 'USD') => {
-    if (!selectedCurrency || selectedCurrency === fromCurrency) {
-      return amount;
-    }
-    
-    // Find currencies
-    const fromCurrencyObj = currencies.find(c => c.code === fromCurrency);
-    const toCurrencyObj = currencies.find(c => c.code === selectedCurrency);
-    
-    // If we don't have currency data, return original amount
-    if (!fromCurrencyObj || !toCurrencyObj) {
-      return amount;
-    }
-    
-    // Convert using exchange rates
-    // Formula: (amount / fromRate) * toRate
-    const convertedAmount = (amount / fromCurrencyObj.rate) * toCurrencyObj.rate;
-    return convertedAmount;
-  };
-  
+  const { convert, symbol } = useCurrency();
+
   // Show loading state while checking authentication
   if (!userInfo) {
     return (
@@ -119,8 +80,8 @@ const VendorDashBoard = () => {
         <Typography variant="h6" color="error">
           Access denied. Vendors only.
         </Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={() => navigate("/vendor/login")}
           sx={{ mt: 2 }}
         >
@@ -147,194 +108,27 @@ const VendorDashBoard = () => {
         return <VendorAnalyticsDashboard />;
       case 2:
         return (
-          <Box sx={{ p: 3 }}>
-            <OrderList isAdmin={userInfo?.role === "admin"} />
+          <Box>
+            <OrderList isAdmin={false} />
           </Box>
         );
       case 3:
         return (
-          <Box sx={{ p: 3 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 4,
-                    }}
-                  >
-                    <Box>
-                      <Typography variant="h4" fontWeight={700} color="primary.main">
-                        My Products
-                      </Typography>
-                      <Chip
-                        label={`Total: ${filteredProducts.length}`}
-                        color="secondary"
-                        sx={{ ml: 2, fontWeight: 600, fontSize: "1rem" }}
-                      />
-                    </Box>
-                    <Button
-                      component={Link}
-                      to="/vendor/product/add"
-                      variant="contained"
-                      color="secondary"
-                      startIcon={<IoAdd />}
-                      sx={{
-                        borderRadius: 2,
-                        fontWeight: 600,
-                        boxShadow: 3,
-                        letterSpacing: 1,
-                        px: 3,
-                        py: 1,
-                        fontSize: "1.05rem",
-                        transition: "transform 0.2s, box-shadow 0.2s",
-                        "&:hover": {
-                          transform: "scale(1.04)",
-                          boxShadow: 6,
-                        },
-                      }}
-                      className="transition-transform"
-                    >
-                      Create Product
-                    </Button>
-                  </Box>
-                  {filteredProducts.length === 0 ? (
-                    <Box sx={{ textAlign: "center", mt: 8 }}>
-                      <Typography variant="h6" color="text.secondary">
-                        You have not added any products yet.
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Grid container spacing={4}>
-                      {filteredProducts.map((product) => (
-                        <Grid item xs={12} md={6} key={product._id}>
-                          <Paper
-                            elevation={6}
-                            sx={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              p: 3,
-                              borderRadius: 4,
-                              bgcolor: "#fff",
-                              boxShadow: "0 6px 32px 0 rgba(0,0,0,0.12)",
-                              transition: "transform 0.2s, box-shadow 0.2s",
-                              "&:hover": {
-                                transform: "translateY(-8px) scale(1.03)",
-                                boxShadow: 12,
-                              },
-                            }}
-                            className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                          >
-                            <Avatar
-                              variant="rounded"
-                              src={product.media[0]?.url}
-                              alt={product.name}
-                              sx={{
-                                width: 120,
-                                height: 120,
-                                mr: 3,
-                                bgcolor: "#eee",
-                                border: "2px solid #e3eeff",
-                              }}
-                            />
-                            <Box sx={{ flex: 1 }}>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Typography variant="h6" fontWeight={700} color="primary.main">
-                                  {product.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {moment(product.createdAt).format("MMM Do, YYYY")}
-                                </Typography>
-                              </Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ my: 1, maxWidth: { xs: "100%", md: 400 } }}
-                              >
-                                {product.description?.substring(0, 160)}...
-                              </Typography>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  mt: 2,
-                                }}
-                              >
-                                <Button
-                                  component={Link}
-                                  to={`/vendor/product/update/${product._id}`}
-                                  variant="contained"
-                                  color="primary"
-                                  sx={{
-                                    borderRadius: 2,
-                                    fontWeight: 600,
-                                    px: 3,
-                                    letterSpacing: 1,
-                                    boxShadow: 2,
-                                    "&:hover": {
-                                      bgcolor: "secondary.main",
-                                      color: "#fff",
-                                    },
-                                  }}
-                                  // Add a callback to set localStorage flag on update
-                                  onClick={() => {
-                                    localStorage.setItem("productChanged", Date.now().toString());
-                                  }}
-                                >
-                                  Update Product
-                                </Button>
-                                <Typography variant="h6" color="secondary.main">
-                                  {getCurrencySymbol()}{convertToSelectedCurrency(product.price, product.currency)?.toFixed(2)}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Paper>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  )}
+          <Box>
+            <AllProducts />
           </Box>
         );
       case 4:
-        return (
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Inventory Tracking
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Monitor stock levels and receive low inventory alerts.
-            </Typography>
-            <Button 
-              variant="contained" 
-              sx={{ mt: 2 }}
-              href="/vendor/inventory"
-            >
-              View Inventory
-            </Button>
-          </Box>
-        );
+        return <VendorShopSettings />;
       case 5:
         return (
           <Box sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 800 }}>
               Customer Insights
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Analyze customer behavior and improve engagement.
+              Analyze customer behavior and improve engagement. (Advanced features coming soon)
             </Typography>
-            <Button 
-              variant="contained" 
-              sx={{ mt: 2 }}
-              href="/vendor/customers"
-            >
-              View Customer Data
-            </Button>
           </Box>
         );
       case 6:
@@ -346,8 +140,8 @@ const VendorDashBoard = () => {
             <Typography variant="body1" color="text.secondary">
               Detailed reports on sales, traffic, and conversion metrics.
             </Typography>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               sx={{ mt: 2 }}
               href="/vendor/reports"
             >
@@ -362,55 +156,54 @@ const VendorDashBoard = () => {
 
 
   return (
-    <DocumentTitle title="Vendor Dashboard | Nexus Mart">
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange} 
+    <DocumentTitle title={`Vendor Dashboard | ${APP_NAME}`}>
+      <Box sx={{ minHeight: '100vh', bgcolor: "#f8fafc" }}>
+        <Box sx={{ borderBottom: 1, borderColor: '#e2e8f0', bgcolor: '#fff', px: { xs: 2, md: 6 }, pt: 3 }}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h4" fontWeight={900} color="#1e293b">
+              Vendor Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Analyze your business growth and manage store operations
+            </Typography>
+          </Box>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
             variant="scrollable"
             scrollButtons="auto"
             aria-label="vendor dashboard tabs"
+            sx={{
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                bgcolor: '#6366f1',
+              },
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                color: '#64748b',
+                minHeight: 48,
+                '&.Mui-selected': {
+                  color: '#6366f1',
+                },
+              },
+            }}
           >
-            <Tab 
-              icon={<DashboardIcon />} 
-              label="Enhanced Dashboard" 
-              wrapped 
-            />
-            <Tab 
-              icon={<AssessmentIcon />} 
-              label="Analytics" 
-              wrapped 
-            />
-            <Tab 
-              icon={<ShoppingCartIcon />} 
-              label="Orders" 
-              wrapped 
-            />
-            <Tab 
-              icon={<InventoryIcon />} 
-              label="Products" 
-              wrapped 
-            />
-            <Tab 
-              icon={<AssessmentIcon />} 
-              label="Inventory" 
-              wrapped 
-            />
-            <Tab 
-              icon={<PeopleIcon />} 
-              label="Customers" 
-              wrapped 
-            />
-            <Tab 
-              icon={<TrendingUpIcon />} 
-              label="Reports" 
-              wrapped 
-            />
+            <Tab icon={<DashboardIcon />} iconPosition="start" label="Overview" />
+            <Tab icon={<AssessmentIcon />} iconPosition="start" label="Analytics" />
+            <Tab icon={<ShoppingCartIcon />} iconPosition="start" label="Orders" />
+            <Tab icon={<InventoryIcon />} iconPosition="start" label="Inventory" />
+            <Tab icon={<StoreIcon />} iconPosition="start" label="Shop Profile" />
+            <Tab icon={<PeopleIcon />} iconPosition="start" label="Customers" />
+            <Tab icon={<TrendingUpIcon />} iconPosition="start" label="Reports" />
           </Tabs>
         </Box>
-        
-        {renderTabContent()}
+
+        <Box sx={{ py: 6, px: { xs: 2, md: 6 } }}>
+          {renderTabContent()}
+        </Box>
       </Box>
     </DocumentTitle>
   );

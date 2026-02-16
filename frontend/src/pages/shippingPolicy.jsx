@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 import { useEffect } from "react";
+import { APP_NAME } from "../redux/constants";
 
 const ShippingPolicy = () => {
   useEffect(() => {
@@ -127,7 +128,7 @@ const ShippingPolicy = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body1" sx={{ color: "#444", mb: 2 }}>
-              At Nexus Mart, we strive to deliver your orders quickly and securely. This Shipping Policy outlines our shipping practices, costs, and delivery times to help you understand what to expect when ordering from us.
+              At {APP_NAME}, we strive to deliver your orders quickly and securely. This Shipping Policy outlines our shipping practices, costs, and delivery times to help you understand what to expect when ordering from us.
             </Typography>
             <Typography variant="body1" sx={{ color: "#444" }}>
               By placing an order, you agree to these shipping terms and conditions.
@@ -220,7 +221,7 @@ const ShippingPolicy = () => {
                 />
               </ListItem>
             </List>
-            
+
             <TableContainer sx={{ mt: 3 }}>
               <Table>
                 <TableHead>
@@ -256,7 +257,7 @@ const ShippingPolicy = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            
+
             <Typography variant="body2" sx={{ color: "#666", mt: 2 }}>
               * Next-Day Delivery costs ₹150 and is available for orders above ₹500 in select cities.
             </Typography>
@@ -576,7 +577,7 @@ const ShippingPolicy = () => {
               <ListItem>
                 <ListItemText
                   primary="Email"
-                  secondary="shipping@nexusmart.com"
+                  secondary={`shipping@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}
                   secondaryTypographyProps={{ color: "#444" }}
                 />
               </ListItem>
@@ -596,7 +597,7 @@ const ShippingPolicy = () => {
               </ListItem>
             </List>
             <Typography variant="body2" sx={{ color: "#666", mt: 2 }}>
-              Nexus Mart Shipping Department, 123 Commerce Street, Bengaluru, Karnataka, India, 560001
+              {APP_NAME} Shipping Department, 123 Commerce Street, Bengaluru, Karnataka, India, 560001
             </Typography>
           </AccordionDetails>
         </Accordion>

@@ -104,8 +104,8 @@ const reviewSchema = mongoose.Schema(
 
 const productSchema = mongoose.Schema({
   name: { type: String, required: true },
-  brand: { type: ObjectId, ref: "Brand", required: true },
-  category: { type: ObjectId, ref: "Category", required: true },
+  brand: { type: ObjectId, ref: "Brand" },
+  category: { type: ObjectId, ref: "Category" },
   description: { type: String, required: true },
   price: { type: Number, required: true },
   // Multi-currency pricing

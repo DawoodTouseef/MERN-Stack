@@ -44,6 +44,7 @@ import { useAdvancedSearchQuery } from '../redux/api/productApiSlice';
 import { useFetchCategoriesQuery } from '../redux/api/categoryApiSlice';
 import { useGetBrandsQuery } from '../redux/api/brandApiSlice';
 import { useDebounce } from '../Utils/useDebounce';
+import { APP_NAME } from '../redux/constants';
 
 const AdvancedFilterPanel = ({
   filters,
@@ -133,7 +134,7 @@ const AdvancedFilterPanel = ({
 
   const sellerTypes = [
     { label: 'All Sellers', value: 'all' },
-    { label: 'Nexus Mart', value: 'nexus_mart' },
+    { label: APP_NAME, value: 'nexus_mart' },
     { label: 'Top Rated', value: 'top_rated' },
     { label: 'Local Sellers', value: 'local' }
   ];
@@ -217,10 +218,10 @@ const AdvancedFilterPanel = ({
             borderRadius: 3
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'primary.main',
+            backgroundColor: '#6366f1',
             borderRadius: 3,
             '&:hover': {
-              backgroundColor: 'primary.dark'
+              backgroundColor: '#4f46e5'
             }
           }
         }}
@@ -259,8 +260,8 @@ const AdvancedFilterPanel = ({
         <Divider sx={{ mb: 2, borderColor: alpha(theme.palette.divider, 0.5) }} />
 
         {/* Price Range */}
-        <FilterSection title="Price Range" panelKey="price" defaultExpanded>
-          <FormControl component="fieldset" fullWidth>
+        <FilterSection title="Price Range" panelKey="price">
+          <FormControl component="fieldset" >
             <RadioGroup
               value={localFilters.priceRange || 'all'}
               onChange={(e) => handleFilterChange('priceRange', e.target.value)}

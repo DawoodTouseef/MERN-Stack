@@ -27,7 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGetSearchSuggestionsQuery } from '../redux/api/productApiSlice';
 import { useDebounce } from '../Utils/useDebounce';
 
-const SmartSearchBox = ({ 
+const SmartSearchBox = ({
   placeholder = "Search products, brands, categories...",
   onSearch,
   sx = {},
@@ -39,10 +39,10 @@ const SmartSearchBox = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchRef = useRef(null);
   const suggestionsRef = useRef(null);
-  
+
   // Debounce search query to avoid too many API calls
   const debouncedQuery = useDebounce(searchQuery, 300);
-  
+
   // Fetch search suggestions
   const {
     data: suggestions,
@@ -56,7 +56,7 @@ const SmartSearchBox = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        searchRef.current && 
+        searchRef.current &&
         !searchRef.current.contains(event.target) &&
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target)
@@ -81,7 +81,7 @@ const SmartSearchBox = ({
   const handleKeyDown = (event) => {
     if (!showSuggestions) return;
 
-    const totalSuggestions = 
+    const totalSuggestions =
       (suggestions?.suggestions?.products?.length || 0) +
       (suggestions?.suggestions?.categories?.length || 0) +
       (suggestions?.suggestions?.brands?.length || 0);
@@ -89,7 +89,7 @@ const SmartSearchBox = ({
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < totalSuggestions - 1 ? prev + 1 : prev
         );
         break;
@@ -118,31 +118,31 @@ const SmartSearchBox = ({
     const products = suggestions?.suggestions?.products || [];
     const categories = suggestions?.suggestions?.categories || [];
     const brands = suggestions?.suggestions?.brands || [];
-    
+
     if (index < products.length) {
       return { type: 'product', data: products[index] };
     }
     index -= products.length;
-    
+
     if (index < categories.length) {
       return { type: 'category', data: categories[index] };
     }
     index -= categories.length;
-    
+
     if (index < brands.length) {
       return { type: 'brand', data: brands[index] };
     }
-    
+
     return null;
   };
 
   // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     if (!suggestion) return;
-    
+
     setShowSuggestions(false);
     setSelectedIndex(-1);
-    
+
     switch (suggestion.type) {
       case 'product':
         navigate(`/product/${suggestion.data._id}`);
@@ -179,7 +179,7 @@ const SmartSearchBox = ({
   // Render suggestion item
   const renderSuggestionItem = (suggestion, index, globalIndex) => {
     const isSelected = globalIndex === selectedIndex;
-    
+
     return (
       <ListItem
         key={`${suggestion.type}-${suggestion.data._id || index}`}
@@ -200,8 +200,8 @@ const SmartSearchBox = ({
         <ListItemAvatar>
           <Avatar sx={{ width: 32, height: 32 }}>
             {suggestion.type === 'product' && suggestion.data.image ? (
-              <img 
-                src={suggestion.data.image} 
+              <img
+                src={suggestion.data.image}
                 alt={suggestion.data.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -226,9 +226,9 @@ const SmartSearchBox = ({
                 </Typography>
               )}
               {suggestion.data.count && (
-                <Chip 
-                  label={suggestion.data.count} 
-                  size="small"    
+                <Chip
+                  label={suggestion.data.count}
+                  size="small"
                   variant="outlined"
                   sx={{ ml: 'auto' }}
                 />
@@ -270,7 +270,7 @@ const SmartSearchBox = ({
     const products = (suggestions?.suggestions?.products || []).map(p => ({ type: 'product', data: p }));
     const categories = (suggestions?.suggestions?.categories || []).map(c => ({ type: 'category', data: c }));
     const brands = (suggestions?.suggestions?.brands || []).map(b => ({ type: 'brand', data: b }));
-    
+
     return [...products, ...categories, ...brands];
   };
 
@@ -289,7 +289,7 @@ const SmartSearchBox = ({
         onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
         InputProps={{
           startAdornment: (
-            <InputAdornment position="start"> 
+            <InputAdornment position="start">
               <SearchIcon sx={{ color: 'text.secondary' }} />
             </InputAdornment>
           ),
@@ -352,9 +352,9 @@ const SmartSearchBox = ({
                         PRODUCTS
                       </Typography>
                     </ListItem>
-                    {suggestions.suggestions.products.slice(0, 5).map((product, index) => 
+                    {suggestions.suggestions.products.slice(0, 5).map((product, index) =>
                       renderSuggestionItem(
-                        { type: 'product', data: product }, 
+                        { type: 'product', data: product },
                         index,
                         index
                       )
@@ -371,9 +371,9 @@ const SmartSearchBox = ({
                         CATEGORIES
                       </Typography>
                     </ListItem>
-                    {suggestions.suggestions.categories.slice(0, 3).map((category, index) => 
+                    {suggestions.suggestions.categories.slice(0, 3).map((category, index) =>
                       renderSuggestionItem(
-                        { type: 'category', data: category }, 
+                        { type: 'category', data: category },
                         index,
                         (suggestions?.suggestions?.products?.length || 0) + index
                       )
@@ -390,11 +390,11 @@ const SmartSearchBox = ({
                         BRANDS
                       </Typography>
                     </ListItem>
-                    {suggestions.suggestions.brands.slice(0, 3).map((brand, index) => 
+                    {suggestions.suggestions.brands.slice(0, 3).map((brand, index) =>
                       renderSuggestionItem(
-                        { type: 'brand', data: brand }, 
+                        { type: 'brand', data: brand },
                         index,
-                        (suggestions?.suggestions?.products?.length || 0) + 
+                        (suggestions?.suggestions?.products?.length || 0) +
                         (suggestions?.suggestions?.categories?.length || 0) + index
                       )
                     )}
@@ -410,12 +410,12 @@ const SmartSearchBox = ({
                 >
                   <ListItemText
                     primary={
-                      <Typography variant="body2" color="primary" fontWeight="bold">
+                      <Typography variant="body2" color="#6366f1" fontWeight="bold">
                         Search for \"{searchQuery}\" in all products
                       </Typography>
                     }
                   />
-                  <SearchIcon color="primary" />
+                  <SearchIcon sx={{ color: '#6366f1' }} />
                 </ListItem>
               </List>
             </Paper>
@@ -425,33 +425,33 @@ const SmartSearchBox = ({
 
       {/* No Results */}
       <AnimatePresence>
-        {showSuggestions && !isSuggestionsLoading && searchQuery.length >= 2 && 
-         allSuggestions.length === 0 && !suggestionsError && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <Paper
-              elevation={8}
-              sx={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                zIndex: 1300,
-                mt: 1,
-                p: 2,
-                textAlign: 'center',
-                borderRadius: 2
-              }}
+        {showSuggestions && !isSuggestionsLoading && searchQuery.length >= 2 &&
+          allSuggestions.length === 0 && !suggestionsError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
             >
-              <Typography variant="body2" color="text.secondary">
-                No suggestions found for \"{searchQuery}\"
-              </Typography>
-            </Paper>
-          </motion.div>
-        )}
+              <Paper
+                elevation={8}
+                sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 1300,
+                  mt: 1,
+                  p: 2,
+                  textAlign: 'center',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  No suggestions found for \"{searchQuery}\"
+                </Typography>
+              </Paper>
+            </motion.div>
+          )}
       </AnimatePresence>
     </Box>
   );

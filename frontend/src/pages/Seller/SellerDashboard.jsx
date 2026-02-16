@@ -25,47 +25,51 @@ import {
 } from "@mui/material";
 import { FaUsers } from "react-icons/fa";
 import { AiOutlineShoppingCart, AiOutlineDollarCircle } from "react-icons/ai";
-import { MdOutlineBarChart } from "react-icons/md";
+import { MdOutlineBarChart, MdInventory2 as InventoryIcon } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 import DocumentTitle from "react-document-title";
 import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
+import useCurrency from "../../hooks/useCurrency";
+import { APP_NAME } from "../../redux/constants";
 
-const StatCard = ({ icon, label, value, color }) => (
+const StatCard = ({ icon, label, value, color, bgColor }) => (
   <Paper
-    elevation={6}
+    elevation={0}
     sx={{
       p: 3,
       borderRadius: 4,
-      bgcolor: "background.paper",
-      minWidth: 220,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      boxShadow: "0 6px 32px 0 rgba(0,0,0,0.10)",
-      transition: "transform 0.2s, box-shadow 0.2s",
-      "&:hover": {
-        transform: "translateY(-6px) scale(1.03)",
-        boxShadow: 12,
-      },
+      bgcolor: bgColor || "#fff",
+      border: '1px solid #e2e8f0',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      }
     }}
   >
-    <Avatar
-      sx={{
-        bgcolor: color,
-        width: 56,
-        height: 56,
-        mb: 2,
-        boxShadow: 3,
-      }}
-    >
-      {icon}
-    </Avatar>
-    <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+      <Avatar
+        sx={{
+          bgcolor: color,
+          width: 48,
+          height: 48,
+          borderRadius: 3,
+          boxShadow: `0 4px 12px ${color}40`,
+        }}
+      >
+        {icon}
+      </Avatar>
+    </Box>
+    <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
       {label}
     </Typography>
-    <Typography variant="h5" fontWeight={700} sx={{ mt: 1 }}>
+    <Typography variant="h4" fontWeight={800} color="text.primary">
       {value}
     </Typography>
   </Paper>
@@ -76,83 +80,51 @@ const SellerDashBoard = () => {
   const navigate = useNavigate();
   const { data: sales, isLoading } = useGetTotalSalesQuery();
   const { data: orders, isLoading: loadingOrders } = useGetTotalOrdersQuery();
-  const {data:order,isLoading:loadingOrder} = useGetOrdersQuery()
+  const { data: order, isLoading: loadingOrder } = useGetOrdersQuery()
   const { data: products, isLoading: loadingProducts } = useAllProductsQuery();
   const { data: salesDetail } = useGetTotalSalesByDateQuery();
   const { userInfo } = useSelector((state) => state.auth);
-  const { selectedCurrency } = useSelector((state) => state.currency);
-  const { data: currencies = [] } = useGetCurrenciesQuery();
-  
-  // Function to convert amount to selected currency
-  const convertToSelectedCurrency = (amount, fromCurrency = 'USD') => {
-    if (!selectedCurrency || selectedCurrency === fromCurrency) {
-      return amount;
-    }
-    
-    // Find currencies
-    const fromCurrencyObj = currencies.find(c => c.code === fromCurrency);
-    const toCurrencyObj = currencies.find(c => c.code === selectedCurrency);
-    
-    // If we don't have currency data, return original amount
-    if (!fromCurrencyObj || !toCurrencyObj) {
-      return amount;
-    }
-    
-    // Convert using exchange rates
-    // Formula: (amount / fromRate) * toRate
-    const convertedAmount = (amount / fromCurrencyObj.rate) * toCurrencyObj.rate;
-    return convertedAmount;
-  };
-  
-  // Function to get currency symbol
-  const getCurrencySymbol = () => {
-    try {
-      const formatter = new Intl.NumberFormat('en', {
-        style: 'currency',
-        currency: selectedCurrency || 'USD',
-        currencyDisplay: 'symbol',
-      });
+  const { convert, symbol } = useCurrency();
 
-      const parts = formatter.formatToParts(1);
-      const symbol = parts.find(part => part.type === 'currency')?.value;
-      return symbol || (selectedCurrency || 'USD');
-    } catch (err) {
-      return selectedCurrency || 'USD'; // fallback if currency code is invalid
-    }
-  };
-  
   const [chartType, setChartType] = useState("bar");
   const [chartData, setChartData] = useState({
     options: {
-      chart: { type: "line", toolbar: { show: false } },
-      tooltip: { theme: "dark" },
-      colors: [theme.palette.secondary.main],
-      dataLabels: { enabled: true },
-      stroke: { curve: "smooth" },
-      title: {
-        text: "Sales Trend",
-        align: "left",
-        style: { color: theme.palette.primary.main },
+      chart: {
+        type: "line",
+        toolbar: { show: false },
+        fontFamily: 'inherit',
       },
-      grid: { borderColor: "#ccc" },
-      markers: { size: 1 },
+      tooltip: {
+        theme: "light",
+        y: {
+          formatter: (val) => `${symbol}${val.toFixed(2)}`
+        }
+      },
+      colors: ["#6366f1", "#10b981", "#f59e0b", "#ef4444"],
+      dataLabels: { enabled: false },
+      stroke: { curve: "smooth", width: 3 },
+      grid: {
+        borderColor: "#f1f5f9",
+        strokeDashArray: 4,
+      },
+      markers: { size: 4 },
       xaxis: {
         categories: [],
-        title: { text: "Date", style: { color: theme.palette.text.primary } },
-        labels: { style: { colors: theme.palette.text.secondary } },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: { style: { colors: "#64748b", fontWeight: 500 } },
       },
       yaxis: {
-        title: { text: "Sales", style: { color: theme.palette.text.primary } },
-        min: 0,
-        labels: { style: { colors: theme.palette.text.secondary } },
+        labels: {
+          style: { colors: "#64748b", fontWeight: 500 },
+          formatter: (val) => `${symbol}${val.toFixed(0)}`
+        },
       },
       legend: {
         position: "top",
         horizontalAlign: "right",
-        floating: true,
-        offsetY: -25,
-        offsetX: -5,
-        labels: { colors: theme.palette.text.primary },
+        fontWeight: 600,
+        labels: { colors: "#1e293b" },
       },
     },
     series: [],
@@ -201,130 +173,125 @@ const SellerDashBoard = () => {
   }, [salesDetail, products, order]);
 
   let customersCount = 0;
-  if (userInfo?.role==="seller" && products) {
+  if (userInfo?.role === "seller" && products) {
     customersCount = products.filter((u) => u.user === userInfo._id).length;
-    
+
   }
 
   return (
-    <DocumentTitle title="DashBoard | Nexus Mart">
+    <DocumentTitle title={`Seller Dashboard | ${APP_NAME}`}>
       <Box
         sx={{
           minHeight: "100vh",
-          background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
-          py: 6,
-          px: { xs: 1, md: 8 },
+          bgcolor: "#f8fafc",
+          py: 8,
+          px: { xs: 2, md: 6 },
         }}
       >
-        <Typography
-          variant="h3"
-          fontWeight={900}
-          color="primary.main"
-          sx={{
-            mb: 4,
-            letterSpacing: 1,
-            textShadow: "2px 2px 8px #e1bee7",
-            textAlign: "center",
-          }}
-        >
-          Seller Dashboard
-        </Typography>
+        {/* Header */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h4" fontWeight={900} color="#1e293b">
+            Seller Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Manage your store performance and sales analytics
+          </Typography>
+        </Box>
 
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={3}
-          justifyContent="center"
-          alignItems="center"
-          sx={{ mb: 4 }}
-        >
-          <StatCard
-            icon={<AiOutlineDollarCircle size={32} />}
-            label="Total Sales"
-            value={
-              isLoading ? (
-                <Loader size={24} />
-              ) : (
-                `${getCurrencySymbol()}${convertToSelectedCurrency(sales?.totalSales)?.toFixed(2) || 0}`
-              )
-            }
-            color={theme.palette.secondary.main}
-          />
-          <StatCard
-            icon={<FaUsers size={28} />}
-            label="Products"
-            value={loadingProducts ? <Loader size={24} /> : customersCount}
-            color={theme.palette.info.main}
-          />
-          <StatCard
-            icon={<AiOutlineShoppingCart size={32} />}
-            label="All Orders"
-            value={loadingOrders ? <Loader size={24} /> : orders?.totalOrders || 0}
-            color={theme.palette.success.main}
-          />
-          <StatCard
-            icon={<MdOutlineBarChart size={32} />}
-            label="Avg. Order Value"
-            value={
-              isLoading || loadingOrders
-                ? <Loader size={24} />
-                : `${getCurrencySymbol()}${convertToSelectedCurrency(orders?.averageOrderValue)?.toFixed(2) || 0}`
-            }
-            color={theme.palette.warning.main}
-          />
-        </Stack>
+        {/* Stats Grid */}
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              icon={<AiOutlineDollarCircle size={28} />}
+              label="Total Sales"
+              value={isLoading ? <Loader size={20} /> : `${symbol}${convert(sales?.totalSales, 'USD')?.toFixed(2) || 0}`}
+              color="#6366f1"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              icon={<InventoryIcon size={28} sx={{ color: '#fff' }} />}
+              label="Products"
+              value={loadingProducts ? <Loader size={20} /> : customersCount}
+              color="#10b981"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              icon={<AiOutlineShoppingCart size={28} />}
+              label="All Orders"
+              value={loadingOrders ? <Loader size={20} /> : orders?.totalOrders || 0}
+              color="#f59e0b"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              icon={<MdOutlineBarChart size={28} />}
+              label="Avg. Order Value"
+              value={isLoading || loadingOrders ? <Loader size={20} /> : `${symbol}${convert(orders?.averageOrderValue, 'USD')?.toFixed(2) || 0}`}
+              color="#ef4444"
+            />
+          </Grid>
+        </Grid>
 
+        {/* Charts Section */}
         <Paper
-          elevation={6}
+          elevation={0}
           sx={{
             p: 4,
-            borderRadius: 4,
+            borderRadius: 6,
             mb: 6,
-            background: "linear-gradient(120deg, #e3eeff 60%, #f3e7e9 100%)",
+            border: '1px solid #e2e8f0',
+            bgcolor: "#fff"
           }}
         >
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              color="primary.main"
-              sx={{ mb: 3, letterSpacing: 1 }}
-            >
-              Sales Trend
-            </Typography>
-            <FormControl sx={{ minWidth: 120 }}>
-              <InputLabel id="chart-type-label">Chart</InputLabel>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={800} color="#1e293b">
+                Sales Performance
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Detailed breakdown of product and order sales trends
+              </Typography>
+            </Box>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
               <Select
-                labelId="chart-type-label"
                 value={chartType}
-                label="Chart"
                 onChange={(e) => setChartType(e.target.value)}
+                sx={{ borderRadius: 2, bgcolor: '#f1f5f9', border: 'none' }}
               >
-                <MenuItem value="line">Line</MenuItem>
-                <MenuItem value="bar">Bar</MenuItem>
+                <MenuItem value="line">Line Chart</MenuItem>
+                <MenuItem value="bar">Bar Chart</MenuItem>
               </Select>
             </FormControl>
           </Stack>
-          <Divider sx={{ mb: 3 }} />
-          <Box sx={{ width: "100%", minHeight: 350 }}>
+
+          <Box sx={{ width: "100%", pt: 2 }}>
             {salesDetail ? (
               <Chart
                 options={chartData.options}
                 series={chartData.series}
                 type={chartType}
                 width="100%"
-                height={350}
+                height={400}
               />
             ) : (
-              <Typography color="text.secondary" textAlign="center">
-                No sales data available.
-              </Typography>
+              <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography color="text.secondary">No sales data available for the current period.</Typography>
+              </Box>
             )}
           </Box>
         </Paper>
 
-        <Paper elevation={6} sx={{ p: 4, borderRadius: 4, background: "#fff" }}>
-          <OrderList isAdmin={userInfo?.role === "admin"} />
-        </Paper>
+        {/* Recent Orders Section */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" fontWeight={800} color="#1e293b" sx={{ mb: 3 }}>
+            Recent Orders
+          </Typography>
+          <Paper elevation={0} sx={{ borderRadius: 6, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <OrderList isAdmin={userInfo?.role === "admin"} />
+          </Paper>
+        </Box>
       </Box>
     </DocumentTitle>
   );

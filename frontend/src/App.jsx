@@ -13,17 +13,17 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import AppPerformanceWrapper, { PWAInstallBanner, registerServiceWorker, preloadCriticalResources } from "./Utils/performanceOptimization";
 import { useEffect } from "react";
 import { AccessibilityProvider } from "./contexts/AccessibilityContext";
-import AccessibilityToolbar from "./components/AccessibilityToolbar";
-import PerformanceMonitor from "./components/PerformanceMonitor";
+import { useGetCurrentOrganizationQuery } from "../src/redux/api/organizationApiSlice";
 import DocumentTitle from "react-document-title";
+import { APP_NAME } from "../src/redux/constants";
 
 const App = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
-
-  const isInactiveVendor = userInfo?.role === "vendor" && !userInfo?.vendorVerified;
+  const { data: org } = useGetCurrentOrganizationQuery();
+  const isInactiveVendor = userInfo?.role === "vendor" && (org && !org.isVerified);
 
   // Initialize performance optimizations
   useEffect(() => {
@@ -43,7 +43,7 @@ const App = () => {
 
   return (
     <>
-      <DocumentTitle title="Nexus Mart">
+      <DocumentTitle title={APP_NAME}>
         <AccessibilityProvider>
           <>
             <ErrorBoundary>

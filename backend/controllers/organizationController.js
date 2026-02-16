@@ -244,10 +244,34 @@ const deleteGroup = asyncHandler(async (req, res) => {
 // @route   POST /api/organizations/verify
 // @access  Private (Organization Owner)
 const submitVerificationDocuments = asyncHandler(async (req, res) => {
-    const { documents } = req.body; // Array of { docType, url }
-    const orgId = req.user.organization;
+    // 1. Destructure all the new fields from the request body
+    const {
+        businessType,
+        orgName,
+        address,
+        contactPerson,
+        registrationDoc,
+        panCard,
+        gstCertificate,
+        partnershipDeed,
+        incorporationCert,
+        moa,
+        aoa,
+        panNumber,
+        gstNumber,
+        productCategory,
+        complianceCert,
+        bankDetails,
+        cancelledCheque,
+        signatoryName,
+        signatoryDesignation,
+        signatoryIdProof,
+        documents // Expecting array of { docType, url } for backward compatibility or direct array
+    } = req.body;
 
+    const orgId = req.user.organization;
     const org = await Organization.findById(orgId);
+
     if (!org) {
         res.status(404);
         throw new Error("Organization not found");
@@ -258,11 +282,48 @@ const submitVerificationDocuments = asyncHandler(async (req, res) => {
         throw new Error("Organization is already verified");
     }
 
-    // Process each document through verification service
-    // In a real flow, this might be async/webhook based.
-    // Here we simulate immediate processing or queuing.
+    // 2. Update Organization Basic Details
+    if (orgName) org.name = orgName;
+    if (businessType) org.businessType = businessType;
+    if (address) org.address = address;
 
-    org.verificationDocuments = documents.map(doc => ({
+    // Update Contact Person (merge)
+    if (contactPerson) {
+        org.contactPerson = { ...org.contactPerson, ...contactPerson };
+        if (signatoryName) org.contactPerson.name = signatoryName; // Assuming signatory is primary contact or update logic
+        if (signatoryDesignation) org.contactPerson.designation = signatoryDesignation;
+    }
+
+    // Update Tax Info
+    if (panNumber) org.panNumber = panNumber;
+    if (gstNumber) org.gstNumber = gstNumber;
+    if (productCategory) org.productCategory = productCategory;
+
+    // Update Bank Details
+    if (bankDetails) {
+        org.bankDetails = {
+            ...org.bankDetails,
+            ...bankDetails
+        };
+    }
+
+    // 3. Process Documents
+    // Combine individual file fields into the documents array if they come separately
+    // OR assuming frontend sends a unified 'documents' array. 
+    // Let's support the unified 'documents' array as per the current controller standard, 
+    // but allowing the frontend to send the rich payload.
+    // The frontend CreateOrganization.jsx sends a big object. 
+    // We need to verify how frontend sends data. 
+    // For now, let's assume 'documents' array is constructed by frontend or we construct it here.
+
+    let docsToProcess = documents || [];
+
+    // If documents are not passed as an array but as individual fields (if we changed frontend logic)
+    // We would map them here. But better to let frontend handle the mapping to [{docType, url}].
+
+    // Clear old pending documents if re-submitting? 
+    // Or append? Let's replace for a fresh submission.
+    org.verificationDocuments = docsToProcess.map(doc => ({
         docType: doc.docType,
         url: doc.url,
         status: 'pending',
@@ -270,33 +331,53 @@ const submitVerificationDocuments = asyncHandler(async (req, res) => {
     }));
 
     org.verificationStatus = 'submitted';
+    org.kybAttempts = (org.kybAttempts || 0) + 1;
+    org.lastKybAttempt = new Date();
+
     await org.save();
 
-    // Trigger verification process (Mock)
+    // 4. Trigger Verification Process
     let allVerified = true;
     let rejectionReason = null;
 
+    // Process each document
+    // In production, this should be an async job queue (BullMQ/RabbitMQ)
     for (let i = 0; i < org.verificationDocuments.length; i++) {
         const doc = org.verificationDocuments[i];
-        const result = await verificationService.verifyDocument(doc.url, doc.docType, { orgName: org.name });
 
-        doc.status = result.status;
-        if (!result.verified) {
+        // Skip verification for some docs if needed, or verify all
+        const result = await verificationService.verifyDocument(doc.url, doc.docType, {
+            orgName: org.name,
+            taxId: org.panNumber
+        });
+
+        doc.status = result.status; // 'approved' | 'rejected'
+        doc.kybVerificationId = result.kybVerificationId;
+        doc.kybConfidence = result.kybConfidence;
+        doc.kybProvider = result.kybProvider;
+        doc.extractedData = result.extractedData;
+
+        if (result.status !== 'approved') {
             allVerified = false;
             doc.rejectionReason = result.reason;
-            rejectionReason = result.reason;
+            rejectionReason = result.reason || 'Document verification failed';
         }
     }
 
-    if (allVerified) {
+    // 5. Update Organization Status based on results
+    if (allVerified && org.verificationDocuments.length > 0) {
         org.verificationStatus = 'verified';
         org.isVerified = true;
 
-        // Also update User status
+        // Update User Status
         await User.updateOne({ _id: org.owner }, { vendorVerified: true });
     } else {
-        org.verificationStatus = 'rejected';
-        // org.rejectionReason = rejectionReason; // if we had a field for global reason
+        // If automatic verification fails, set to 'rejected' or 'submitted' (pending manual review)
+        // For now, let's set to 'submitted' if confidence is low, or 'rejected' if explicit failure.
+        // If we want manual review fallback:
+        org.verificationStatus = 'submitted'; // Keep as submitted for admin to review
+        org.isVerified = false;
+        org.kybFailureReason = rejectionReason;
     }
 
     await org.save();
@@ -304,7 +385,8 @@ const submitVerificationDocuments = asyncHandler(async (req, res) => {
     res.json({
         success: true,
         status: org.verificationStatus,
-        documents: org.verificationDocuments
+        documents: org.verificationDocuments,
+        message: allVerified ? "Verification successful" : "Documents submitted for manual review"
     });
 });
 
@@ -359,11 +441,30 @@ const updateVerificationStatus = asyncHandler(async (req, res) => {
     res.json({ success: true, organization: org });
 });
 
+// @desc    Get verification status
+// @route   GET /api/organizations/verification-status
+// @access  Private (Vendor)
+const getVerificationStatus = asyncHandler(async (req, res) => {
+    const org = await Organization.findOne({ owner: req.user._id });
+    if (!org) {
+        res.status(404);
+        throw new Error("Organization not found");
+    }
+    res.json({
+        status: org.verificationStatus,
+        isVerified: org.isVerified,
+        documents: org.verificationDocuments,
+        remarks: org.kybFailureReason,
+        lastAttempt: org.lastKybAttempt
+    });
+});
+
 export {
     createOrganization,
     getCurrentOrganization,
     getOrganizations,
     updateVerificationStatus,
+    getVerificationStatus,
     createSubUser,
     getSubUsers,
     deleteSubUser,

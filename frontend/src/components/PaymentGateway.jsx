@@ -34,13 +34,14 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCreatePaymentIntentMutation, useGetPaymentMethodsQuery } from '../redux/api/paymentApiSlice';
 import { toast } from 'react-toastify';
+import { APP_NAME } from '../redux/constants';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const PaymentMethodCard = ({ method, selected, onSelect, fraudScore }) => {
   const theme = useTheme();
-  
+
   const getMethodIcon = (methodType) => {
     switch (methodType) {
       case 'credit_card':
@@ -103,7 +104,7 @@ const PaymentMethodCard = ({ method, selected, onSelect, fraudScore }) => {
               </Typography>
             </Box>
           </Box>
-          
+
           {fraudScore > 70 && (
             <Chip
               icon={<Warning />}
@@ -113,13 +114,13 @@ const PaymentMethodCard = ({ method, selected, onSelect, fraudScore }) => {
             />
           )}
         </Box>
-        
+
         <Box mt={1}>
           <Typography variant="caption" color="text.secondary">
             Fee: {method.fees.domestic.percentage}% + ₹{method.fees.domestic.fixed}
           </Typography>
         </Box>
-        
+
         {selected && (
           <Box
             sx={{
@@ -144,14 +145,14 @@ const StripePaymentForm = ({ onSuccess, onError, paymentData }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!stripe || !elements) return;
-    
+
     setProcessing(true);
-    
+
     try {
       const cardElement = elements.getElement(CardElement);
-      
+
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -202,7 +203,7 @@ const StripePaymentForm = ({ onSuccess, onError, paymentData }) => {
           }}
         />
       </Box>
-      
+
       <Button
         type="submit"
         variant="contained"
@@ -221,13 +222,13 @@ const RazorpayPaymentForm = ({ onSuccess, onError, paymentData }) => {
 
   const handleRazorpayPayment = async () => {
     setProcessing(true);
-    
+
     try {
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: paymentData.amount * 100,
         currency: paymentData.currency,
-        name: 'Nexus Mart',
+        name: APP_NAME,
         description: `Order Payment - ${paymentData.orderId}`,
         order_id: paymentData.gatewayTransactionId,
         handler: function (response) {
@@ -269,23 +270,23 @@ const RazorpayPaymentForm = ({ onSuccess, onError, paymentData }) => {
   );
 };
 
-const PaymentGateway = ({ 
-  orderId, 
-  amount, 
-  currency = 'INR', 
-  onSuccess, 
+const PaymentGateway = ({
+  orderId,
+  amount,
+  currency = 'INR',
+  onSuccess,
   onError,
   billingAddress,
-  customerInfo 
+  customerInfo
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [fraudScore, setFraudScore] = useState(0);
   const [deviceFingerprint, setDeviceFingerprint] = useState('');
-  
+
   const { data: paymentMethods, isLoading: methodsLoading } = useGetPaymentMethodsQuery();
   const [createPaymentIntent, { isLoading: intentLoading }] = useCreatePaymentIntentMutation();
 
@@ -299,11 +300,11 @@ const PaymentGateway = ({
       ctx.textBaseline = 'top';
       ctx.font = '14px Arial';
       ctx.fillText('Device fingerprint', 2, 2);
-      
-      const fingerprint = canvas.toDataURL().slice(-50) + 
-        navigator.userAgent.slice(-20) + 
+
+      const fingerprint = canvas.toDataURL().slice(-50) +
+        navigator.userAgent.slice(-20) +
         screen.width + 'x' + screen.height;
-      
+
       setDeviceFingerprint(btoa(fingerprint).slice(0, 32));
     };
 
@@ -320,7 +321,7 @@ const PaymentGateway = ({
 
     try {
       setCurrentStep(2);
-      
+
       const paymentData = {
         amount,
         currency,
@@ -336,7 +337,7 @@ const PaymentGateway = ({
       };
 
       const result = await createPaymentIntent(paymentData).unwrap();
-      
+
       setFraudScore(result.fraudScore);
 
       if (result.fraudScore > 80) {
@@ -392,12 +393,12 @@ const PaymentGateway = ({
 
       {/* Fraud Score Alert */}
       {fraudScore > 50 && (
-        <Alert 
-          severity={fraudScore > 80 ? 'error' : 'warning'} 
+        <Alert
+          severity={fraudScore > 80 ? 'error' : 'warning'}
           sx={{ mb: 3 }}
           icon={fraudScore > 80 ? <ErrorIcon /> : <Warning />}
         >
-          {fraudScore > 80 
+          {fraudScore > 80
             ? 'Transaction has been blocked due to security concerns'
             : 'Additional verification may be required for this transaction'
           }
@@ -411,7 +412,7 @@ const PaymentGateway = ({
             <Typography variant="h6" gutterBottom>
               Choose Payment Method
             </Typography>
-            
+
             <Grid container spacing={2}>
               {paymentMethods?.paymentMethods?.map((method, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
@@ -435,7 +436,7 @@ const PaymentGateway = ({
             <Typography variant="h6" gutterBottom>
               Payment Details
             </Typography>
-            
+
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="subtitle1" gutterBottom>

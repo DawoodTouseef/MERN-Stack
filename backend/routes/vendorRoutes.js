@@ -16,6 +16,7 @@ import {
   getVendorProfile
 } from '../controllers/vendorController.js';
 import { authenticate, authorizeVendor, IsAdmin } from '../middlewares/authMiddleware.js';
+import { requireVerifiedOrganization } from '../middlewares/verificationMiddleware.js';
 
 const router = express.Router();
 
@@ -24,22 +25,22 @@ const router = express.Router();
 
 // Vendor routes (vendor access)
 router.route('/dashboard')
-  .get(authenticate, authorizeVendor, getVendorDashboard);
+  .get(authenticate, authorizeVendor, requireVerifiedOrganization, getVendorDashboard);
 
 router.route('/profile')
   .get(authenticate, authorizeVendor, getVendorProfile);
 
 router.route('/analytics/sales')
-  .get(authenticate, authorizeVendor, getVendorSalesAnalytics);
+  .get(authenticate, authorizeVendor, requireVerifiedOrganization, getVendorSalesAnalytics);
 
 router.route('/analytics/products')
-  .get(authenticate, authorizeVendor, getVendorProductAnalytics);
+  .get(authenticate, authorizeVendor, requireVerifiedOrganization, getVendorProductAnalytics);
 
 router.route('/analytics/customers')
-  .get(authenticate, authorizeVendor, getVendorCustomerAnalytics);
+  .get(authenticate, authorizeVendor, requireVerifiedOrganization, getVendorCustomerAnalytics);
 
 router.route('/analytics/inventory')
-  .get(authenticate, authorizeVendor, getVendorInventoryAnalytics);
+  .get(authenticate, authorizeVendor, requireVerifiedOrganization, getVendorInventoryAnalytics);
 
 // Debug routes
 router.route('/debug/products')

@@ -56,29 +56,89 @@ const Pie = lazy(() => import('recharts').then(module => ({ default: module.Pie 
 const Cell = lazy(() => import('recharts').then(module => ({ default: module.Cell })));
 
 import { useGetVendorDashboardQuery, useGetVendorSalesAnalyticsQuery } from '../../redux/api/vendorApiSlice';
+import useCurrency from '../../hooks/useCurrency';
+import moment from 'moment';
+
+const StatCard = ({ title, value, icon, color, change, description }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 3,
+      borderRadius: 4,
+      bgcolor: '#fff',
+      border: '1px solid #e2e8f0',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+      height: '100%',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      }
+    }}
+  >
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+      <Avatar
+        sx={{
+          bgcolor: `${color}15`,
+          color: color,
+          width: 48,
+          height: 48,
+          borderRadius: 3,
+        }}
+      >
+        {icon}
+      </Avatar>
+      {change !== undefined && (
+        <Chip
+          label={`${change > 0 ? '+' : ''}${change}%`}
+          size="small"
+          sx={{
+            bgcolor: change >= 0 ? '#ecfdf5' : '#fef2f2',
+            color: change >= 0 ? '#10b981' : '#ef4444',
+            fontWeight: 700,
+            borderRadius: 1.5,
+          }}
+        />
+      )}
+    </Box>
+    <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
+      {title}
+    </Typography>
+    <Typography variant="h4" fontWeight={900} color="#1e293b" sx={{ mb: 1 }}>
+      {value}
+    </Typography>
+    <Typography variant="caption" color="text.secondary">
+      {description}
+    </Typography>
+  </Paper>
+);
 
 const VendorAnalyticsDashboard = () => {
   const theme = useTheme();
+  const { format, symbol } = useCurrency();
   const [period, setPeriod] = useState('30d');
   const [forceRefresh, setForceRefresh] = useState(false);
-  
-  const { 
-    data: dashboardData, 
-    isLoading: isDashboardLoading, 
+
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading,
     error: dashboardError,
     refetch: refetchDashboard,
     isFetching: isDashboardFetching
-  } = useGetVendorDashboardQuery(undefined, { 
+  } = useGetVendorDashboardQuery(undefined, {
     refetchOnMountOrArgChange: true
   });
-    
-  const { 
-    data: salesData, 
-    isLoading: isSalesLoading, 
+
+  const {
+    data: salesData,
+    isLoading: isSalesLoading,
     error: salesError,
     refetch: refetchSales,
     isFetching: isSalesFetching
-  } = useGetVendorSalesAnalyticsQuery({ 
+  } = useGetVendorSalesAnalyticsQuery({
     startDate: new Date(Date.now() - parseInt(period) * 24 * 60 * 60 * 1000).toISOString(),
     endDate: new Date().toISOString(),
     groupBy: 'day'
@@ -97,7 +157,7 @@ const VendorAnalyticsDashboard = () => {
     console.log('Sales Data:', salesData);
     console.log('Dashboard Error:', dashboardError);
     console.log('Sales Error:', salesError);
-    
+
     // Log detailed error information
     if (dashboardError) {
       console.log('Dashboard Error Details:', {
@@ -106,7 +166,7 @@ const VendorAnalyticsDashboard = () => {
         error: dashboardError?.error
       });
     }
-    
+
     if (salesError) {
       console.log('Sales Error Details:', {
         status: salesError?.status,
@@ -114,7 +174,7 @@ const VendorAnalyticsDashboard = () => {
         error: salesError?.error
       });
     }
-    
+
     // Log product count specifically
     if (dashboardData) {
       console.log('Product Count:', dashboardData.products);
@@ -125,7 +185,7 @@ const VendorAnalyticsDashboard = () => {
   // Format data for charts
   const formatSalesData = () => {
     if (!salesData || !Array.isArray(salesData.data)) return [];
-    
+
     return salesData.data.map(item => ({
       date: item._id || '',
       revenue: item.totalSales || 0,
@@ -136,7 +196,7 @@ const VendorAnalyticsDashboard = () => {
 
   const formatCustomerSegments = () => {
     if (!dashboardData?.performance?.customers?.segments) return [];
-    
+
     return Object.entries(dashboardData.performance.customers.segments).map(([name, value]) => ({
       name,
       value: value || 0
@@ -145,7 +205,7 @@ const VendorAnalyticsDashboard = () => {
 
   const formatInventoryData = () => {
     if (!dashboardData?.performance?.inventory) return [];
-    
+
     const inventory = dashboardData.performance.inventory;
     return [
       { name: 'In Stock', value: typeof inventory.inStock === 'number' && !isNaN(inventory.inStock) ? inventory.inStock : 0 },
@@ -177,8 +237,8 @@ const VendorAnalyticsDashboard = () => {
           {isDashboardLoading ? 'Loading dashboard data...' : ''}
           {isSalesLoading ? 'Loading sales analytics...' : ''}
         </Typography>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           onClick={handleRefresh}
           sx={{ mt: 2 }}
           disabled={forceRefresh}
@@ -195,11 +255,11 @@ const VendorAnalyticsDashboard = () => {
     console.error('Vendor Dashboard Error:', { dashboardError, salesError });
     return (
       <Box sx={{ p: 3 }}>
-        <Alert 
+        <Alert
           severity="error"
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={handleRefresh}
               startIcon={<RefreshIcon />}
@@ -227,14 +287,14 @@ const VendorAnalyticsDashboard = () => {
             Please try again or contact support if the problem persists.
           </Typography>
         </Alert>
-        
+
         {/* Show raw error details for debugging */}
         {(dashboardError || salesError) && (
           <details style={{ marginTop: '20px' }}>
             <summary>Debug Information</summary>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '10px', 
+            <pre style={{
+              backgroundColor: '#f5f5f5',
+              padding: '10px',
               borderRadius: '4px',
               maxHeight: '200px',
               overflow: 'auto',
@@ -244,10 +304,10 @@ const VendorAnalyticsDashboard = () => {
             </pre>
           </details>
         )}
-        
+
         <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleRefresh}
             startIcon={<RefreshIcon />}
           >
@@ -262,11 +322,11 @@ const VendorAnalyticsDashboard = () => {
   if (!dashboardData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert 
+        <Alert
           severity="info"
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={handleRefresh}
               startIcon={<RefreshIcon />}
@@ -288,18 +348,18 @@ const VendorAnalyticsDashboard = () => {
 
   // Check if vendor has products - with additional debugging
   const productCount = dashboardData?.products || 0;
-  
+
   // Additional check to ensure productCount is a valid number
   const validProductCount = (typeof productCount === 'number' && !isNaN(productCount) && isFinite(productCount)) ? productCount : 0;
-  
+
   if (validProductCount === 0) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert 
+        <Alert
           severity="info"
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={handleRefresh}
               startIcon={<RefreshIcon />}
@@ -314,8 +374,8 @@ const VendorAnalyticsDashboard = () => {
           <Typography variant="body2" sx={{ mb: 2 }}>
             You haven't added any products to your store yet. Sales analytics will appear once you have products and orders.
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             href="/vendor/productlist"
             sx={{ mt: 1 }}
           >
@@ -329,7 +389,7 @@ const VendorAnalyticsDashboard = () => {
   const salesChartData = formatSalesData();
   const customerSegments = formatCustomerSegments();
   const inventoryData = formatInventoryData();
-  
+
   const performance = dashboardData?.performance || {};
   const sales = performance.sales?.total || {};
   const products = performance.products || {};
@@ -358,8 +418,8 @@ const VendorAnalyticsDashboard = () => {
           Vendor Dashboard
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             size="small"
             onClick={handleRefresh}
             disabled={isDashboardFetching || isSalesFetching}
@@ -387,83 +447,47 @@ const VendorAnalyticsDashboard = () => {
       </Box>
 
       {/* Key Metrics */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 6 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AttachMoneyIcon sx={{ fontSize: 32, mr: 1 }} />
-                <Typography variant="h6" gutterBottom>
-                  Total Revenue
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                ${typeof sales.totalRevenue === 'number' ? sales.totalRevenue.toFixed(2) : '0.00'}
-              </Typography>
-              <Typography variant="body2">
-                {typeof performance.sales?.growth?.revenueGrowth === 'number' && performance.sales?.growth?.revenueGrowth >= 0 ? '+' : ''}
-                {typeof performance.sales?.growth?.revenueGrowth === 'number' ? performance.sales?.growth?.revenueGrowth.toFixed(2) : '0.00'}% from last period
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Total Revenue"
+            value={format(sales.totalRevenue || 0)}
+            icon={<AttachMoneyIcon />}
+            color="#6366f1"
+            change={performance.sales?.growth?.revenueGrowth}
+            description="Lifetime store earnings"
+          />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <ShoppingCartIcon sx={{ fontSize: 32, mr: 1 }} />
-                <Typography variant="h6" gutterBottom>
-                  Total Orders
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {typeof sales.totalOrders === 'number' ? sales.totalOrders : 0}
-              </Typography>
-              <Typography variant="body2">
-                {typeof performance.sales?.growth?.orderGrowth === 'number' && performance.sales?.growth?.orderGrowth >= 0 ? '+' : ''}
-                {typeof performance.sales?.growth?.orderGrowth === 'number' ? performance.sales?.growth?.orderGrowth.toFixed(2) : '0.00'}% from last period
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Total Orders"
+            value={(sales.totalOrders || 0).toLocaleString()}
+            icon={<ShoppingCartIcon />}
+            color="#10b981"
+            change={performance.sales?.growth?.orderGrowth}
+            description="Orders successfully placed"
+          />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <InventoryIcon sx={{ fontSize: 32, mr: 1 }} />
-                <Typography variant="h6" gutterBottom>
-                  Products
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {typeof products.totalProducts === 'number' ? products.totalProducts : validProductCount}
-              </Typography>
-              <Typography variant="body2">
-                {typeof products.activeProducts === 'number' ? products.activeProducts : 0} active products
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Products"
+            value={(products.totalProducts || validProductCount).toLocaleString()}
+            icon={<InventoryIcon />}
+            color="#f59e0b"
+            description="Items currently in your catalog"
+          />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white', height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PeopleIcon sx={{ fontSize: 32, mr: 1 }} />
-                <Typography variant="h6" gutterBottom>
-                  Customers
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {typeof customers.total === 'number' ? customers.total : 0}
-              </Typography>
-              <Typography variant="body2">
-                Avg. value: ${typeof customers.averageValue === 'number' ? customers.averageValue.toFixed(2) : '0.00'}
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Customers"
+            value={(customers.total || 0).toLocaleString()}
+            icon={<PeopleIcon />}
+            color="#ef4444"
+            description={`Avg. value: ${format(customers.averageValue || 0)}`}
+          />
         </Grid>
       </Grid>
 
@@ -471,88 +495,112 @@ const VendorAnalyticsDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Sales Trend Chart */}
         <Grid item xs={12} lg={8}>
-          <Card>
-            <CardHeader
-              title="Sales Trend"
-              subheader="Track your revenue and order volume over time"
-              avatar={<TrendingUpIcon />}
-            />
-            <CardContent>
-              {salesChartData && salesChartData.length > 0 ? (
-                <ChartWrapper title="Sales Trend">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={salesChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <TooltipChart />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="revenue" 
-                        stroke={theme.palette.primary.main} 
-                        name="Revenue" 
-                        strokeWidth={2}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="orders" 
-                        stroke={theme.palette.secondary.main} 
-                        name="Orders" 
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartWrapper>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Typography>No sales data available for the selected period</Typography>
-                  {(isSalesLoading || isSalesFetching) && (
-                    <CircularProgress sx={{ mt: 2 }} />
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 6, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h5" fontWeight={900} color="#1e293b">
+                Sales Trend
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Track your revenue and order volume over time
+              </Typography>
+            </Box>
+            {salesChartData && salesChartData.length > 0 ? (
+              <ChartWrapper title="Sales Trend">
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart data={salesChartData}>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                      tickFormatter={(val) => `${symbol}${val}`}
+                    />
+                    <TooltipChart
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                      formatter={(value, name) => [name === 'revenue' ? format(value) : value, name === 'revenue' ? 'Revenue' : 'Orders']}
+                    />
+                    <Legend verticalAlign="top" align="right" iconType="circle" />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#6366f1"
+                      strokeWidth={4}
+                      dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                      activeDot={{ r: 6, strokeWidth: 0 }}
+                      name="revenue"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      name="orders"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography color="text.secondary">No sales data available for the selected period</Typography>
+                {(isSalesLoading || isSalesFetching) && (
+                  <CircularProgress sx={{ mt: 2 }} />
+                )}
+              </Box>
+            )}
+          </Paper>
         </Grid>
-        
+
         {/* Customer Segments */}
         <Grid item xs={12} md={6} lg={4}>
-          <Card>
-            <CardHeader
-              title="Customer Segments"
-              subheader="Distribution of your customer base"
-              avatar={<PeopleIcon />}
-            />
-            <CardContent>
-              {customerSegments && customerSegments.length > 0 ? (
-                <ChartWrapper title="Customer Segments">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={customerSegments}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {customerSegments.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <TooltipChart />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartWrapper>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Typography>No customer data available</Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 6, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h5" fontWeight={900} color="#1e293b">
+                Customer Segments
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Distribution of your customer base
+              </Typography>
+            </Box>
+            {customerSegments && customerSegments.length > 0 ? (
+              <ChartWrapper title="Customer Segments">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={customerSegments}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {customerSegments.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <TooltipChart
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                    />
+                    <Legend iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography color="text.secondary">No customer data available</Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
 
@@ -560,153 +608,220 @@ const VendorAnalyticsDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Inventory Status */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader
-              title="Inventory Status"
-              subheader="Current stock levels across your products"
-              avatar={<InventoryIcon />}
-            />
-            <CardContent>
-              {inventoryData && inventoryData.length > 0 ? (
-                <ChartWrapper title="Inventory Status">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={inventoryData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <TooltipChart />
-                      <Bar dataKey="value" fill={theme.palette.primary.main} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartWrapper>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Typography>No inventory data available</Typography>
-                </Box>
-              )}
-              
-              {/* Low Stock Alert */}
-              {typeof inventory.lowStock === 'number' && inventory.lowStock > 0 && (
-                <Alert 
-                  severity="warning" 
-                  icon={<WarningIcon />}
-                  sx={{ mt: 2 }}
-                >
-                  <Typography variant="body2">
-                    You have {inventory.lowStock} products with low stock. Consider restocking soon.
-                  </Typography>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 6, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h5" fontWeight={900} color="#1e293b">
+                  Inventory Status
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Current stock levels across your products
+                </Typography>
+              </Box>
+              <Avatar sx={{ bgcolor: '#f5f3ff', color: '#6366f1' }}>
+                <InventoryIcon />
+              </Avatar>
+            </Box>
+
+            {inventoryData && inventoryData.length > 0 ? (
+              <ChartWrapper title="Inventory Status">
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={inventoryData} margin={{ top: 20 }}>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                    />
+                    <TooltipChart
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="#6366f1"
+                      radius={[6, 6, 0, 0]}
+                      barSize={40}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 5 }}>
+                <Typography color="text.secondary">No inventory data available</Typography>
+              </Box>
+            )}
+
+            {/* Low Stock Alert */}
+            {typeof inventory.lowStock === 'number' && inventory.lowStock > 0 && (
+              <Alert
+                severity="warning"
+                icon={<WarningIcon />}
+                sx={{ mt: 3, borderRadius: 3 }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  You have {inventory.lowStock} products with low stock. Consider restocking soon.
+                </Typography>
+              </Alert>
+            )}
+          </Paper>
         </Grid>
-        
+
         {/* Recent Orders */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader
-              title="Recent Orders"
-              subheader="Latest orders from your customers"
-              avatar={<ShoppingCartIcon />}
-            />
-            <CardContent>
-              {recentOrders && recentOrders.length > 0 ? (
-                <TableContainer component={Paper}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Order ID</TableCell>
-                        <TableCell>Customer</TableCell>
-                        <TableCell align="right">Amount</TableCell>
-                        <TableCell>Status</TableCell>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 6, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h5" fontWeight={900} color="#1e293b">
+                  Recent Orders
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Latest transactions from your customers
+                </Typography>
+              </Box>
+              <Avatar sx={{ bgcolor: '#ecfdf5', color: '#10b981' }}>
+                <ShoppingCartIcon />
+              </Avatar>
+            </Box>
+
+            {recentOrders && recentOrders.length > 0 ? (
+              <TableContainer component={Box}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ color: '#64748b', fontWeight: 700, borderBottom: '2px solid #f1f5f9' }}>Order ID</TableCell>
+                      <TableCell sx={{ color: '#64748b', fontWeight: 700, borderBottom: '2px solid #f1f5f9' }}>Customer</TableCell>
+                      <TableCell align="right" sx={{ color: '#64748b', fontWeight: 700, borderBottom: '2px solid #f1f5f9' }}>Amount</TableCell>
+                      <TableCell sx={{ color: '#64748b', fontWeight: 700, borderBottom: '2px solid #f1f5f9' }}>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {recentOrders.slice(0, 5).map((order) => (
+                      <TableRow key={order._id} sx={{ '&:hover': { bgcolor: '#f8fafc' } }}>
+                        <TableCell sx={{ py: 2 }}>
+                          <Typography variant="body2" fontWeight={700} color="#1e293b">
+                            #{order._id.substring(0, 8)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 2 }}>
+                          <Typography variant="body2" color="#64748b">
+                            {order.user?.username || 'Anonymous'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ py: 2 }}>
+                          <Typography variant="body2" fontWeight={800} color="#1e293b">
+                            {format(order.totalPrice || 0)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 2 }}>
+                          <Chip
+                            label={order.isPaid ? 'Paid' : 'Pending'}
+                            size="small"
+                            sx={{
+                              bgcolor: order.isPaid ? '#ecfdf5' : '#fff7ed',
+                              color: order.isPaid ? '#10b981' : '#f59e0b',
+                              fontWeight: 700,
+                              borderRadius: 1.5
+                            }}
+                          />
+                        </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {recentOrders.slice(0, 5).map((order) => (
-                        <TableRow key={order._id}>
-                          <TableCell>
-                            <Typography variant="body2" noWrap>
-                              #{order._id.substring(0, 8)}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {order.user?.username || 'Anonymous'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="body2" fontWeight="bold">
-                              ${order.totalPrice?.toFixed(2) || '0.00'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={order.isPaid ? 'Paid' : 'Pending'} 
-                              size="small" 
-                              color={order.isPaid ? 'success' : 'warning'} 
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <InfoIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-                  <Typography color="text.secondary">
-                    No recent orders found
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <InfoIcon sx={{ fontSize: 48, color: '#64748b', mb: 2, opacity: 0.5 }} />
+                <Typography color="text.secondary">
+                  No recent orders found
+                </Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
 
       {/* Top Products */}
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Card>
-            <CardHeader
-              title="Top Selling Products"
-              subheader="Your best performing products by revenue"
-              avatar={<TrendingUpIcon />}
-            />
-            <CardContent>
-              {products.topProducts && products.topProducts.length > 0 ? (
-                <ChartWrapper title="Top Selling Products">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={products.topProducts.map(product => ({
-                        name: product.productName && product.productName.length > 15 ? 
-                          `${product.productName.substring(0, 15)}...` : 
-                          product.productName || 'Unknown Product',
-                        revenue: product.totalRevenue || 0,
-                        quantity: product.totalQuantity || 0
-                      }))}
-                      layout="vertical"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="name" width={100} />
-                      <TooltipChart />
-                      <Legend />
-                      <Bar dataKey="revenue" fill={theme.palette.primary.main} name="Revenue" />
-                      <Bar dataKey="quantity" fill={theme.palette.secondary.main} name="Quantity" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartWrapper>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Typography>No product data available</Typography>
-                  {isDashboardLoading && (
-                    <CircularProgress sx={{ mt: 2 }} />
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 6, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h5" fontWeight={900} color="#1e293b">
+                  Top Selling Products
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Your best performing products by revenue
+                </Typography>
+              </Box>
+              <Avatar sx={{ bgcolor: '#fff7ed', color: '#f59e0b' }}>
+                <TrendingUpIcon />
+              </Avatar>
+            </Box>
+
+            {products.topProducts && products.topProducts.length > 0 ? (
+              <ChartWrapper title="Top Selling Products">
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={products.topProducts.map(product => ({
+                      name: product.productName && product.productName.length > 20 ?
+                        `${product.productName.substring(0, 20)}...` :
+                        product.productName || 'Unknown Product',
+                      revenue: product.totalRevenue || 0,
+                      quantity: product.totalQuantity || 0
+                    }))}
+                    layout="vertical"
+                    margin={{ left: 40, right: 40 }}
+                  >
+                    <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={150}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#1e293b', fontWeight: 600, fontSize: 12 }}
+                    />
+                    <TooltipChart
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                      formatter={(value, name) => [name === 'revenue' ? format(value) : value, name === 'revenue' ? 'Revenue' : 'Quantity']}
+                    />
+                    <Legend iconType="circle" />
+                    <Bar
+                      dataKey="revenue"
+                      fill="#6366f1"
+                      name="revenue"
+                      radius={[0, 4, 4, 0]}
+                      barSize={20}
+                    />
+                    <Bar
+                      dataKey="quantity"
+                      fill="#10b981"
+                      name="quantity"
+                      radius={[0, 4, 4, 0]}
+                      barSize={20}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography color="text.secondary">No product data available</Typography>
+                {isDashboardLoading && (
+                  <CircularProgress sx={{ mt: 2 }} />
+                )}
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
     </Box>

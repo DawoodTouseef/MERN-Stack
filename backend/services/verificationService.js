@@ -31,13 +31,15 @@ class VerificationService {
             verified: true,
             status: 'approved',
             reason: null,
-            confidence: 0.95,
+            kybConfidence: 0.95,
+            kybVerificationId: `ver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            kybProvider: 'MockVerify-v1',
             extractedData: {
                 docType: docType,
                 verifiedAt: new Date(),
-                provider: 'MockVerify-v1'
-            },
-            transactionId: `ver_${Date.now()}`
+                orgName: metadata.orgName,
+                taxId: metadata.taxId || 'MOCK-TAX-ID',
+            }
         };
     }
 

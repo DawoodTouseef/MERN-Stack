@@ -16,10 +16,12 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  alpha
 } from "@mui/material";
 import { FaLock, FaUserShield, FaRegClock, FaRegEnvelope, FaCookieBite, FaUsers, FaShieldAlt, FaGlobe } from "react-icons/fa";
 import { ExpandMore } from "@mui/icons-material";
 import { useEffect } from "react";
+import { APP_NAME } from "../redux/constants";
 
 const Privacy = () => {
   useEffect(() => {
@@ -53,21 +55,21 @@ const Privacy = () => {
         minHeight: "100vh",
         py: { xs: 4, md: 8 },
         px: { xs: 2, md: 4 },
-        background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
+        bgcolor: "#f8fafc",
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
       }}
     >
       <Paper
-        elevation={6}
+        elevation={0}
         sx={{
           maxWidth: 900,
           width: "100%",
           mx: "auto",
           p: { xs: 3, md: 5 },
           borderRadius: 4,
-          boxShadow: "0 8px 32px 0 rgba(236,72,153,0.15)",
+          border: `1px solid ${alpha('#6366f1', 0.1)}`,
           background: "#fff",
         }}
       >
@@ -75,13 +77,13 @@ const Privacy = () => {
           variant="h3"
           fontWeight="bold"
           sx={{
-            color: "#ec4899",
+            color: "#1e293b",
             mb: 2,
-            letterSpacing: 0.5,
+            letterSpacing: '-0.02em',
             textAlign: { xs: "center", md: "left" },
           }}
         >
-          Nexus Mart Privacy Policy
+          Privacy <Box component="span" sx={{ color: '#6366f1' }}>Policy</Box>
         </Typography>
         <Typography
           variant="subtitle1"
@@ -122,19 +124,19 @@ const Privacy = () => {
         <Divider sx={{ mb: 4, bgcolor: "#e3eeff" }} />
 
         {/* Introduction */}
-        <Accordion defaultExpanded>
+        <Accordion defaultExpanded elevation={0} sx={{ border: `1px solid ${alpha('#6366f1', 0.1)}`, borderRadius: '8px !important', overflow: 'hidden', mb: 2 }}>
           <AccordionSummary
-            expandIcon={<ExpandMore />}
+            expandIcon={<ExpandMore sx={{ color: '#6366f1' }} />}
             id="introduction"
-            sx={{ bgcolor: "#f3e7e9", borderRadius: 1, mb: 1 }}
+            sx={{ bgcolor: alpha('#6366f1', 0.03) }}
           >
-            <Typography variant="h6" fontWeight="bold" sx={{ color: "#18181b" }}>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#1e293b" }}>
               1. Introduction
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body1" sx={{ color: "#444", mb: 2 }}>
-              At <b>Nexus Mart</b>, we are committed to protecting your privacy. This Privacy Policy outlines how we collect, use, disclose, and safeguard your personal information when you visit our website, use our mobile applications, or engage with our services. By using Nexus Mart, you consent to the practices described in this policy.
+              At <b>{APP_NAME}</b>, we are committed to protecting your privacy. This Privacy Policy outlines how we collect, use, disclose, and safeguard your personal information when you visit our website, use our mobile applications, or engage with our services. By using {APP_NAME}, you consent to the practices described in this policy.
             </Typography>
             <Typography variant="body2" sx={{ color: "#666" }}>
               This policy complies with applicable data protection laws, including the General Data Protection Regulation (GDPR), California Consumer Privacy Act (CCPA), and India’s Digital Personal Data Protection Act (DPDP Act).
@@ -586,7 +588,7 @@ const Privacy = () => {
               </ListItem>
             </List>
             <Typography variant="body2" sx={{ color: "#666" }}>
-              Nexus Mart, 123 Commerce Street, Bengaluru, Karnataka, India
+              {APP_NAME}, 123 Commerce Street, Bengaluru, Karnataka, India
             </Typography>
           </AccordionDetails>
         </Accordion>

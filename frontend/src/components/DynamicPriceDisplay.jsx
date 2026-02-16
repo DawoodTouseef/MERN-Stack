@@ -15,25 +15,27 @@ import {
 } from '@mui/icons-material';
 import { useCalculateDynamicPriceMutation } from '../redux/api/dynamicPricingApiSlice';
 import { useSelector } from 'react-redux';
+import useCurrency from '../hooks/useCurrency';
 
-const DynamicPriceDisplay = ({ 
-  product, 
-  quantity = 1, 
+const DynamicPriceDisplay = ({
+  product,
+  quantity = 1,
   userLocation = null,
   showOriginalPrice = true,
   showDiscountBadge = true,
-  compact = false 
+  compact = false
 }) => {
   const { userInfo } = useSelector((state) => state.auth);
+  const { format } = useCurrency();
   const [priceData, setPriceData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [calculatePrice] = useCalculateDynamicPriceMutation();
 
   useEffect(() => {
     const fetchDynamicPrice = async () => {
       if (!product?._id) return;
-      
+
       setIsLoading(true);
       try {
         const result = await calculatePrice({
@@ -42,7 +44,7 @@ const DynamicPriceDisplay = ({
           userSegment: userInfo?.role || 'all',
           location: userLocation
         }).unwrap();
-        
+
         setPriceData(result.data);
       } catch (error) {
         // Fallback to original price if dynamic pricing fails
@@ -90,10 +92,7 @@ const DynamicPriceDisplay = ({
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount || 0);
+    return format(amount, product?.currency || 'USD');
   };
 
   const calculateSavingsPercentage = () => {
@@ -124,18 +123,18 @@ const DynamicPriceDisplay = ({
   if (compact) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography 
-          variant="h6" 
+        <Typography
+          variant="h6"
           fontWeight="bold"
           color={hasDiscount ? "error.main" : "text.primary"}
         >
           {formatCurrency(priceData.dynamicPrice)}
         </Typography>
-        
+
         {hasDiscount && showOriginalPrice && (
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               textDecoration: 'line-through',
               color: 'text.secondary'
             }}
@@ -143,7 +142,7 @@ const DynamicPriceDisplay = ({
             {formatCurrency(priceData.originalPrice)}
           </Typography>
         )}
-        
+
         {hasDiscount && showDiscountBadge && (
           <Chip
             size="small"
@@ -160,18 +159,18 @@ const DynamicPriceDisplay = ({
     <Box>
       {/* Main Price Display */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        <Typography 
-          variant="h6" 
+        <Typography
+          variant="h6"
           fontWeight="bold"
           color={hasDiscount ? "error.main" : "text.primary"}
         >
           {formatCurrency(priceData.dynamicPrice)}
         </Typography>
-        
+
         {hasDiscount && showOriginalPrice && (
-          <Typography 
-            variant="body1" 
-            sx={{ 
+          <Typography
+            variant="body1"
+            sx={{
               textDecoration: 'line-through',
               color: 'text.secondary'
             }}
@@ -190,7 +189,7 @@ const DynamicPriceDisplay = ({
               label={`${savingsPercentage}% OFF`}
               color={getPricingTypeColor(priceData.appliedPricing?.type)}
               size="small"
-              sx={{ 
+              sx={{
                 fontWeight: 'bold',
                 animation: priceData.appliedPricing?.type === 'flash_sale' ? 'pulse 2s infinite' : 'none',
                 '@keyframes pulse': {
@@ -201,7 +200,7 @@ const DynamicPriceDisplay = ({
               }}
             />
           )}
-          
+
           <Typography variant="body2" color="success.main" fontWeight="medium">
             Save {formatCurrency(priceData.savings)}
           </Typography>
@@ -211,10 +210,10 @@ const DynamicPriceDisplay = ({
       {/* Applied Pricing Info */}
       {priceData.appliedPricing && (
         <Tooltip title={`Applied: ${priceData.appliedPricing.name}`}>
-          <Typography 
-            variant="caption" 
+          <Typography
+            variant="caption"
             color="text.secondary"
-            sx={{ 
+            sx={{
               display: 'block',
               fontStyle: 'italic',
               cursor: 'help'

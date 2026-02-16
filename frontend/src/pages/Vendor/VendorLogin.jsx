@@ -39,25 +39,25 @@ const VendorLogin = () => {
   const redirect = sp.get("redirect") || "/";
 
   useEffect(() => {
-    if (userInfo?.role==="vendor") {
+    if (userInfo?.role === "vendor") {
       navigate("/");
     }
   }, [navigate, userInfo]);
 
   const handleLogout = async () => {
-      try {
-        let api;
-        if (userInfo.role==="vendor"){
-            api="/Vendor/login"
-        }
-        await logoutApiCall().unwrap();
-        dispatch(logout());
-        navigate(api || '/login');
-      } catch (error) {
-        // handle error
+    try {
+      let api;
+      if (userInfo.role === "vendor") {
+        api = "/Vendor/login"
       }
+      await logoutApiCall().unwrap();
+      dispatch(logout());
+      navigate(api || '/login');
+    } catch (error) {
+      // handle error
+    }
 
-    };
+  };
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
@@ -73,199 +73,178 @@ const VendorLogin = () => {
     } catch (err) {
       toast.error(err?.data?.message || "Invalid email or password");
     }
-};
+  };
 
   return (
-    <Grid
-      container
-      component="main"
+    <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
+        bgcolor: "#f8fafc",
+        display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        py: 4,
+        px: 2,
       }}
     >
-      <Grid item xs={11} sm={8} md={4}>
-        <Fade in>
-          <Paper
-            elevation={12}
+      <Fade in>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 4, md: 6 },
+            borderRadius: 6,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            maxWidth: 450,
+            bgcolor: "#fff",
+            border: "1px solid #e2e8f0",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+          }}
+        >
+          <Avatar
             sx={{
-              p: 4,
-              borderRadius: 5,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              background: "rgba(24,24,27,0.98)",
-              color: "#fff",
-              boxShadow: "0 8px 32px 0 rgba(236,72,153,0.18)",
-              position: "relative",
-              overflow: "hidden",
+              mb: 2,
+              bgcolor: "#f5f3ff",
+              width: 72,
+              height: 72,
+              border: "2px solid #6366f1",
             }}
           >
-            <Box
+            <StorefrontIcon sx={{ color: "#6366f1", fontSize: 40 }} />
+          </Avatar>
+          <Typography
+            component="h1"
+            variant="h4"
+            fontWeight={900}
+            sx={{
+              color: "#1e293b",
+              mb: 1,
+              textAlign: "center",
+            }}
+          >
+            Vendor Login
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "#64748b",
+              mb: 4,
+              textAlign: "center",
+              fontWeight: 500,
+            }}
+          >
+            Manage your store with modern analytics
+          </Typography>
+
+          <Box
+            component="form"
+            onSubmit={submitHandler}
+            sx={{ width: "100%" }}
+          >
+            <TextField
+              label="Email Address"
+              fullWidth
+              required
+              margin="normal"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               sx={{
-                position: "absolute",
-                top: -60,
-                left: -60,
-                width: 160,
-                height: 160,
-                bgcolor: "#ec4899",
-                opacity: 0.15,
-                borderRadius: "50%",
-                zIndex: 0,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                  bgcolor: "#f8fafc",
+                }
+              }}
+              autoComplete="email"
+            />
+            <TextField
+              label="Password"
+              type={showPass ? "text" : "password"}
+              fullWidth
+              required
+              margin="normal"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                  bgcolor: "#f8fafc",
+                },
+                mt: 2,
+              }}
+              autoComplete="current-password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPass((show) => !show)}
+                      edge="end"
+                      sx={{ color: "#6366f1" }}
+                    >
+                      {showPass ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
             />
-            <Avatar
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
               sx={{
-                m: 1,
-                bgcolor: "#fff",
-                width: 64,
-                height: 64,
-                boxShadow: 3,
-                border: "3px solid #ec4899",
-                zIndex: 1,
+                mt: 4,
+                py: 2,
+                fontWeight: 800,
+                fontSize: "1rem",
+                borderRadius: 3,
+                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
+                textTransform: "none",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                  transform: "translateY(-1px)",
+                },
+                transition: "all 0.2s",
               }}
+              disabled={isLoading}
             >
-              <StorefrontIcon sx={{ color: "#ec4899", fontSize: 38 }} />
-            </Avatar>
-            <Typography
-              component="h1"
-              variant="h4"
-              fontWeight={800}
-              sx={{
-                letterSpacing: 2,
-                color: "#fff",
-                mt: 1,
-                mb: 1,
-                zIndex: 1,
-                textShadow: "2px 2px 8px #ec4899",
-              }}
-            >
-              Vendor Login
-            </Typography>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "#a1a1aa",
-                mb: 2,
-                zIndex: 1,
-                fontWeight: 500,
-                textAlign: "center",
-              }}
-            >
-              Welcome back! Please login to your Vendor dashboard.
-            </Typography>
-            <Divider sx={{ width: "100%", mb: 2, bgcolor: "#ec4899", opacity: 0.3 }} />
-            <Box
-              component="form"
-              onSubmit={submitHandler}
-              sx={{ mt: 1, width: "100%", zIndex: 1 }}
-            >
-              <TextField
-                label="Email Address"
-                fullWidth
-                required
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                sx={{
-                  input: { color: "#fff" },
-                  label: { color: "#fff" },
-                  bgcolor: "#232336",
-                  borderRadius: 2,
-                  mb: 2,
-                }}
-                InputLabelProps={{ style: { color: "#fff" } }}
-                autoComplete="email"
-              />
-              <TextField
-                label="Password"
-                type={showPass ? "text" : "password"}
-                fullWidth
-                required
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                sx={{
-                  input: { color: "#fff" },
-                  label: { color: "#fff" },
-                  bgcolor: "#232336",
-                  borderRadius: 2,
-                  mb: 2,
-                }}
-                InputLabelProps={{ style: { color: "#fff" } }}
-                autoComplete="current-password"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowPass((show) => !show)}
-                        edge="end"
-                        sx={{ color: "#ec4899" }}
-                      >
-                        {showPass ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="secondary"
-                sx={{
-                  mt: 3,
-                  py: 1.5,
-                  fontWeight: 700,
-                  fontSize: "1.1rem",
-                  borderRadius: 3,
-                  background: "linear-gradient(90deg, #6366f1 0%, #ec4899 100%)",
-                  boxShadow: 2,
-                  letterSpacing: 1,
-                  textTransform: "none",
-                  "&:hover": {
-                    background: "linear-gradient(90deg, #ec4899 0%, #6366f1 100%)",
-                  },
-                }}
-                disabled={isLoading}
-              >
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-              <Box sx={{ mt: 3, textAlign: "center" }}>
-                <Typography variant="body2" color="#fff">
-                  New Vendor?{" "}
-                  <Link
-                    to={redirect ? `/vendor/register?redirect=${redirect}` : "/vendor/register"}
-                    style={{
-                      color: "#ec4899",
-                      textDecoration: "underline",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Register
-                  </Link>
-                </Typography>
-                <Typography variant="body2" color="#fff">
-                  <Link
-                    to={redirect ? `/forgot-password?redirect=${redirect}` : "/forgot-password"}
-                    style={{
-                      color: "#ec4899",
-                      textDecoration: "underline",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Forgot password?
-                  </Link>
-                </Typography>
-              </Box>
+              {isLoading ? "Signing in..." : "Continue to Dashboard"}
+            </Button>
+            <Box sx={{ mt: 4, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                New Vendor?{" "}
+                <Link
+                  to={redirect ? `/vendor/register?redirect=${redirect}` : "/vendor/register"}
+                  style={{
+                    color: "#6366f1",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  Create an account
+                </Link>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <Link
+                  to={redirect ? `/forgot-password?redirect=${redirect}` : "/forgot-password"}
+                  style={{
+                    color: "#64748b",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  Forgot password?
+                </Link>
+              </Typography>
             </Box>
-          </Paper>
-        </Fade>
-      </Grid>
-    </Grid>
+          </Box>
+        </Paper>
+      </Fade>
+    </Box>
   );
 };
 

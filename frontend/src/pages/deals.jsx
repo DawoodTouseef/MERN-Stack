@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { FlashOn, LocalOffer, Timer, Percent } from "@mui/icons-material";
 import { useFetchOffersQuery } from "../redux/api/offerApiSlice";
+import { APP_NAME } from "../redux/constants";
 
 const Deals = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -31,32 +32,32 @@ const Deals = () => {
     { id: "new", name: "New Arrivals" }
   ];
 
-  const filteredDeals = activeTab === "all" 
-    ? offers 
-    : activeTab === "featured" 
+  const filteredDeals = activeTab === "all"
+    ? offers
+    : activeTab === "featured"
       ? offers.filter(offer => offer.isFeatured)
       : offers.filter(offer => {
-          // Check offer type first
-          if (offer.offerType && offer.offerType.toLowerCase().includes(activeTab)) {
-            return true;
-          }
-          
-          // Check categories
-          if (offer.categories && offer.categories.length > 0) {
-            return offer.categories.some(cat => 
-              cat && cat.name && cat.name.toLowerCase().includes(activeTab)
-            );
-          }
-          
-          return false;
-        });
+        // Check offer type first
+        if (offer.offerType && offer.offerType.toLowerCase().includes(activeTab)) {
+          return true;
+        }
+
+        // Check categories
+        if (offer.categories && offer.categories.length > 0) {
+          return offer.categories.some(cat =>
+            cat && cat.name && cat.name.toLowerCase().includes(activeTab)
+          );
+        }
+
+        return false;
+      });
 
   const formatExpiryDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -64,12 +65,12 @@ const Deals = () => {
     const expiryDate = new Date(dateString);
     const now = new Date();
     const diffTime = expiryDate - now;
-    
+
     if (diffTime < 0) return "Expired";
-    
+
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+
     if (diffDays > 0) {
       return `${diffDays} day${diffDays !== 1 ? 's' : ''} left`;
     } else {
@@ -132,17 +133,18 @@ const Deals = () => {
             Current Deals & Offers
           </Typography>
         </Box>
-        
+
         <Typography
           variant="subtitle1"
           sx={{ color: "#6366f1", mb: 4 }}
         >
-          Take advantage of our exclusive deals and save on your favorite products
+          At {APP_NAME}, we're constantly updating our inventory with the latest and greatest deals.
+          Check back often to find the best savings.
         </Typography>
 
         <Alert severity="info" sx={{ mb: 4 }}>
           <Typography variant="body1">
-            <strong>Limited Time Offers:</strong> All deals are subject to availability and may end without notice. 
+            <strong>Limited Time Offers:</strong> All deals are subject to availability and may end without notice.
             Some restrictions may apply. See individual deal details for complete terms.
           </Typography>
         </Alert>
@@ -167,10 +169,10 @@ const Deals = () => {
         <Grid container spacing={4}>
           {filteredDeals.map((deal) => (
             <Grid item xs={12} sm={6} md={4} key={deal._id}>
-              <Card 
-                sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
                   flexDirection: 'column',
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                   '&:hover': {
@@ -191,45 +193,45 @@ const Deals = () => {
                       {deal.title}
                     </Typography>
                     {deal.offerType === "flash" && (
-                      <Chip 
-                        icon={<FlashOn />} 
-                        label="Flash Sale" 
-                        color="error" 
-                        size="small" 
+                      <Chip
+                        icon={<FlashOn />}
+                        label="Flash Sale"
+                        color="error"
+                        size="small"
                         sx={{ ml: 1 }}
                       />
                     )}
                   </Box>
-                  
+
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {deal.description}
                   </Typography>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Chip 
-                      icon={<Percent />} 
-                      label={`${deal.discountValue}${deal.discountUnit === "percent" ? "%" : ""} OFF`} 
-                      color="primary" 
+                    <Chip
+                      icon={<Percent />}
+                      label={`${deal.discountValue}${deal.discountUnit === "percent" ? "%" : ""} OFF`}
+                      color="primary"
                       sx={{ fontWeight: 'bold' }}
                     />
                   </Box>
-                  
+
                   {deal.startTime && deal.endTime && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
                       <Timer color="action" />
                       <Typography variant="body2" color="text.secondary">
-                        Expires: {formatExpiryDate(deal.endTime)} 
+                        Expires: {formatExpiryDate(deal.endTime)}
                         <span style={{ color: '#f57c00', fontWeight: 'bold' }}> ({getTimeRemaining(deal.endTime)})</span>
                       </Typography>
                     </Box>
                   )}
                 </CardContent>
                 <CardActions sx={{ mt: 'auto', p: 2, pt: 0 }}>
-                  <Button 
-                    size="small" 
-                    variant="contained" 
+                  <Button
+                    size="small"
+                    variant="contained"
                     fullWidth
-                    sx={{ 
+                    sx={{
                       fontWeight: 'bold',
                       borderRadius: 2,
                       py: 1
@@ -252,12 +254,12 @@ const Deals = () => {
           <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
             Subscribe to our newsletter and never miss out on exclusive offers and promotions
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             size="large"
-            sx={{ 
-              px: 4, 
-              py: 1.5, 
+            sx={{
+              px: 4,
+              py: 1.5,
               fontWeight: 'bold',
               borderRadius: 3,
               bgcolor: "primary.main",
@@ -273,12 +275,12 @@ const Deals = () => {
             Terms & Conditions
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            All offers are valid while supplies last. Nexus Mart reserves the right to modify or cancel any promotion at any time. 
+            All offers are valid while supplies last. {APP_NAME} reserves the right to modify or cancel any promotion at any time.
             Some restrictions may apply. See individual offer details for complete terms and conditions.
           </Typography>
           <Typography variant="body2">
-            For questions about any of our current deals, please contact our customer support team at 
-            <Link href="mailto:support@nexusmart.com"> support@nexusmart.com</Link>.
+            For questions about any of our current deals, please contact our customer support team at
+            <Link href={`mailto:support@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}> support@{APP_NAME.toLowerCase().replace(/\s+/g, '')}.com</Link>.
           </Typography>
         </Box>
       </Paper>

@@ -78,6 +78,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { useTheme as useMuiTheme } from "@mui/material/styles";
+import { APP_NAME } from "../../redux/constants";
 
 const UserList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -387,7 +388,7 @@ const UserList = () => {
   ];
 
   return (
-    <DocumentTitle title="User Management | Nexus Mart">
+    <DocumentTitle title={`User Management | ${APP_NAME}`}>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
         <Fade in>
           <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>

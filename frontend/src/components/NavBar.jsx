@@ -43,6 +43,7 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 import StoreIcon from "@mui/icons-material/Store";
 import SellIcon from "@mui/icons-material/Sell";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/features/auth/authSlice";
 import { useLogoutMutation } from "../redux/api/usersApiSlice";
@@ -51,6 +52,7 @@ import { useAllProductsQuery } from "../redux/api/productApiSlice";
 import Autosuggest from 'react-autosuggest';
 import debounce from "lodash.debounce";
 import HeaderCurrencySelector from "./HeaderCurrencySelector";
+import { APP_NAME } from "../redux/constants";
 
 const NavBar = ({
   placeholder = "Search products...",
@@ -61,7 +63,7 @@ const NavBar = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const location = useLocation();
-  
+
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -104,7 +106,7 @@ const NavBar = ({
       } else if (userInfo.role === "vendor") {
         redirectPath = "/vendor/login";
       }
-      
+
       await logoutApiCall().unwrap();
       dispatch(logout());
       navigate(redirectPath);
@@ -135,11 +137,11 @@ const NavBar = ({
           inputValue.length === 0
             ? []
             : products.filter(
-                (product) =>
-                  product.name.toLowerCase().includes(inputValue) ||
-                  product.brand?.name?.toLowerCase().includes(inputValue) ||
-                  product.description?.toLowerCase().includes(inputValue)
-              );
+              (product) =>
+                product.name.toLowerCase().includes(inputValue) ||
+                product.brand?.name?.toLowerCase().includes(inputValue) ||
+                product.description?.toLowerCase().includes(inputValue)
+            );
         callback(filtered.slice(0, 6));
       }, 200),
     [products]
@@ -166,17 +168,17 @@ const NavBar = ({
       regex,
       (match) => `<span style="color:${theme.palette.primary.main}; font-weight:bold;">${match}</span>`
     );
-    
+
     return (
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 1 }}>
         <Box
           component="img"
           src={suggestion.media?.[0]?.url || "/placeholder.png"}
           alt={suggestion.name}
-          sx={{ 
-            width: 45, 
-            height: 45, 
-            borderRadius: 2, 
+          sx={{
+            width: 45,
+            height: 45,
+            borderRadius: 2,
             objectFit: "cover",
             border: `1px solid ${theme.palette.divider}`
           }}
@@ -211,39 +213,39 @@ const NavBar = ({
           { label: "Brands", icon: <SellIcon />, path: "/admin/brand" },
           { label: "Offers", icon: <DashboardIcon />, path: "/admin/offer" },
         ];
-    }
+      }
 
-    if (userInfo.role === "seller") {
+      if (userInfo.role === "seller") {
+        return [
+          { label: "Inventory", icon: <InventoryIcon />, path: "/seller/allproductslist" },
+          { label: "Orders", icon: <ReceiptIcon />, path: "/seller/orderlist" },
+        ];
+      }
+
+      if (userInfo.role === "vendor") {
+        return [
+
+          { label: "Inventory", icon: <InventoryIcon />, path: "/vendor/allproductslist" },
+          { label: "Orders", icon: <ReceiptIcon />, path: "/vendor/orders" },
+
+        ];
+      }
+
+      // Customer role
       return [
-        { label: "Inventory", icon: <InventoryIcon />, path: "/seller/allproductslist" },
-        { label: "Orders", icon: <ReceiptIcon />, path: "/seller/orderlist" },
+        { label: "Shop", icon: <StoreIcon />, path: "/shop" },
+        { label: "Cart", icon: <ShoppingCartIcon />, path: "/cart" },
+        { label: "Favorites", icon: <FavoriteIcon />, path: "/favorite" },
       ];
-    }
-
-    if (userInfo.role === "vendor") {
-      return [
-  
-        { label: "Inventory", icon: <InventoryIcon />, path: "/vendor/allproductslist" },
-        { label: "Orders", icon: <ReceiptIcon />, path: "/vendor/orderlist" },
-
-      ];
-    }
-
-    // Customer role
-    return [
-      { label: "Shop", icon: <StoreIcon />, path: "/shop" },
-      { label: "Cart", icon: <ShoppingCartIcon />, path: "/cart" },
-      { label: "Favorites", icon: <FavoriteIcon />, path: "/favorite" },
-    ];
     }
   };
 
   const getUserMenuItems = () => {
     if (!userInfo) return [];
-    
+
     const baseItems = [
       { label: "Profile", icon: <PersonIcon />, path: "/profile" },
-      
+
     ];
     if (userInfo.role === "admin") {
       baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" })
@@ -253,12 +255,14 @@ const NavBar = ({
         path: "/admin/currencies",
       });
     }
-    else{
+    else {
       baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/orders" })
     }
-    
+    if (userInfo.role === "admin") {
+      baseItems.push({ label: "Settings", icon: <SettingsIcon />, path: "/admin/settings" });
+    }
     baseItems.push({ label: "Logout", icon: <LogoutIcon />, action: handleLogout });
-    
+
     return baseItems;
   };
 
@@ -266,25 +270,25 @@ const NavBar = ({
   const drawerContent = (
     <Box sx={{ width: { xs: 280, sm: 320 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Drawer Header */}
-      <Box sx={{ 
-        p: 2, 
-        bgcolor: 'primary.main', 
+      <Box sx={{
+        p: 2,
+        bgcolor: 'primary.main',
         color: 'white',
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Nexus Mart
+          {APP_NAME}
         </Typography>
-        <IconButton 
-          onClick={() => setDrawerOpen(false)} 
+        <IconButton
+          onClick={() => setDrawerOpen(false)}
           sx={{ color: 'white' }}
         >
           <CloseIcon />
         </IconButton>
       </Box>
-      
+
       {/* Mobile Search */}
       <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
         <form onSubmit={handleSubmit}>
@@ -317,35 +321,35 @@ const NavBar = ({
       <List>
         {userInfo ? (
           <>
-            <ListItem 
-              button 
-              component={Link} 
-              to="/profile" 
+            <ListItem
+              button
+              component={Link}
+              to="/profile"
               onClick={() => setDrawerOpen(false)}
-              sx={{ 
-                borderRadius: 2, 
+              sx={{
+                borderRadius: 2,
                 mb: 0.5,
                 '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
               }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <Avatar 
-                  {...stringAvatar(userInfo.username)} 
-                  sx={{ width: 24, height: 24, fontSize: 12 }} 
+                <Avatar
+                  {...stringAvatar(userInfo.username)}
+                  sx={{ width: 24, height: 24, fontSize: 12 }}
                 />
               </ListItemIcon>
-              <ListItemText 
-                primary={userInfo.username} 
+              <ListItemText
+                primary={userInfo.username}
                 secondary={userInfo.email}
                 primaryTypographyProps={{ fontWeight: 500 }}
                 secondaryTypographyProps={{ fontSize: 12 }}
               />
             </ListItem>
-            <ListItem 
-              button 
+            <ListItem
+              button
               onClick={handleLogout}
-              sx={{ 
-                borderRadius: 2, 
+              sx={{
+                borderRadius: 2,
                 mb: 0.5,
                 '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
               }}
@@ -353,21 +357,21 @@ const NavBar = ({
               <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary="Logout" 
-                primaryTypographyProps={{ fontWeight: 500, color: 'error.main' }} 
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{ fontWeight: 500, color: 'error.main' }}
               />
             </ListItem>
           </>
         ) : (
           <>
-            <ListItem 
-              button 
-              component={Link} 
-              to="/login" 
+            <ListItem
+              button
+              component={Link}
+              to="/login"
               onClick={() => setDrawerOpen(false)}
-              sx={{ 
-                borderRadius: 2, 
+              sx={{
+                borderRadius: 2,
                 mb: 0.5,
                 '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
               }}
@@ -375,18 +379,18 @@ const NavBar = ({
               <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
                 <LoginIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary="Login" 
-                primaryTypographyProps={{ fontWeight: 500 }} 
+              <ListItemText
+                primary="Login"
+                primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItem>
-            <ListItem 
-              button 
-              component={Link} 
-              to="/register" 
+            <ListItem
+              button
+              component={Link}
+              to="/register"
               onClick={() => setDrawerOpen(false)}
-              sx={{ 
-                borderRadius: 2, 
+              sx={{
+                borderRadius: 2,
                 mb: 0.5,
                 '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
               }}
@@ -394,9 +398,9 @@ const NavBar = ({
               <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
                 <AppRegistrationIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary="Register" 
-                primaryTypographyProps={{ fontWeight: 500 }} 
+              <ListItemText
+                primary="Register"
+                primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItem>
           </>
@@ -404,7 +408,7 @@ const NavBar = ({
       </List>
     </Box>
   );
-  
+
   return (
     <Slide in direction="down">
       <AppBar
@@ -412,8 +416,8 @@ const NavBar = ({
         sx={{
           bgcolor: theme.palette.background.paper,
           color: theme.palette.text.primary,
-          boxShadow: '0 2px 24px rgba(0,0,0,0.08)',
-          borderBottom: `3px solid ${theme.palette.primary.main}`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          borderBottom: `1px solid ${alpha('#6366f1', 0.1)}`,
           py: { xs: 0, md: 0.5 },
         }}
       >
@@ -439,7 +443,7 @@ const NavBar = ({
               color="primary"
               aria-label="menu"
               onClick={() => setDrawerOpen(true)}
-              sx={{ 
+              sx={{
                 mr: 1,
                 width: { xs: 40, sm: 44 },
                 height: { xs: 40, sm: 44 }
@@ -462,161 +466,161 @@ const NavBar = ({
                 letterSpacing: 1,
                 fontFamily: "'Poppins', sans-serif",
                 transition: "all 0.3s ease",
-                "&:hover": { 
+                "&:hover": {
                   color: "secondary.main",
                   transform: "scale(1.02)"
                 },
                 fontSize: { xs: "1.4rem", sm: "1.6rem", md: "1.8rem" },
               }}
             >
-              NexusMart
+              {APP_NAME.replace(/\s+/g, '')}
             </Typography>
           </Box>
 
-          {userInfo && userInfo.role!=="admin" &&(
+          {userInfo && userInfo.role !== "admin" && (
             <>
-            {/* Search Bar - Desktop */}
-          {location.pathname !== "/admin/login"  && !isMobile && (
-            <Box sx={{ 
-              flex: { md: 2 }, 
-              display: "flex", 
-              justifyContent: "center",
-              mx: { xs: 0, md: 2 },
-              maxWidth: { md: "600px" },
-              width: { md: "100%" },
-            }}>
-              <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
-                <Autosuggest
-                  suggestions={suggestions}
-                  onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-                  onSuggestionsClearRequested={onSuggestionsClearRequested}
-                  onSuggestionSelected={handleSuggestionSelected}
-                  getSuggestionValue={getSuggestionValue}
-                  renderSuggestion={renderSuggestion}
-                  inputProps={inputProps}
-                  theme={{
-                    container: {
-                      position: "relative",
-                      width: "100%",
-                    },
-                    input: {
-                      width: "100%",
-                      padding: "12px 20px",
-                      fontSize: "16px",
-                      borderRadius: "50px",
-                      border: `2px solid ${theme.palette.divider}`,
-                      backgroundColor: theme.palette.background.paper,
-                      transition: "all 0.3s ease",
-                      outline: "none",
-                      height: { xs: "40px", sm: "44px", md: "48px" },
-                      '&:focus': {
-                        borderColor: theme.palette.primary.main,
-                        boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
-                      }
-                    },
-                    suggestionsContainer: {
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      zIndex: 20,
-                      backgroundColor: theme.palette.background.paper,
-                      boxShadow: theme.shadows[4],
-                      borderRadius: "16px",
-                      marginTop: "8px",
-                      overflow: "hidden",
-                      maxHeight: "360px",
-                      overflowY: "auto",
-                    },
-                    suggestionsList: {
-                      listStyle: "none",
-                      margin: 0,
-                      padding: 0,
-                    },
-                    suggestion: {
-                      padding: "12px 20px",
-                      cursor: "pointer",
-                      transition: "background 0.2s ease",
-                      fontSize: "15px",
-                      borderBottom: `1px solid ${theme.palette.divider}`,
-                      '&:last-child': {
-                        borderBottom: 'none'
-                      },
-                      '&:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                      }
-                    },
-                    suggestionHighlighted: {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                    },
-                  }}
-                />
-              </form>
-            </Box>
-          )}
+              {/* Search Bar - Desktop */}
+              {location.pathname !== "/admin/login" && !isMobile && (
+                <Box sx={{
+                  flex: { md: 2 },
+                  display: "flex",
+                  justifyContent: "center",
+                  mx: { xs: 0, md: 2 },
+                  maxWidth: { md: "600px" },
+                  width: { md: "100%" },
+                }}>
+                  <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
+                    <Autosuggest
+                      suggestions={suggestions}
+                      onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+                      onSuggestionsClearRequested={onSuggestionsClearRequested}
+                      onSuggestionSelected={handleSuggestionSelected}
+                      getSuggestionValue={getSuggestionValue}
+                      renderSuggestion={renderSuggestion}
+                      inputProps={inputProps}
+                      theme={{
+                        container: {
+                          position: "relative",
+                          width: "100%",
+                        },
+                        input: {
+                          width: "100%",
+                          padding: "12px 20px",
+                          fontSize: "16px",
+                          borderRadius: "50px",
+                          border: `2px solid ${theme.palette.divider}`,
+                          backgroundColor: theme.palette.background.paper,
+                          transition: "all 0.3s ease",
+                          outline: "none",
+                          height: { xs: "40px", sm: "44px", md: "48px" },
+                          '&:focus': {
+                            borderColor: theme.palette.primary.main,
+                            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          }
+                        },
+                        suggestionsContainer: {
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          zIndex: 20,
+                          backgroundColor: theme.palette.background.paper,
+                          boxShadow: theme.shadows[4],
+                          borderRadius: "16px",
+                          marginTop: "8px",
+                          overflow: "hidden",
+                          maxHeight: "360px",
+                          overflowY: "auto",
+                        },
+                        suggestionsList: {
+                          listStyle: "none",
+                          margin: 0,
+                          padding: 0,
+                        },
+                        suggestion: {
+                          padding: "12px 20px",
+                          cursor: "pointer",
+                          transition: "background 0.2s ease",
+                          fontSize: "15px",
+                          borderBottom: `1px solid ${theme.palette.divider}`,
+                          '&:last-child': {
+                            borderBottom: 'none'
+                          },
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                          }
+                        },
+                        suggestionHighlighted: {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        },
+                      }}
+                    />
+                  </form>
+                </Box>
+              )}
 
-          {/* Mobile Search Icon */}
-          { location.pathname !== "/admin/login"  && isMobile && !mobileSearchOpen && (
-            <IconButton
-              onClick={() => setMobileSearchOpen(true)}
-              sx={{ 
-                color: 'primary.main',
-                width: { xs: 40, sm: 44 },
-                height: { xs: 40, sm: 44 }
-              }}
-            >
-              <SearchIcon fontSize="large" />
-            </IconButton>
-          )}
-
-          {/* Mobile Search Bar */}
-          { location.pathname !== "/admin/login"   && isMobile && mobileSearchOpen && (
-            <Box sx={{ 
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              bgcolor: 'background.paper',
-              p: 1,
-              display: 'flex',
-              alignItems: 'center',
-              zIndex: 100
-            }}>
-              <form onSubmit={handleSubmit} style={{ width: "100%", display: 'flex' }}>
-                <TextField
-                  fullWidth
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
+              {/* Mobile Search Icon */}
+              {location.pathname !== "/admin/login" && isMobile && !mobileSearchOpen && (
+                <IconButton
+                  onClick={() => setMobileSearchOpen(true)}
                   sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "50px 0 0 50px",
-                      height: 44,
-                    },
-                  }}
-                />
-                <Button 
-                  type="submit"
-                  variant="contained"
-                  sx={{ 
-                    borderRadius: "0 50px 50px 0",
-                    minWidth: 60,
-                    height: 44
+                    color: 'primary.main',
+                    width: { xs: 40, sm: 44 },
+                    height: { xs: 40, sm: 44 }
                   }}
                 >
-                  <SearchIcon />
-                </Button>
-              </form>
-              <IconButton
-                onClick={() => setMobileSearchOpen(false)}
-                sx={{ ml: 1 }}
-              >
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          )}
+                  <SearchIcon fontSize="large" />
+                </IconButton>
+              )}
+
+              {/* Mobile Search Bar */}
+              {location.pathname !== "/admin/login" && isMobile && mobileSearchOpen && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: 'background.paper',
+                  p: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  zIndex: 100
+                }}>
+                  <form onSubmit={handleSubmit} style={{ width: "100%", display: 'flex' }}>
+                    <TextField
+                      fullWidth
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      autoFocus
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "50px 0 0 50px",
+                          height: 44,
+                        },
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      sx={{
+                        borderRadius: "0 50px 50px 0",
+                        minWidth: 60,
+                        height: 44
+                      }}
+                    >
+                      <SearchIcon />
+                    </Button>
+                  </form>
+                  <IconButton
+                    onClick={() => setMobileSearchOpen(false)}
+                    sx={{ ml: 1 }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+              )}
 
             </>
           )}
@@ -634,7 +638,7 @@ const NavBar = ({
             >
               {/* Currency Selector */}
               <HeaderCurrencySelector />
-              
+
               {/* Navigation Items */}
               {userInfo && getNavItems().map((item, index) => (
                 <Tooltip key={index} title={item.label}>
@@ -649,7 +653,7 @@ const NavBar = ({
                       alignItems: "center",
                       borderRadius: 3,
                       transition: "all 0.3s ease",
-                      "&:hover": { 
+                      "&:hover": {
                         bgcolor: alpha(theme.palette.primary.main, 0.1),
                         transform: "translateY(-2px)"
                       },
@@ -667,11 +671,11 @@ const NavBar = ({
               {userInfo ? (
                 <>
                   <Tooltip title={userInfo.username}>
-                    <IconButton 
-                      onClick={handleAvatarClick} 
-                      sx={{ 
-                        ml: 2, 
-                        width: 44, 
+                    <IconButton
+                      onClick={handleAvatarClick}
+                      sx={{
+                        ml: 2,
+                        width: 44,
                         height: 44,
                         border: "none",
                         transition: "all 0.3s ease",
@@ -682,14 +686,14 @@ const NavBar = ({
                         }
                       }}
                     >
-                      <Avatar 
-                        {...stringAvatar(userInfo.username)} 
-                        sx={{ 
-                          width: 36, 
+                      <Avatar
+                        {...stringAvatar(userInfo.username)}
+                        sx={{
+                          width: 36,
                           height: 36,
                           bgcolor: 'primary.main',
                           color: 'white',
-                        }} 
+                        }}
                       />
                     </IconButton>
                   </Tooltip>
@@ -716,13 +720,13 @@ const NavBar = ({
                     }}
                   >
                     {getUserMenuItems().map((item, index) => (
-                      <MenuItem 
+                      <MenuItem
                         key={index}
                         component={item.path ? Link : undefined}
                         to={item.path}
                         onClick={item.action || handleMenuClose}
-                        sx={{ 
-                          py: 1.5, 
+                        sx={{
+                          py: 1.5,
                           px: 2,
                           borderRadius: 2,
                           mx: 1,
@@ -730,24 +734,24 @@ const NavBar = ({
                           transition: "all 0.2s ease",
                           "&:hover": {
                             bgcolor: alpha(
-                              item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main, 
+                              item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main,
                               0.1
                             )
                           }
                         }}
                       >
-                        <ListItemIcon sx={{ 
+                        <ListItemIcon sx={{
                           minWidth: 36,
                           color: item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main
                         }}>
                           {item.icon}
                         </ListItemIcon>
-                        <ListItemText 
-                          primary={item.label} 
-                          primaryTypographyProps={{ 
+                        <ListItemText
+                          primary={item.label}
+                          primaryTypographyProps={{
                             fontWeight: 600,
                             color: item.label === "Logout" ? theme.palette.error.main : 'inherit'
-                          }} 
+                          }}
                         />
                       </MenuItem>
                     ))}
@@ -767,7 +771,7 @@ const NavBar = ({
                           ml: { xs: 0.5, sm: 1 },
                           borderRadius: 3,
                           transition: "all 0.3s ease",
-                          "&:hover": { 
+                          "&:hover": {
                             bgcolor: alpha(theme.palette.primary.main, 0.1),
                             transform: "translateY(-2px)"
                           },
@@ -792,7 +796,7 @@ const NavBar = ({
                           ml: { xs: 0.5, sm: 1 },
                           borderRadius: 3,
                           transition: "all 0.3s ease",
-                          "&:hover": { 
+                          "&:hover": {
                             transform: "translateY(-2px)",
                             boxShadow: theme.shadows[4]
                           },
@@ -816,7 +820,7 @@ const NavBar = ({
                           ml: { xs: 0.5, sm: 1 },
                           borderRadius: 3,
                           transition: "all 0.3s ease",
-                          "&:hover": { 
+                          "&:hover": {
                             bgcolor: alpha(theme.palette.primary.main, 0.1),
                             transform: "translateY(-2px)"
                           },
@@ -837,24 +841,24 @@ const NavBar = ({
             </Box>
           )}
         </Toolbar>
-        
+
         {/* Drawer for mobile */}
-        {location.pathname !== "/admin/login"  && (
-        <Drawer
-          anchor="left"
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          PaperProps={{
-            sx: {
-              bgcolor: theme.palette.background.paper,
-              width: { xs: 280, sm: 320 },
-              height: '100%',
-              boxShadow: theme.shadows[10]
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
+        {location.pathname !== "/admin/login" && (
+          <Drawer
+            anchor="left"
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            PaperProps={{
+              sx: {
+                bgcolor: theme.palette.background.paper,
+                width: { xs: 280, sm: 320 },
+                height: '100%',
+                boxShadow: theme.shadows[10]
+              },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
         )}
       </AppBar>
     </Slide>

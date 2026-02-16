@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useAllProductsQuery, useDeleteProductMutation } from "../../redux/api/productApiSlice";
@@ -34,19 +34,70 @@ import {
   DeleteForever as DeleteForeverIcon,
   Inventory as InventoryIcon,
   Category as CategoryIcon,
-  AttachMoney as MoneyIcon
+  AttachMoney as MoneyIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
 } from "@mui/icons-material";
 import { FaSearch, FaFilter } from "react-icons/fa";
 import DocumentTitle from "react-document-title";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import useCurrency from "../../hooks/useCurrency";
+import { APP_NAME } from "../../redux/constants";
+
+const StatCard = ({ title, value, icon, color, description }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 2.5,
+      borderRadius: 4,
+      bgcolor: '#fff',
+      border: '1px solid #e2e8f0',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      }
+    }}
+  >
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+      <Avatar
+        sx={{
+          bgcolor: `${color}15`,
+          color: color,
+          width: 42,
+          height: 42,
+          borderRadius: 2.5,
+        }}
+      >
+        {icon}
+      </Avatar>
+    </Box>
+    <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
+      {title}
+    </Typography>
+    <Typography variant="h4" fontWeight={900} color="#1e293b" sx={{ mb: 1 }}>
+      {value}
+    </Typography>
+    {description && (
+      <Typography variant="caption" color="text.secondary">
+        {description}
+      </Typography>
+    )}
+  </Paper>
+);
 
 const AllProducts = () => {
   const { data: products = [], isLoading, isError, refetch } = useAllProductsQuery();
   const [deleteProduct] = useDeleteProductMutation();
   const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
-
+  const { format } = useCurrency();
+  console.log(products)
   // State management
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +106,34 @@ const AllProducts = () => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, product: null });
+
+  // Calculate inventory statistics
+  const inventoryStats = useMemo(() => {
+    if (!products || products.length === 0) return {
+      total: 0,
+      inStock: 0,
+      lowStock: 0,
+      outOfStock: 0
+    };
+
+    // Filter products correctly based on user role first
+    const ownProducts = userInfo?.role === "admin"
+      ? products
+      : products.filter(p => p.user === userInfo?._id || p.user?._id === userInfo?._id);
+
+    return ownProducts.reduce((stats, p) => {
+      stats.total += 1;
+      if (p.countInStock === 0) stats.outOfStock += 1;
+      else if (p.countInStock <= 10) stats.lowStock += 1;
+      else stats.inStock += 1;
+      return stats;
+    }, {
+      total: 0,
+      inStock: 0,
+      lowStock: 0,
+      outOfStock: 0
+    });
+  }, [products, userInfo]);
 
   // Listen for product changes
   useEffect(() => {
@@ -73,7 +152,7 @@ const AllProducts = () => {
 
     // Filter by user (seller/vendor only sees their own products)
     if (userInfo?.role !== "admin") {
-      filtered = filtered.filter((p) => p.user === userInfo._id);
+      filtered = filtered.filter((p) => p.user === userInfo?._id || p.user?._id === userInfo?._id);
     }
 
     // Apply search filter
@@ -101,12 +180,7 @@ const AllProducts = () => {
     setFilteredProducts(filtered);
   }, [products, userInfo, searchTerm, categoryFilter, statusFilter]);
 
-  // Refetch on focus
-  useEffect(() => {
-    const onFocus = () => refetch();
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [refetch]);
+
 
   // Dialog handlers
   const openDeleteDialog = (product) => {
@@ -134,7 +208,11 @@ const AllProducts = () => {
 
   // Format date
   const formatDate = (date) => {
-    return date ? format(new Date(date), 'MMM dd, yyyy') : 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
   };
 
   // Get unique categories for filter
@@ -165,7 +243,7 @@ const AllProducts = () => {
               {params.row.name}
             </Typography>
             <Typography variant="caption" color="textSecondary" display="block">
-              {params.row.brand || 'No brand'}
+              {typeof params.row.brand === 'object' ? params.row.brand?.name || 'No Brand' : params.row.brand || 'No Brand'}
             </Typography>
           </Box>
         </Box>
@@ -175,7 +253,7 @@ const AllProducts = () => {
       field: 'category',
       headerName: 'Category',
       width: 150,
-      valueGetter: (params) => params.value?.name || 'Uncategorized'
+      valueGetter: (value, row) => row.category?.name || 'Uncategorized'
     },
     {
       field: 'price',
@@ -204,7 +282,11 @@ const AllProducts = () => {
       field: 'createdAt',
       headerName: 'Created',
       width: 130,
-      valueGetter: (params) => formatDate(params.value)
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight={600}>
+          {formatDate(params.value)}
+        </Typography>
+      )
     },
     {
       field: 'actions',
@@ -224,7 +306,16 @@ const AllProducts = () => {
               <IconButton
                 size="small"
                 color="primary"
-                onClick={() => navigate(`/product/${params.row._id}`)}
+                onClick={() => {
+                  const viewPath = userInfo?.role === "vendor"
+                    ? `/vendor/product/details/${params.row._id}`
+                    : userInfo?.role === "admin"
+                      ? `/admin/product/details/${params.row._id}`
+                      : userInfo?.role === "seller"
+                        ? `/seller/product/details/${params.row._id}`
+                        : `/product/${params.row._id}`;
+                  navigate(viewPath);
+                }}
               >
                 <VisibilityIcon fontSize="small" />
               </IconButton>
@@ -234,7 +325,15 @@ const AllProducts = () => {
               <IconButton
                 size="small"
                 component={Link}
-                to={updatePath}
+                to={(() => {
+                  return userInfo?.role === "vendor"
+                    ? `/vendor/product/update/${params.row._id}`
+                    : userInfo?.role === "admin"
+                      ? `/admin/product/update/${params.row._id}`
+                      : userInfo?.role === "seller"
+                        ? `/seller/product/update/${params.row._id}`
+                        : `/product/${params.row._id}`; // Fallback, though edit shouldn't show
+                })()}
                 onClick={() => {
                   localStorage.setItem("productChanged", Date.now().toString());
                 }}
@@ -266,18 +365,18 @@ const AllProducts = () => {
       : "/admin/product/add";
 
   return (
-    <DocumentTitle title="Products | Nexus Mart">
+    <DocumentTitle title={`Products | ${APP_NAME}`}>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
         <Fade in>
           <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>
             {/* Header */}
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Box>
-                <Typography variant="h4" fontWeight={800} color="text.primary">
+                <Typography variant="h4" fontWeight={900} color="#1e293b">
                   Product Inventory
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Manage your product catalog and inventory
+                <Typography variant="body1" color="text.secondary">
+                  Manage your product catalog and monitor stock levels
                 </Typography>
               </Box>
               <Button
@@ -285,11 +384,64 @@ const AllProducts = () => {
                 to={addProductPath}
                 variant="contained"
                 startIcon={<AddIcon />}
-                sx={{ borderRadius: 2, fontWeight: 600 }}
+                sx={{
+                  borderRadius: 3,
+                  fontWeight: 800,
+                  bgcolor: '#6366f1',
+                  px: 4,
+                  py: 1.5,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)',
+                  "&:hover": {
+                    bgcolor: '#4f46e5',
+                    transform: "translateY(-2px)",
+                  },
+                  transition: 'all 0.2s',
+                }}
               >
-                Add Product
+                Create New Product
               </Button>
             </Box>
+
+            {/* Inventory Stats */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Total Products"
+                  value={inventoryStats.total}
+                  icon={<InventoryIcon />}
+                  color="#6366f1"
+                  description="All listed items"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="In Stock"
+                  value={inventoryStats.inStock}
+                  icon={<CheckCircleIcon />}
+                  color="#10b981"
+                  description="Available for purchase"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Low Stock"
+                  value={inventoryStats.lowStock}
+                  icon={<WarningIcon />}
+                  color="#f59e0b"
+                  description="Threshold: 10 units"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Out of Stock"
+                  value={inventoryStats.outOfStock}
+                  icon={<ErrorIcon />}
+                  color="#ef4444"
+                  description="Action required"
+                />
+              </Grid>
+            </Grid>
 
             {/* Filters */}
             <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>

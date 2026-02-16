@@ -44,6 +44,7 @@ import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import EditIcon from "@mui/icons-material/Edit";
+import { APP_NAME } from "../../redux/constants";
 
 const AddProduct = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -76,15 +77,15 @@ const AddProduct = () => {
     countInStock: "",
     images: [],
   });
-  
+
   // State for variant image uploads
   const [variantImageFiles, setVariantImageFiles] = useState([]);
-  
+
   // Currency state
   const [currency, setCurrency] = useState("USD");
   const [prices, setPrices] = useState({});
   const [convertedPrices, setConvertedPrices] = useState({});
-  
+
   // Additional product information
   const [warrantyPeriod, setWarrantyPeriod] = useState("");
   const [returnPolicy, setReturnPolicy] = useState("");
@@ -157,20 +158,20 @@ const AddProduct = () => {
       // Mock tax calculation for demonstration
       // In a real implementation, this would call the backend API
       const basePrice = parseFloat(price) || 0;
-      const taxRate = taxSettings.taxCategory === "food" ? 0 : 
-                     taxSettings.taxCategory === "clothing" ? 5 : 
-                     taxSettings.taxCategory === "electronics" ? 10 : 8;
-      
+      const taxRate = taxSettings.taxCategory === "food" ? 0 :
+        taxSettings.taxCategory === "clothing" ? 5 :
+          taxSettings.taxCategory === "electronics" ? 10 : 8;
+
       const taxAmount = taxSettings.taxExempt ? 0 : (basePrice * taxRate) / 100;
       const totalPrice = basePrice + taxAmount;
-      
+
       setTaxCalculation({
         basePrice,
         taxAmount,
         taxRate,
         totalPrice,
       });
-      
+
       setTaxBreakdown({
         jurisdiction: "Default Tax Region",
         taxType: "Sales Tax",
@@ -192,7 +193,7 @@ const AddProduct = () => {
       if (currency && currencies.length > 0 && price) {
         // Get all enabled currencies for conversion
         const enabledCurrencies = currencies.filter(c => c.isEnabled);
-        
+
         // Convert to all enabled currencies
         const conversionPromises = enabledCurrencies.map(async (targetCurrency) => {
           if (targetCurrency.code !== currency) {
@@ -202,7 +203,7 @@ const AddProduct = () => {
                 to: targetCurrency.code,
                 amount: parseFloat(price)
               }).unwrap();
-              
+
               return {
                 code: targetCurrency.code,
                 convertedAmount: result.convertedAmount,
@@ -220,10 +221,10 @@ const AddProduct = () => {
           }
           return null;
         });
-        
+
         // Wait for all conversions
         const results = await Promise.all(conversionPromises);
-        
+
         // Filter out null results and create prices object
         const newPrices = {};
         results.forEach(result => {
@@ -231,11 +232,11 @@ const AddProduct = () => {
             newPrices[result.code] = result.convertedAmount;
           }
         });
-        
+
         setPrices(newPrices);
       }
     };
-    
+
     updateConvertedPrices();
   }, [currency, price, currencies, convertCurrency]);
 
@@ -245,13 +246,13 @@ const AddProduct = () => {
       // For each converted price, calculate tax
       const convertedPricesWithTax = {};
       Object.entries(prices).forEach(([currencyCode, convertedPrice]) => {
-        const taxRate = taxSettings.taxCategory === "food" ? 0 : 
-                       taxSettings.taxCategory === "clothing" ? 5 : 
-                       taxSettings.taxCategory === "electronics" ? 10 : 8;
-        
+        const taxRate = taxSettings.taxCategory === "food" ? 0 :
+          taxSettings.taxCategory === "clothing" ? 5 :
+            taxSettings.taxCategory === "electronics" ? 10 : 8;
+
         const taxAmount = taxSettings.taxExempt ? 0 : (convertedPrice * taxRate) / 100;
         const totalPrice = convertedPrice + taxAmount;
-        
+
         convertedPricesWithTax[currencyCode] = {
           basePrice: convertedPrice,
           taxAmount,
@@ -259,7 +260,7 @@ const AddProduct = () => {
           totalPrice
         };
       });
-      
+
       setConvertedPrices(convertedPricesWithTax);
     } else if (Object.keys(prices).length > 0) {
       // If not taxable, just show base prices
@@ -272,7 +273,7 @@ const AddProduct = () => {
           totalPrice: convertedPrice
         };
       });
-      
+
       setConvertedPrices(convertedPricesWithoutTax);
     }
   }, [prices, taxSettings]);
@@ -314,28 +315,28 @@ const AddProduct = () => {
       toast.error("No files selected.");
       return;
     }
-    
+
     if (files.length > 5) {
       toast.error("You can upload a maximum of 5 images per variant.");
       return;
     }
-    
+
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append("image", files[i]);
     }
-    
+
     try {
       const res = await uploadProductImage(formData).unwrap();
       toast.success(res.message);
-      
+
       if (variantIndex !== null) {
         // Update specific variant
         const updatedVariants = [...variants];
         const variantImages = updatedVariants[variantIndex].images || [];
         updatedVariants[variantIndex].images = [...variantImages, ...res.images];
         setVariants(updatedVariants);
-        
+
         // Update variant image files state
         const updatedVariantImageFiles = [...variantImageFiles];
         if (!updatedVariantImageFiles[variantIndex]) {
@@ -362,18 +363,18 @@ const AddProduct = () => {
       if (imagePath && imagePath.startsWith('/uploads')) {
         await deleteProductImage({ imagePath });
       }
-      
+
       if (variantIndex !== null) {
         // Update specific variant
         const updatedVariants = [...variants];
         const variantImages = updatedVariants[variantIndex].images || [];
         updatedVariants[variantIndex].images = variantImages.filter(img => img !== imagePath);
         setVariants(updatedVariants);
-        
+
         // Update variant image files state
         const updatedVariantImageFiles = [...variantImageFiles];
         if (updatedVariantImageFiles[variantIndex]) {
-          updatedVariantImageFiles[variantIndex] = updatedVariantImageFiles[variantIndex].filter((_, i) => 
+          updatedVariantImageFiles[variantIndex] = updatedVariantImageFiles[variantIndex].filter((_, i) =>
             updatedVariants[variantIndex].images[i] !== imagePath
           );
         }
@@ -385,7 +386,7 @@ const AddProduct = () => {
           images: prev.images.filter(img => img !== imagePath)
         }));
       }
-      
+
       toast.success("Variant image deleted successfully");
     } catch (err) {
       toast.error("Failed to delete variant image");
@@ -397,7 +398,7 @@ const AddProduct = () => {
       const updatedVariants = [...variants];
       const variantImages = [...(updatedVariants[variantIndex].images || [])];
       const targetIndex = imageIndex + direction;
-      
+
       if (targetIndex >= 0 && targetIndex < variantImages.length) {
         [variantImages[imageIndex], variantImages[targetIndex]] = [
           variantImages[targetIndex],
@@ -405,7 +406,7 @@ const AddProduct = () => {
         ];
         updatedVariants[variantIndex].images = variantImages;
         setVariants(updatedVariants);
-        
+
         // Update variant image files state
         const updatedVariantImageFiles = [...variantImageFiles];
         if (updatedVariantImageFiles[variantIndex]) {
@@ -480,13 +481,13 @@ const AddProduct = () => {
       toast.error("Please fill at least one field for the variant.");
       return;
     }
-    
+
     // Ensure images array exists
     const variantWithImages = { ...variantForm };
     if (!variantWithImages.images) {
       variantWithImages.images = [];
     }
-    
+
     if (editVariantIndex !== null) {
       const updated = [...variants];
       updated[editVariantIndex] = variantWithImages;
@@ -611,23 +612,23 @@ const AddProduct = () => {
         formData.append(`media[${i}][url]`, url);
       });
       formData.append("countInStock", Number(stock));
-      
+
       // Add shipping details
       formData.append("shippingWeight", shippingDetails.weight);
       formData.append("shippingLength", shippingDetails.dimensions.length);
       formData.append("shippingWidth", shippingDetails.dimensions.width);
       formData.append("shippingHeight", shippingDetails.dimensions.height);
       formData.append("shippingClass", shippingDetails.shippingClass);
-      
+
       // Add tax settings
       formData.append("taxProductCode", taxSettings.taxCode);
       formData.append("isTaxable", taxSettings.isTaxable);
       formData.append("taxCategory", taxSettings.taxCategory);
       formData.append("taxExempt", taxSettings.taxExempt);
-      
+
       // Add vendor reference
       formData.append("user", userInfo._id);
-      
+
       await createProduct(formData).unwrap();
       toast.success(`${name} created successfully`);
       // Signal that a product has been created
@@ -645,19 +646,29 @@ const AddProduct = () => {
     return currency ? currency.symbol : '$';
   };
 
-   return (
-    <Box sx={{ maxWidth: "100vw", px: { xs: 1, md: 4 }, py: 2 }}>
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: "#f8fafc", py: 8, px: { xs: 2, md: 6 } }}>
       <Paper
-        elevation={3}
-        sx={{ bgcolor: "#151515", color: "#fff", p: 3, mt: 2, mb: 2, borderRadius: 3 }}
+        elevation={0}
+        sx={{
+          p: { xs: 3, md: 6 },
+          borderRadius: 6,
+          border: '1px solid #e2e8f0',
+          bgcolor: "#fff"
+        }}
       >
-        <Typography variant="h5" sx={{ mb: 3 }}>
-          Add New Product
-        </Typography>
-        
+        <Box sx={{ mb: 5 }}>
+          <Typography variant="h4" fontWeight={900} color="#1e293b">
+            Add New Product
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Fill in the details to list a new product on {APP_NAME}
+          </Typography>
+        </Box>
+
         {/* Tax Calculation Preview */}
         {price && (
-          <Card sx={{ mb: 3, bgcolor: "#1e1e1e" }}>
+          <Card elevation={0} sx={{ mb: 5, bgcolor: "#f1f5f9", borderRadius: 4, border: '1px solid #e2e8f0' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Tax Calculation Preview
@@ -681,16 +692,16 @@ const AddProduct = () => {
                     {getCurrencySymbol(currency)}{taxCalculation.totalPrice.toFixed(2)}
                   </Typography>
                 </Box>
-                <Button 
-                  size="small" 
-                  variant="outlined" 
+                <Button
+                  size="small"
+                  variant="outlined"
                   onClick={() => setShowTaxDetails(!showTaxDetails)}
                   sx={{ ml: "auto" }}
                 >
                   {showTaxDetails ? "Hide Details" : "Show Details"}
                 </Button>
               </Stack>
-              
+
               {showTaxDetails && taxBreakdown && (
                 <Box sx={{ mt: 2, p: 2, bgcolor: "#2a2a2a", borderRadius: 1 }}>
                   <Typography variant="subtitle2" gutterBottom>
@@ -713,7 +724,7 @@ const AddProduct = () => {
                   ))}
                 </Box>
               )}
-              
+
               {/* Converted Prices with Tax */}
               {Object.keys(convertedPrices).length > 0 && (
                 <Box sx={{ mt: 2, p: 2, bgcolor: "#2a2a2a", borderRadius: 1 }}>
@@ -727,10 +738,10 @@ const AddProduct = () => {
                           {code} ({getCurrencySymbol(code)}):
                         </Typography>
                         <Typography variant="body2">
-                          {getCurrencySymbol(code)}{priceInfo.totalPrice.toFixed(2)} 
+                          {getCurrencySymbol(code)}{priceInfo.totalPrice.toFixed(2)}
                           {priceInfo.taxAmount > 0 && (
                             <span style={{ fontSize: '0.8em', color: '#aaa' }}>
-                              {" "}(Base: {getCurrencySymbol(code)}{priceInfo.basePrice.toFixed(2)}, 
+                              {" "}(Base: {getCurrencySymbol(code)}{priceInfo.basePrice.toFixed(2)},
                               Tax: {getCurrencySymbol(code)}{priceInfo.taxAmount.toFixed(2)})
                             </span>
                           )}
@@ -743,7 +754,7 @@ const AddProduct = () => {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Product Images */}
         {images.length > 0 && (
           <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: "wrap" }}>
@@ -770,21 +781,27 @@ const AddProduct = () => {
           </Stack>
         )}
         <Button
-          variant="outlined"
+          variant="dashed"
           component="label"
           fullWidth
           sx={{
-            color: "#fff",
-            borderColor: "#fff",
-            bgcolor: "#222",
-            mb: 3,
-            py: 3,
-            fontWeight: "bold",
-            borderRadius: 2,
+            color: "#6366f1",
+            borderColor: "#6366f1",
+            borderStyle: 'dashed',
+            borderWidth: 2,
+            bgcolor: "#f5f3ff",
+            mb: 5,
+            py: 4,
+            fontWeight: 700,
+            borderRadius: 4,
+            '&:hover': {
+              bgcolor: "#ede9fe",
+              borderColor: "#4f46e5",
+            }
           }}
           startIcon={<AddPhotoAlternateIcon />}
         >
-          Upload Images (Max 5)
+          Click to Upload Product Images (Max 5)
           <input
             type="file"
             accept="image/*"
@@ -793,7 +810,7 @@ const AddProduct = () => {
             onChange={uploadFileHandler}
           />
         </Button>
-        
+
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -811,8 +828,8 @@ const AddProduct = () => {
                   fullWidth
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -828,7 +845,7 @@ const AddProduct = () => {
                   }}
                   required
                 />
-          
+
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: "black" }}>Currency *</InputLabel>
                   <Select
@@ -851,8 +868,8 @@ const AddProduct = () => {
                   fullWidth
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -877,8 +894,8 @@ const AddProduct = () => {
                   fullWidth
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -901,8 +918,8 @@ const AddProduct = () => {
                   fullWidth
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  sx={{ 
-                    textarea: { color: "black" }, 
+                  sx={{
+                    textarea: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -924,8 +941,8 @@ const AddProduct = () => {
                   fullWidth
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -947,8 +964,7 @@ const AddProduct = () => {
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     sx={{ color: "black" }}
-                    label="Brand *"
-                    required
+                    label="Brand "
                   >
                     {brands.map((b) => (
                       <MenuItem key={b._id} value={b._id}>
@@ -976,7 +992,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Tax Settings */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -987,13 +1003,13 @@ const AddProduct = () => {
                 <Alert severity="info">
                   Configure tax settings for this product. Tax will be automatically calculated based on your location and product category.
                 </Alert>
-                
+
                 <FormGroup>
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={taxSettings.isTaxable}
-                        onChange={(e) => setTaxSettings({...taxSettings, isTaxable: e.target.checked})}
+                        onChange={(e) => setTaxSettings({ ...taxSettings, isTaxable: e.target.checked })}
                         sx={{ color: "black" }}
                       />
                     }
@@ -1003,19 +1019,19 @@ const AddProduct = () => {
                     control={
                       <Checkbox
                         checked={taxSettings.taxExempt}
-                        onChange={(e) => setTaxSettings({...taxSettings, taxExempt: e.target.checked})}
+                        onChange={(e) => setTaxSettings({ ...taxSettings, taxExempt: e.target.checked })}
                         sx={{ color: "black" }}
                       />
                     }
                     label="Product is tax exempt"
                   />
                 </FormGroup>
-                
+
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: "black" }}>Tax Category</InputLabel>
                   <Select
                     value={taxSettings.taxCategory}
-                    onChange={(e) => setTaxSettings({...taxSettings, taxCategory: e.target.value})}
+                    onChange={(e) => setTaxSettings({ ...taxSettings, taxCategory: e.target.value })}
                     sx={{ color: "black" }}
                     label="Tax Category"
                     disabled={taxSettings.taxExempt}
@@ -1027,14 +1043,14 @@ const AddProduct = () => {
                     ))}
                   </Select>
                 </FormControl>
-                
+
                 <TextField
                   label="Tax Product Code (Optional)"
                   fullWidth
                   value={taxSettings.taxCode}
-                  onChange={(e) => setTaxSettings({...taxSettings, taxCode: e.target.value})}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  onChange={(e) => setTaxSettings({ ...taxSettings, taxCode: e.target.value })}
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -1053,7 +1069,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Shipping Details */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -1067,11 +1083,11 @@ const AddProduct = () => {
                   fullWidth
                   value={shippingDetails.weight}
                   onChange={(e) => setShippingDetails({
-                    ...shippingDetails, 
+                    ...shippingDetails,
                     weight: e.target.value
                   })}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -1086,7 +1102,7 @@ const AddProduct = () => {
                     },
                   }}
                 />
-                
+
                 <Typography variant="subtitle1">Dimensions (cm)</Typography>
                 <Stack direction="row" spacing={2}>
                   <TextField
@@ -1095,14 +1111,14 @@ const AddProduct = () => {
                     fullWidth
                     value={shippingDetails.dimensions.length}
                     onChange={(e) => setShippingDetails({
-                      ...shippingDetails, 
+                      ...shippingDetails,
                       dimensions: {
                         ...shippingDetails.dimensions,
                         length: e.target.value
                       }
                     })}
-                    sx={{ 
-                      input: { color: "black" }, 
+                    sx={{
+                      input: { color: "black" },
                       label: { color: "#bbb" },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -1123,14 +1139,14 @@ const AddProduct = () => {
                     fullWidth
                     value={shippingDetails.dimensions.width}
                     onChange={(e) => setShippingDetails({
-                      ...shippingDetails, 
+                      ...shippingDetails,
                       dimensions: {
                         ...shippingDetails.dimensions,
                         width: e.target.value
                       }
                     })}
-                    sx={{ 
-                      input: { color: "black" }, 
+                    sx={{
+                      input: { color: "black" },
                       label: { color: "#bbb" },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -1151,14 +1167,14 @@ const AddProduct = () => {
                     fullWidth
                     value={shippingDetails.dimensions.height}
                     onChange={(e) => setShippingDetails({
-                      ...shippingDetails, 
+                      ...shippingDetails,
                       dimensions: {
                         ...shippingDetails.dimensions,
                         height: e.target.value
                       }
                     })}
-                    sx={{ 
-                      input: { color: "black" }, 
+                    sx={{
+                      input: { color: "black" },
                       label: { color: "#bbb" },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -1174,13 +1190,13 @@ const AddProduct = () => {
                     }}
                   />
                 </Stack>
-                
+
                 <FormControl fullWidth>
                   <InputLabel sx={{ color: "black" }}>Shipping Class</InputLabel>
                   <Select
                     value={shippingDetails.shippingClass}
                     onChange={(e) => setShippingDetails({
-                      ...shippingDetails, 
+                      ...shippingDetails,
                       shippingClass: e.target.value
                     })}
                     sx={{ color: "black" }}
@@ -1196,7 +1212,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Product Tags */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -1208,8 +1224,8 @@ const AddProduct = () => {
                   label="Add Tags (Enter to Add) *"
                   fullWidth
                   onKeyDown={handleAddTag}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -1238,7 +1254,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Product Variants */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -1247,7 +1263,7 @@ const AddProduct = () => {
             <AccordionDetails>
               <Stack spacing={3}>
                 <Typography variant="h6">Add New Variant</Typography>
-                
+
                 {/* Variant Images Upload Section */}
                 <Box sx={{ p: 2, border: "1px dashed #ccc", borderRadius: 2, bgcolor: "#f9f9f9" }}>
                   <Typography variant="subtitle1" gutterBottom>
@@ -1277,7 +1293,7 @@ const AddProduct = () => {
                       onChange={(e) => uploadVariantImageHandler(e, null)}
                     />
                   </Button>
-                  
+
                   {/* Display variant images preview */}
                   {variantForm.images && variantForm.images.length > 0 && (
                     <Box sx={{ mt: 2 }}>
@@ -1293,24 +1309,24 @@ const AddProduct = () => {
                               style={{ height: 100, borderRadius: 8, border: "1px solid #ddd" }}
                             />
                             <Stack direction="row" spacing={0} sx={{ mt: 1 }}>
-                              <IconButton 
-                                size="small" 
+                              <IconButton
+                                size="small"
                                 onClick={() => moveVariantImage(null, imgIndex, -1)}
                                 disabled={imgIndex === 0}
                                 sx={{ minWidth: "30px", minHeight: "30px" }}
                               >
                                 <ArrowUpwardIcon fontSize="small" />
                               </IconButton>
-                              <IconButton 
-                                size="small" 
+                              <IconButton
+                                size="small"
                                 onClick={() => moveVariantImage(null, imgIndex, 1)}
                                 disabled={imgIndex === variantForm.images.length - 1}
                                 sx={{ minWidth: "30px", minHeight: "30px" }}
                               >
                                 <ArrowDownwardIcon fontSize="small" />
                               </IconButton>
-                              <IconButton 
-                                size="small" 
+                              <IconButton
+                                size="small"
                                 onClick={() => deleteVariantImageHandler(url, null)}
                                 sx={{ minWidth: "30px", minHeight: "30px" }}
                               >
@@ -1323,14 +1339,14 @@ const AddProduct = () => {
                     </Box>
                   )}
                 </Box>
-                
+
                 {/* Variant Properties */}
                 <Box sx={{ p: 2, border: "1px solid #eee", borderRadius: 2, bgcolor: "#fafafa" }}>
                   <Typography variant="subtitle1" gutterBottom>
                     Variant Properties
                   </Typography>
                   <Stack direction="row" spacing={2} flexWrap="wrap">
-                    {[ "color", "size", "storage", "price", "countInStock"].map(
+                    {["color", "size", "storage", "price", "countInStock"].map(
                       (field) => (
                         <TextField
                           key={field}
@@ -1339,8 +1355,8 @@ const AddProduct = () => {
                           onChange={(e) =>
                             setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
                           }
-                          sx={{ 
-                            input: { color: "black" }, 
+                          sx={{
+                            input: { color: "black" },
                             label: { color: "#666" },
                             '& .MuiOutlinedInput-root': {
                               '& fieldset': {
@@ -1360,7 +1376,7 @@ const AddProduct = () => {
                       )
                     )}
                   </Stack>
-                  
+
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     <Button
                       onClick={handleAddOrUpdateVariant}
@@ -1392,7 +1408,7 @@ const AddProduct = () => {
                     )}
                   </Stack>
                 </Box>
-                
+
                 {/* Existing Variants List */}
                 {variants.length > 0 && (
                   <Box sx={{ mt: 3 }}>
@@ -1425,7 +1441,7 @@ const AddProduct = () => {
                               </IconButton>
                             </Box>
                           </Box>
-                          
+
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
                             {v.color && <Chip label={`Color: ${v.color}`} size="small" sx={{ bgcolor: "#e3f2fd" }} />}
                             {v.size && <Chip label={`Size: ${v.size}`} size="small" sx={{ bgcolor: "#e8f5e9" }} />}
@@ -1433,13 +1449,13 @@ const AddProduct = () => {
                             {v.price && <Chip label={`Price: $${v.price}`} size="small" sx={{ bgcolor: "#fce4ec" }} />}
                             {v.countInStock && <Chip label={`Stock: ${v.countInStock}`} size="small" sx={{ bgcolor: "#f3e5f5" }} />}
                           </Box>
-                          
+
                           {/* Variant images section */}
                           <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle2" gutterBottom>
                               Variant Images:
                             </Typography>
-                            
+
                             {/* Upload button for existing variant */}
                             <Button
                               variant="outlined"
@@ -1456,7 +1472,7 @@ const AddProduct = () => {
                                 onChange={(e) => uploadVariantImageHandler(e, i)}
                               />
                             </Button>
-                            
+
                             {/* Display variant images */}
                             {v.images && v.images.length > 0 ? (
                               <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
@@ -1468,24 +1484,24 @@ const AddProduct = () => {
                                       style={{ height: 80, borderRadius: 4, border: "1px solid #ddd" }}
                                     />
                                     <Stack direction="row" spacing={0} sx={{ mt: 0.5 }}>
-                                      <IconButton 
-                                        size="small" 
+                                      <IconButton
+                                        size="small"
                                         onClick={() => moveVariantImage(i, imgIndex, -1)}
                                         disabled={imgIndex === 0}
                                         sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
                                       >
                                         <ArrowUpwardIcon fontSize="small" />
                                       </IconButton>
-                                      <IconButton 
-                                        size="small" 
+                                      <IconButton
+                                        size="small"
                                         onClick={() => moveVariantImage(i, imgIndex, 1)}
                                         disabled={imgIndex === v.images.length - 1}
                                         sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
                                       >
                                         <ArrowDownwardIcon fontSize="small" />
                                       </IconButton>
-                                      <IconButton 
-                                        size="small" 
+                                      <IconButton
+                                        size="small"
                                         onClick={() => deleteVariantImageHandler(url, i)}
                                         sx={{ minWidth: "25px", minHeight: "25px", padding: "2px" }}
                                       >
@@ -1509,7 +1525,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Product Specifications */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -1522,8 +1538,8 @@ const AddProduct = () => {
                     label="Key"
                     value={specKey}
                     onChange={(e) => setSpecKey(e.target.value)}
-                    sx={{ 
-                      input: { color: "black" }, 
+                    sx={{
+                      input: { color: "black" },
                       label: { color: "#bbb" },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -1542,8 +1558,8 @@ const AddProduct = () => {
                     label="Value"
                     value={specValue}
                     onChange={(e) => setSpecValue(e.target.value)}
-                    sx={{ 
-                      input: { color: "black" }, 
+                    sx={{
+                      input: { color: "black" },
                       label: { color: "#bbb" },
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -1606,7 +1622,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Additional Information */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}>
@@ -1619,8 +1635,8 @@ const AddProduct = () => {
                   fullWidth
                   value={warrantyPeriod}
                   onChange={(e) => setWarrantyPeriod(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -1641,8 +1657,8 @@ const AddProduct = () => {
                   fullWidth
                   value={returnPolicy}
                   onChange={(e) => setReturnPolicy(e.target.value)}
-                  sx={{ 
-                    input: { color: "black" }, 
+                  sx={{
+                    input: { color: "black" },
                     label: { color: "#bbb" },
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': {
@@ -1661,7 +1677,7 @@ const AddProduct = () => {
               </Stack>
             </AccordionDetails>
           </Accordion>
-          
+
           {/* Submit Button */}
           <Button
             type="submit"

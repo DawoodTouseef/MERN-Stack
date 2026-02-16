@@ -52,6 +52,7 @@ const orderSchema = mongoose.Schema({
   taxPrice: { type: Number, required: true, default: 0.0 },
   shippingPrice: { type: Number, required: true, default: 0.0 },
   totalPrice: { type: Number, required: true, default: 0.0 },
+  currency: { type: String, required: true, default: "USD" },
 
   // Financial split
   vendorEarnings: { type: Number, default: 0.0 },
@@ -176,6 +177,7 @@ orderSchema.index({ createdAt: -1 });
 orderSchema.index({ 'orderItems.product': 1 });
 orderSchema.index({ vendor: 1, orderStatus: 1 }); // Optimized for vendor dashboard
 orderSchema.index({ parentOrder: 1 });
+orderSchema.index({ currency: 1 });
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

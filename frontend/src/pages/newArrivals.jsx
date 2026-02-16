@@ -18,6 +18,7 @@ import {
 import { useState, useEffect } from "react";
 import { NewReleases, LocalFireDepartment, Star } from "@mui/icons-material";
 import { useGetNewProductsQuery } from "../redux/api/productApiSlice";
+import { APP_NAME } from "../redux/constants";
 
 const NewArrivals = () => {
   const { data: products = [], isLoading, isError, error } = useGetNewProductsQuery();
@@ -59,7 +60,7 @@ const NewArrivals = () => {
             New Arrivals
           </Typography>
         </Box>
-        
+
         <Typography
           variant="subtitle1"
           sx={{ color: "#6366f1", mb: 4 }}
@@ -69,7 +70,7 @@ const NewArrivals = () => {
 
         <Alert severity="info" sx={{ mb: 4 }}>
           <Typography variant="body1">
-            <strong>Fresh Picks:</strong> These items just arrived and are creating a buzz! 
+            <strong>Fresh Picks:</strong> These items just arrived and are creating a buzz!
             Be among the first to own these exciting new products.
           </Typography>
         </Alert>
@@ -100,10 +101,10 @@ const NewArrivals = () => {
           <Grid container spacing={4}>
             {products.map((product) => (
               <Grid item xs={12} sm={6} md={4} key={product._id}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
                     flexDirection: 'column',
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                     '&:hover': {
@@ -124,35 +125,35 @@ const NewArrivals = () => {
                         {product.name}
                       </Typography>
                       <Box>
-                        <Chip 
-                          icon={<NewReleases />} 
-                          label="New" 
-                          color="primary" 
-                          size="small" 
+                        <Chip
+                          icon={<NewReleases />}
+                          label="New"
+                          color="primary"
+                          size="small"
                           sx={{ mb: 0.5 }}
                         />
                         {product.rating >= 4.5 && (
-                          <Chip 
-                            icon={<LocalFireDepartment />} 
-                            label="Trending" 
-                            color="error" 
-                            size="small" 
+                          <Chip
+                            icon={<LocalFireDepartment />}
+                            label="Trending"
+                            color="error"
+                            size="small"
                           />
                         )}
                       </Box>
                     </Box>
-                    
+
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {product.description}
                     </Typography>
-                    
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <Rating value={product.rating} precision={0.5} size="small" readOnly />
                       <Typography variant="body2" color="text.secondary">
                         {product.rating} ({product.numReviews})
                       </Typography>
                     </Box>
-                    
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <Typography variant="h6" color="primary.main" fontWeight="bold">
                         ${product.price?.toFixed(2)}
@@ -162,23 +163,23 @@ const NewArrivals = () => {
                           <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
                             ${product.pricing.compareAtPrice.toFixed(2)}
                           </Typography>
-                          <Chip 
-                            label={`${Math.round((1 - product.price / product.pricing.compareAtPrice) * 100)}% OFF`} 
-                            size="small" 
-                            color="success" 
+                          <Chip
+                            label={`${Math.round((1 - product.price / product.pricing.compareAtPrice) * 100)}% OFF`}
+                            size="small"
+                            color="success"
                           />
                         </>
                       )}
                     </Box>
-                    
+
                     <Chip label={product.category?.name || "Uncategorized"} variant="outlined" size="small" />
                   </CardContent>
                   <CardActions sx={{ mt: 'auto', p: 2, pt: 0 }}>
-                    <Button 
-                      size="small" 
-                      variant="contained" 
+                    <Button
+                      size="small"
+                      variant="contained"
                       fullWidth
-                      sx={{ 
+                      sx={{
                         fontWeight: 'bold',
                         borderRadius: 2,
                         py: 1
@@ -202,12 +203,12 @@ const NewArrivals = () => {
           <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
             Subscribe to our newsletter and be the first to know about new products and exclusive offers
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             size="large"
-            sx={{ 
-              px: 4, 
-              py: 1.5, 
+            sx={{
+              px: 4,
+              py: 1.5,
               fontWeight: 'bold',
               borderRadius: 3,
               bgcolor: "primary.main",
@@ -223,12 +224,12 @@ const NewArrivals = () => {
             About Our New Arrivals
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            At Nexus Mart, we're constantly updating our inventory with the latest and greatest products across all categories. 
+            At {APP_NAME}, we're constantly updating our inventory with the latest and greatest products across all categories.
             Our team carefully selects new items based on quality, innovation, and customer demand.
           </Typography>
           <Typography variant="body1">
-            For questions about any of our new arrivals or to request a specific product, please contact our customer support team at 
-            <Link href="mailto:support@nexusmart.com"> support@nexusmart.com</Link>.
+            For questions about any of our new arrivals or to request a specific product, please contact our customer support team at
+            <Link href={`mailto:support@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}> support@nexusmart.com</Link>.
           </Typography>
         </Box>
       </Paper>

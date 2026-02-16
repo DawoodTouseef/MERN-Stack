@@ -1,7 +1,12 @@
+import Order from "../models/orderModel.js";
+import ParentOrder from "../models/parentOrderModel.js";
+import Shipment from "../models/courierModel.js";
 import Organization from "../models/organizationModel.js";
+import Product from "../models/productModel.js";
 import taxServiceManager from "../services/thirdPartyTaxService.js";
 import PaymentService from "../services/paymentService.js";
 import logisticsService from "../services/logisticsService.js";
+import notificationManager from "../services/notificationService.js";
 import { findVariantById, hasSufficientStock } from "../utils/variantUtils.js";
 import { calculatePlatformFee, distributeTaxAndShipping } from "../utils/orderUtils.js";
 
@@ -15,7 +20,7 @@ function generateOrderNumber() {
 }
 const createOrder = async (req, res) => {
   try {
-    const { orderItems, shippingAddress, paymentMethod, notes, taxPrice, shippingPrice } = req.body;
+    const { orderItems, shippingAddress, paymentMethod, notes, taxPrice, shippingPrice, currency } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       return res.status(400).json({ error: "No order items provided" });
@@ -145,6 +150,7 @@ const createOrder = async (req, res) => {
       totalPrice: grandTotal,
       totalTaxPrice: totalTax,
       totalShippingPrice: totalShipping,
+      currency: currency || 'USD',
       isPaid: false
     });
 
@@ -184,6 +190,7 @@ const createOrder = async (req, res) => {
         taxPrice: allocatedTax,
         shippingPrice: allocatedShipping,
         totalPrice: subTotal,
+        currency: currency || 'USD',
         vendorEarnings: earnings,
         platformFee: fee,
         isPaid: false
@@ -215,7 +222,7 @@ const createOrder = async (req, res) => {
       try {
         paymentIntent = await paymentService.createPaymentIntent({
           amount: grandTotal,
-          currency: 'USD', // Should be dynamic
+          currency: currency || 'USD', // Now dynamic
           gateway: paymentMethod.toLowerCase(), // Frontend sends "Razorpay", "Stripe", etc.
           paymentMethod: 'card', // Should be dynamic
           orderId: savedParent._id,
@@ -587,11 +594,12 @@ const getOrderTracking = async (req, res) => {
 
     // Get shipment details if available
     let shipmentDetails = null;
-    if (order.tracking?.trackingNumber) {
-      shipmentDetails = await Shipment.findOne({
-        trackingNumber: order.tracking.trackingNumber
-      }).populate('courier', 'name displayName code logo');
-    }
+    // TODO: Implement Shipment model and uncomment this code
+    // if (order.tracking?.trackingNumber) {
+    //   shipmentDetails = await Shipment.findOne({
+    //     trackingNumber: order.tracking.trackingNumber
+    //   }).populate('courier', 'name displayName code logo');
+    // }
 
     const trackingInfo = {
       orderNumber: order.orderNumber,
@@ -878,6 +886,155 @@ const submitOrderFeedback = async (req, res) => {
   }
 };
 
+// @desc    Cancel order (Customer only, for pending orders)
+// @route   PUT /api/orders/:id/cancel
+// @access  Private (Customer)
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Check if user owns the order
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized to cancel this order" });
+    }
+
+    // Only allow cancellation of pending/placed orders
+    if (!['Placed', 'Confirmed'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        error: `Cannot cancel order with status: ${order.orderStatus}. Only pending orders can be cancelled.`
+      });
+    }
+
+    // Restore stock for cancelled items
+    for (const item of order.orderItems) {
+      if (item.variantId) {
+        await Product.updateOne(
+          { _id: item.product, "variants._id": item.variantId },
+          { $inc: { "variants.$.countInStock": item.qty } }
+        );
+      } else {
+        await Product.updateOne(
+          { _id: item.product },
+          { $inc: { countInStock: item.qty } }
+        );
+      }
+    }
+
+    // Update order status
+    order.orderStatus = "Cancelled";
+    order.cancelledAt = new Date();
+    order.cancellationReason = req.body.reason || "Customer requested cancellation";
+
+    // Add tracking event
+    if (!order.tracking) {
+      order.tracking = { events: [] };
+    }
+    order.tracking.events.push({
+      timestamp: new Date(),
+      status: 'Cancelled',
+      description: order.cancellationReason,
+      isSystemGenerated: false,
+      updatedBy: req.user._id
+    });
+
+    await order.save();
+
+    // Send cancellation notification
+    try {
+      await notificationManager.sendOrderNotification(order._id, 'Cancelled', {
+        reason: order.cancellationReason
+      });
+    } catch (notifError) {
+      console.error('Notification failed:', notifError.message);
+    }
+
+    res.json({
+      message: "Order cancelled successfully",
+      order
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// @desc    Get all orders (Admin only)
+// @route   GET /api/orders/admin
+// @access  Private (Admin)
+const getAdminOrders = async (req, res) => {
+  try {
+    const {
+      status,
+      startDate,
+      endDate,
+      vendor,
+      customer,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const filter = {};
+
+    if (status) filter.orderStatus = status;
+    if (vendor) filter.vendor = vendor;
+    if (customer) filter.user = customer;
+
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
+        .populate('user', 'username email')
+        .populate('vendor', 'name')
+        .populate('shippingAddress')
+        .sort(sortOptions)
+        .limit(parseInt(limit))
+        .skip(skip),
+      Order.countDocuments(filter)
+    ]);
+
+    // Calculate summary statistics
+    const stats = await Order.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalPrice' },
+          averageOrderValue: { $avg: '$totalPrice' },
+          totalOrders: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.json({
+      orders,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      },
+      stats: stats[0] || { totalRevenue: 0, averageOrderValue: 0, totalOrders: 0 }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export {
   createOrder,
   getAllOrders,
@@ -898,5 +1055,8 @@ export {
   updateDeliveryPreferences,
   getOrdersWithFilters,
   submitOrderFeedback,
-  getVendorOrders
+  getVendorOrders,
+  // New role-based functions
+  cancelOrder,
+  getAdminOrders
 };

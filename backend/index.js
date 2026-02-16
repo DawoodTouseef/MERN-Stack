@@ -125,12 +125,8 @@ app.use('/api/pricing', dynamicPricingRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/organizations', organizationRoutes);
-// app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
+app.use('/api/payments', paymentRoutes); // Temporarily disabled for testing
 
-// Security headers for config endpoints
-app.get("/api/config/paypal", (req, res) => {
-  res.json({ clientId: process.env.PAYPAL_CLIENT_ID });
-});
 
 app.get('/api/config/exchange', (req, res) => {
   res.json({ apikey: process.env.EXCHANGE_API_KEY });

@@ -15,6 +15,7 @@ import {
   Link,
 } from "@mui/material";
 import { useState } from "react";
+import { APP_NAME } from "../redux/constants";
 
 const SizeGuide = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -97,8 +98,8 @@ const SizeGuide = () => {
 
         <Alert severity="info" sx={{ mb: 4 }}>
           <Typography variant="body1">
-            <strong>Important:</strong> Sizes may vary between brands and styles. 
-            Always refer to the specific product's size chart when available. 
+            <strong>Important:</strong> Sizes may vary between brands and styles.
+            Always refer to the specific product's size chart when available.
             When in doubt, choose the larger size as our items generally fit true to size.
           </Typography>
         </Alert>
@@ -116,7 +117,7 @@ const SizeGuide = () => {
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
               Women's Clothing Size Chart
             </Typography>
-            
+
             <TableContainer sx={{ mb: 4 }}>
               <Table>
                 <TableHead>
@@ -145,7 +146,7 @@ const SizeGuide = () => {
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, mt: 4 }}>
               Men's Clothing Size Chart
             </Typography>
-            
+
             <TableContainer>
               <Table>
                 <TableHead>
@@ -182,7 +183,7 @@ const SizeGuide = () => {
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
               Shoe Size Chart
             </Typography>
-            
+
             <TableContainer>
               <Table>
                 <TableHead>
@@ -209,7 +210,7 @@ const SizeGuide = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            
+
             <Box sx={{ mt: 4, p: 3, bgcolor: '#f0f8ff', borderRadius: 2 }}>
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
                 How to Measure Your Feet
@@ -250,7 +251,7 @@ const SizeGuide = () => {
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
               Kids' Clothing Size Chart
             </Typography>
-            
+
             <TableContainer>
               <Table>
                 <TableHead>
@@ -275,7 +276,7 @@ const SizeGuide = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            
+
             <Box sx={{ mt: 4, p: 3, bgcolor: '#fff3e0', borderRadius: 2 }}>
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: '#f57c00' }}>
                 Kids' Sizing Tips
@@ -320,7 +321,7 @@ const SizeGuide = () => {
             </Box>
             <Box>
               <Typography variant="subtitle2">Phone Support</Typography>
-              <Link href="tel:+18001234567">1-800-NEXUS-MART</Link>
+              <Link href="tel:+18001234567">1-800-123-4567</Link>
             </Box>
             <Box>
               <Typography variant="subtitle2">Live Chat</Typography>
@@ -328,8 +329,8 @@ const SizeGuide = () => {
             </Box>
           </Box>
         </Box>
-      </Paper>
-    </Box>
+      </Paper >
+    </Box >
   );
 };
 

@@ -11,10 +11,12 @@ import {
   AccordionSummary,
   AccordionDetails,
   Link,
+  alpha
 } from "@mui/material";
 import { FaBalanceScale, FaUserShield, FaRegClock, FaRegEnvelope, FaExclamationTriangle, FaBan, FaDollarSign } from "react-icons/fa";
 import { ExpandMore } from "@mui/icons-material";
 import { useEffect } from "react";
+import { APP_NAME } from "../redux/constants";
 
 const Terms = () => {
   useEffect(() => {
@@ -51,21 +53,21 @@ const Terms = () => {
         minHeight: "100vh",
         py: { xs: 4, md: 8 },
         px: { xs: 2, md: 4 },
-        background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
+        bgcolor: "#f8fafc",
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
       }}
     >
       <Paper
-        elevation={6}
+        elevation={0}
         sx={{
           maxWidth: 900,
           width: "100%",
           mx: "auto",
           p: { xs: 3, md: 5 },
           borderRadius: 4,
-          boxShadow: "0 8px 32px 0 rgba(236,72,153,0.15)",
+          border: `1px solid ${alpha('#6366f1', 0.1)}`,
           background: "#fff",
         }}
       >
@@ -73,13 +75,13 @@ const Terms = () => {
           variant="h3"
           fontWeight="bold"
           sx={{
-            color: "#ec4899",
+            color: "#1e293b",
             mb: 2,
-            letterSpacing: 0.5,
+            letterSpacing: '-0.02em',
             textAlign: { xs: "center", md: "left" },
           }}
         >
-          Terms and Conditions
+          Terms & <Box component="span" sx={{ color: '#6366f1' }}>Conditions</Box>
         </Typography>
         <Typography
           variant="subtitle1"
@@ -114,22 +116,22 @@ const Terms = () => {
         <Divider sx={{ mb: 4, bgcolor: "#e3eeff" }} />
 
         {/* Acceptance of Terms */}
-        <Accordion defaultExpanded>
+        <Accordion defaultExpanded elevation={0} sx={{ border: `1px solid ${alpha('#6366f1', 0.1)}`, borderRadius: '8px !important', overflow: 'hidden', mb: 2 }}>
           <AccordionSummary
-            expandIcon={<ExpandMore />}
+            expandIcon={<ExpandMore sx={{ color: '#6366f1' }} />}
             id="acceptance"
-            sx={{ bgcolor: "#f3e7e9", borderRadius: 1, mb: 1 }}
+            sx={{ bgcolor: alpha('#6366f1', 0.03) }}
           >
-            <Typography variant="h6" fontWeight="bold" sx={{ color: "#18181b" }}>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#1e293b" }}>
               1. Acceptance of Terms
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body1" sx={{ color: "#444", mb: 2 }}>
-              By accessing or using the Nexus Mart website, mobile applications, or services ("Platform"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to these Terms, you must not access or use the Platform.
+              By accessing or using the {APP_NAME} website, mobile applications, or services ("Platform"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to these Terms, you must not access or use the Platform.
             </Typography>
             <Typography variant="body1" sx={{ color: "#444" }}>
-              These Terms constitute a legally binding agreement between you and Nexus Mart Private Limited, an Indian company ("we," "us," or "our").
+              These Terms constitute a legally binding agreement between you and {APP_NAME} Private Limited, an Indian company ("we," "us," or "our").
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -372,7 +374,7 @@ const Terms = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body1" sx={{ color: "#444", mb: 2 }}>
-              All content on the Platform, including text, graphics, logos, images, and software, is the property of Nexus Mart or its licensors and is protected by intellectual property laws.
+              All content on the Platform, including text, graphics, logos, images, and software, is the property of {APP_NAME} or its licensors and is protected by intellectual property laws.
             </Typography>
             <Typography variant="body1" sx={{ color: "#444" }}>
               You may not use our intellectual property without prior written consent. Unauthorized use may result in legal action.
@@ -464,7 +466,7 @@ const Terms = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body1" sx={{ color: "#444", mb: 2 }}>
-              To the fullest extent permitted by law, Nexus Mart shall not be liable for any indirect, incidental, special, or consequential damages arising from:
+              To the fullest extent permitted by law, {APP_NAME} shall not be liable for any indirect, incidental, special, or consequential damages arising from:
             </Typography>
             <List>
               <ListItem>
@@ -623,7 +625,7 @@ const Terms = () => {
               </ListItem>
             </List>
             <Typography variant="body2" sx={{ color: "#666" }}>
-              Nexus Mart Private Limited, 123 Commerce Street, Bengaluru, Karnataka, India, 560001
+              {APP_NAME} Private Limited, 123 Commerce Street, Bengaluru, Karnataka, India, 560001
             </Typography>
           </AccordionDetails>
         </Accordion>

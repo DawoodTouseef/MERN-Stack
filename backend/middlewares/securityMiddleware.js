@@ -41,27 +41,27 @@ export const securityMiddleware = (app) => {
     if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-Content-Type-Options', 'nosniff');
     }
-    
+
     // Prevent framing (clickjacking protection) - but allow same origin
     if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     }
-    
+
     // Enable XSS filtering
     if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('X-XSS-Protection', '1; mode=block');
     }
-    
+
     // Referrer policy
     if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
-    
+
     // Feature policy
     if (!res.headersSent && !res.getHeader('Access-Control-Allow-Origin')) {
       res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
     }
-    
+
     next();
   });
 };
@@ -71,7 +71,7 @@ export const createRateLimiters = () => {
   // General API rate limiter
   const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Limit each IP to 1000 requests per windowMs
     message: {
       success: false,
       message: 'Too many requests from this IP, please try again later.',

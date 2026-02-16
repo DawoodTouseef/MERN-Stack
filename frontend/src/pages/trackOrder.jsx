@@ -17,6 +17,8 @@ import {
 } from "@mui/material";
 import { LocalShipping, CheckCircle, Pending, Cancel, Info } from "@mui/icons-material";
 import { useTrackOrderByNumberQuery } from "../redux/api/trackingApiSlice";
+import Loader from "../components/Loader";
+import { APP_NAME } from "../redux/constants";
 
 const TrackOrder = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -75,7 +77,7 @@ const TrackOrder = () => {
     const statusOrder = ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered"];
     const currentStatusIndex = statusOrder.indexOf(orderStatus);
     const stepStatusIndex = statusOrder.indexOf(stepStatus);
-    
+
     if (stepStatusIndex < currentStatusIndex) return "completed";
     if (stepStatusIndex === currentStatusIndex) return "current";
     return "pending";
@@ -84,7 +86,7 @@ const TrackOrder = () => {
   // Create steps based on order timeline
   const createStepsFromTimeline = (timeline) => {
     if (!timeline || timeline.length === 0) return [];
-    
+
     return timeline.map(event => ({
       id: event.status,
       label: event.status,
@@ -173,41 +175,39 @@ const TrackOrder = () => {
         </Box>
 
         {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
+          <Loader />
         )}
 
         {orderStatus && !isLoading && (
           <>
             <Divider sx={{ my: 4 }} />
-            
+
             <Box sx={{ mb: 4 }}>
               <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
                 Order Status
               </Typography>
-              
+
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Chip 
-                  icon={<LocalShipping />} 
-                  label={`Order #${orderStatus.orderNumber}`} 
-                  color="primary" 
-                  variant="outlined" 
+                <Chip
+                  icon={<LocalShipping />}
+                  label={`Order #${orderStatus.orderNumber}`}
+                  color="primary"
+                  variant="outlined"
                 />
-                <Chip 
-                  label={`Status: ${orderStatus.status}`} 
-                  color={getStatusColor(orderStatus.status)} 
-                  variant="outlined" 
+                <Chip
+                  label={`Status: ${orderStatus.status}`}
+                  color={getStatusColor(orderStatus.status)}
+                  variant="outlined"
                 />
                 {orderStatus.estimatedDelivery && (
-                  <Chip 
-                    label={`Est. Delivery: ${new Date(orderStatus.estimatedDelivery).toLocaleDateString()}`} 
-                    color="success" 
-                    variant="outlined" 
+                  <Chip
+                    label={`Est. Delivery: ${new Date(orderStatus.estimatedDelivery).toLocaleDateString()}`}
+                    color="success"
+                    variant="outlined"
                   />
                 )}
               </Box>
-              
+
               <Box sx={{ mb: 4 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
                   Order Progress
@@ -216,13 +216,13 @@ const TrackOrder = () => {
                   {orderStatus.timeline && orderStatus.timeline.length > 0 ? (
                     createStepsFromTimeline(orderStatus.timeline).map((step, index) => (
                       <Step key={step.id} active={step.status === "current"} completed={step.status === "completed"}>
-                        <StepLabel 
+                        <StepLabel
                           StepIconComponent={() => getStatusIcon(step.status)}
-                          sx={{ 
-                            '& .MuiStepLabel-label': { 
+                          sx={{
+                            '& .MuiStepLabel-label': {
                               fontWeight: step.status === "current" ? 'bold' : 'normal',
-                              color: step.status === "completed" ? 'success.main' : 
-                                     step.status === "current" ? 'primary.main' : 'text.secondary'
+                              color: step.status === "completed" ? 'success.main' :
+                                step.status === "current" ? 'primary.main' : 'text.secondary'
                             }
                           }}
                         >
@@ -245,7 +245,7 @@ const TrackOrder = () => {
                   )}
                 </Stepper>
               </Box>
-              
+
               {orderStatus.shippingAddress && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                   <Box sx={{ flex: 1, minWidth: 250 }}>
@@ -310,7 +310,7 @@ const TrackOrder = () => {
             </Box>
             <Box>
               <Typography variant="subtitle2">Phone Support</Typography>
-              <Link href="tel:+18001234567">1-800-NEXUS-MART</Link>
+              <Link href="tel:+18001234567">1-800-123-4567</Link>
             </Box>
             <Box>
               <Typography variant="subtitle2">Live Chat</Typography>
@@ -318,8 +318,8 @@ const TrackOrder = () => {
             </Box>
           </Box>
         </Box>
-      </Paper>
-    </Box>
+      </Paper >
+    </Box >
   );
 };
 

@@ -1,61 +1,34 @@
-import { useSelector } from "react-redux";
-import { useGetCurrenciesQuery } from "../redux/api/currencyApiSlice";
-import {
-  Box,
-  Typography,
-  Tooltip,
-  Chip
-} from "@mui/material";
+import useCurrency from "../hooks/useCurrency";
+import { Box, Typography } from "@mui/material";
+
 
 const MultiCurrencyPriceDisplay = ({ product, showConversion = true }) => {
-  const { selectedCurrency } = useSelector((state) => state.currency);
-  const { data: currencies = [] } = useGetCurrenciesQuery();
-  
-  // Get the default currency
-  const defaultCurrency = currencies.find(c => c.isDefault) || { code: 'USD', symbol: '$' };
-  
+  const { format, selectedCurrency, currencies } = useCurrency();
+
   // Determine which currency to display
-  const displayCurrencyCode = selectedCurrency || product.currency || defaultCurrency.code;
-  
-  // Find the currency details
-  const displayCurrency = currencies.find(c => c.code === displayCurrencyCode) || defaultCurrency;
-  
+  const displayCurrencyCode = selectedCurrency;
+
   // Get the price in the selected currency
   let displayPrice = product.price;
-  
+  let sourceCurrency = product.currency || 'USD';
+
   // If we have specific prices for different currencies, use that
   if (product.prices && product.prices[displayCurrencyCode]) {
     displayPrice = product.prices[displayCurrencyCode];
-  } 
-  // Otherwise, if we need to convert from the default currency
-  else if (displayCurrencyCode !== (product.currency || defaultCurrency.code)) {
-    // Get the original currency
-    const originalCurrency = currencies.find(c => c.code === (product.currency || defaultCurrency.code)) || defaultCurrency;
-    
-    // Convert using exchange rates
-    if (originalCurrency.rate && displayCurrency.rate) {
-      // Convert to base currency first, then to target currency
-      const amountInBase = product.price / originalCurrency.rate;
-      displayPrice = amountInBase * displayCurrency.rate;
-    }
+    sourceCurrency = displayCurrencyCode;
   }
-  
+
   // Format the price
-  const formattedPrice = new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: displayCurrencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(displayPrice);
-  
+  const formattedPrice = format(displayPrice, sourceCurrency);
+
   // Show other available currencies
-  const otherCurrencies = currencies.filter(c => 
-    c.code !== displayCurrencyCode && 
-    c.isEnabled && 
-    product.prices && 
+  const otherCurrencies = currencies.filter(c =>
+    c.code !== displayCurrencyCode &&
+    c.isEnabled &&
+    product.prices &&
     product.prices[c.code]
   );
-  
+
   return (
     <Box>
       <Typography variant="h4" component="div" sx={{ fontWeight: "bold", mb: 1 }}>
@@ -66,7 +39,7 @@ const MultiCurrencyPriceDisplay = ({ product, showConversion = true }) => {
           </Typography>
         )}
       </Typography>
-      
+
       {otherCurrencies.length > 0 && showConversion && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.7 }}>
@@ -81,14 +54,14 @@ const MultiCurrencyPriceDisplay = ({ product, showConversion = true }) => {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               }).format(price);
-              
+
               return (
                 <Tooltip key={currency.code} title={`${currency.name} (${currency.code})`}>
                   <Chip
                     label={`${formattedOtherPrice} ${currency.symbol}`}
                     size="small"
                     variant="outlined"
-                    sx={{ 
+                    sx={{
                       borderColor: "rgba(255,255,255,0.3)",
                       color: "rgba(255,255,255,0.7)",
                       fontSize: "0.75rem"

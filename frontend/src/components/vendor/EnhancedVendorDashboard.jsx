@@ -57,6 +57,8 @@ import {
   QuestionMark as QuestionMarkIcon
 } from '@mui/icons-material';
 import { useGetVendorDashboardQuery, useGetVendorSalesAnalyticsQuery, useGetVendorProductAnalyticsQuery, useGetVendorCustomerAnalyticsQuery, useGetVendorInventoryAnalyticsQuery } from '../../redux/api/vendorApiSlice';
+import useCurrency from '../../hooks/useCurrency';
+import moment from 'moment';
 
 // Lazy load chart components to prevent SSR issues
 const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })));
@@ -67,14 +69,72 @@ const PieChart = lazy(() => import('recharts').then(module => ({ default: module
 const Cell = lazy(() => import('recharts').then(module => ({ default: module.Cell })));
 const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })));
 const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })));
-const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })));   
+const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })));
 const RechartsTooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
 const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })));
 const ResponsiveContainer = lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })));
 
 
+const StatCard = ({ title, value, icon, color, change, changeLabel, description }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 3,
+      borderRadius: 4,
+      bgcolor: '#fff',
+      border: '1px solid #e2e8f0',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+      height: '100%',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      }
+    }}
+  >
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+      <Avatar
+        sx={{
+          bgcolor: `${color}15`,
+          color: color,
+          width: 48,
+          height: 48,
+          borderRadius: 3,
+        }}
+      >
+        {icon}
+      </Avatar>
+      {change !== undefined && (
+        <Chip
+          label={`${change > 0 ? '+' : ''}${change}%`}
+          size="small"
+          sx={{
+            bgcolor: change >= 0 ? '#ecfdf5' : '#fef2f2',
+            color: change >= 0 ? '#10b981' : '#ef4444',
+            fontWeight: 700,
+            borderRadius: 1.5,
+          }}
+        />
+      )}
+    </Box>
+    <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
+      {title}
+    </Typography>
+    <Typography variant="h4" fontWeight={900} color="#1e293b" sx={{ mb: 1 }}>
+      {value}
+    </Typography>
+    <Typography variant="caption" color="text.secondary">
+      {description}
+    </Typography>
+  </Paper>
+);
+
 const EnhancedVendorDashboard = () => {
   const theme = useTheme();
+  const { format, symbol, convert } = useCurrency();
   const [period, setPeriod] = useState('30d');
   const [activeTab, setActiveTab] = useState(0);
   const [forceRefresh, setForceRefresh] = useState(false);
@@ -82,24 +142,24 @@ const EnhancedVendorDashboard = () => {
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     end: new Date()
   });
-  
-  const { 
-    data: dashboardData, 
-    isLoading: isDashboardLoading, 
+
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading,
     error: dashboardError,
     refetch: refetchDashboard,
     isFetching: isDashboardFetching
-  } = useGetVendorDashboardQuery(undefined, { 
+  } = useGetVendorDashboardQuery(undefined, {
     refetchOnMountOrArgChange: true
   });
-    
-  const { 
-    data: salesData, 
-    isLoading: isSalesLoading, 
+
+  const {
+    data: salesData,
+    isLoading: isSalesLoading,
     error: salesError,
     refetch: refetchSales,
     isFetching: isSalesFetching
-  } = useGetVendorSalesAnalyticsQuery({ 
+  } = useGetVendorSalesAnalyticsQuery({
     startDate: dateRange.start.toISOString(),
     endDate: dateRange.end.toISOString(),
     groupBy: 'day'
@@ -107,13 +167,13 @@ const EnhancedVendorDashboard = () => {
     refetchOnMountOrArgChange: true
   });
 
-  const { 
-    data: productData, 
-    isLoading: isProductLoading, 
+  const {
+    data: productData,
+    isLoading: isProductLoading,
     error: productError,
     refetch: refetchProducts,
     isFetching: isProductFetching
-  } = useGetVendorProductAnalyticsQuery({ 
+  } = useGetVendorProductAnalyticsQuery({
     startDate: dateRange.start.toISOString(),
     endDate: dateRange.end.toISOString(),
     limit: 10,
@@ -122,9 +182,9 @@ const EnhancedVendorDashboard = () => {
     refetchOnMountOrArgChange: true
   });
 
-  const { 
-    data: customerData, 
-    isLoading: isCustomerLoading, 
+  const {
+    data: customerData,
+    isLoading: isCustomerLoading,
     error: customerError,
     refetch: refetchCustomers,
     isFetching: isCustomerFetching
@@ -135,9 +195,9 @@ const EnhancedVendorDashboard = () => {
     refetchOnMountOrArgChange: true
   });
 
-  const { 
-    data: inventoryData, 
-    isLoading: isInventoryLoading, 
+  const {
+    data: inventoryData,
+    isLoading: isInventoryLoading,
     error: inventoryError,
     refetch: refetchInventory,
     isFetching: isInventoryFetching
@@ -165,7 +225,7 @@ const EnhancedVendorDashboard = () => {
   // Format data for charts
   const formatSalesData = () => {
     if (!salesData || !Array.isArray(salesData.data)) return [];
-    
+
     return salesData.data.map(item => ({
       date: item._id || '',
       revenue: item.totalSales || 0,
@@ -176,7 +236,7 @@ const EnhancedVendorDashboard = () => {
 
   const formatCustomerSegments = () => {
     if (!dashboardData?.performance?.customers?.segments) return [];
-    
+
     return Object.entries(dashboardData.performance.customers.segments).map(([name, value]) => ({
       name,
       value: value || 0
@@ -185,7 +245,7 @@ const EnhancedVendorDashboard = () => {
 
   const formatInventoryData = () => {
     if (!dashboardData?.performance?.inventory) return [];
-    
+
     const inventory = dashboardData.performance.inventory;
     return [
       { name: 'In Stock', value: typeof inventory.inStock === 'number' && !isNaN(inventory.inStock) ? inventory.inStock : 0 },
@@ -197,7 +257,7 @@ const EnhancedVendorDashboard = () => {
   // Add this new function to format product analytics data
   const formatProductData = () => {
     if (!productData || !Array.isArray(productData.topProducts)) return [];
-    
+
     return productData.topProducts.map(product => ({
       id: product.productId,
       name: product.productName,
@@ -225,8 +285,8 @@ const EnhancedVendorDashboard = () => {
           {isCustomerLoading ? 'Loading customer analytics...' : ''}
           {isInventoryLoading ? 'Loading inventory analytics...' : ''}
         </Typography>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           onClick={handleRefresh}
           sx={{ mt: 2 }}
           disabled={forceRefresh}
@@ -243,11 +303,11 @@ const EnhancedVendorDashboard = () => {
     console.error('Enhanced Vendor Dashboard Error:', { dashboardError, salesError, productError, customerError, inventoryError });
     return (
       <Box sx={{ p: 3 }}>
-        <Alert 
+        <Alert
           severity="error"
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={handleRefresh}
               startIcon={<RefreshIcon />}
@@ -266,8 +326,8 @@ const EnhancedVendorDashboard = () => {
             {customerError ? `Customer Error: ${customerError?.data?.message || customerError?.error || customerError?.status || 'Unknown error'}` : ''}
             {inventoryError ? `Inventory Error: ${inventoryError?.data?.message || inventoryError?.error || inventoryError?.status || 'Unknown error'}` : ''}
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleRefresh}
             sx={{ mt: 2 }}
             startIcon={<RefreshIcon />}
@@ -275,13 +335,13 @@ const EnhancedVendorDashboard = () => {
             Try Again
           </Button>
         </Alert>
-        
+
         {/* Show raw error details for debugging */}
         <details style={{ marginTop: '20px' }}>
           <summary>Debug Information</summary>
-          <pre style={{ 
-            backgroundColor: '#f5f5f5', 
-            padding: '10px', 
+          <pre style={{
+            backgroundColor: '#f5f5f5',
+            padding: '10px',
             borderRadius: '4px',
             maxHeight: '200px',
             overflow: 'auto',
@@ -298,11 +358,11 @@ const EnhancedVendorDashboard = () => {
   if (!dashboardData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert 
+        <Alert
           severity="info"
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={handleRefresh}
               startIcon={<RefreshIcon />}
@@ -325,11 +385,11 @@ const EnhancedVendorDashboard = () => {
   // Check if vendor has products
   const productCount = dashboardData?.products || 0;
   const validProductCount = (typeof productCount === 'number' && !isNaN(productCount) && isFinite(productCount)) ? productCount : 0;
-  
+
   const salesChartData = formatSalesData();
   const customerSegments = formatCustomerSegments();
   const inventoryDataFormatted = formatInventoryData();
-  
+
   const performance = dashboardData?.performance || {};
   const sales = performance.sales?.total || {};
   const products = performance.products || {};
@@ -343,39 +403,33 @@ const EnhancedVendorDashboard = () => {
   const quickStats = [
     {
       title: 'Total Revenue',
-      value: `$${typeof sales.totalRevenue === 'number' ? sales.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}`,
-      icon: <AttachMoneyIcon sx={{ fontSize: 32 }} />,
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      value: format(sales.totalRevenue || 0),
+      icon: <AttachMoneyIcon />,
+      color: '#6366f1',
       change: typeof performance.sales?.growth?.revenueGrowth === 'number' ? performance.sales?.growth?.revenueGrowth : 0,
-      changeLabel: 'from last period',
-      description: 'Total sales generated'
+      description: 'Lifetime store earnings'
     },
     {
       title: 'Total Orders',
-      value: typeof sales.totalOrders === 'number' ? sales.totalOrders.toLocaleString() : 0,
-      icon: <ShoppingCartIcon sx={{ fontSize: 32 }} />,
-      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      value: (sales.totalOrders || 0).toLocaleString(),
+      icon: <ShoppingCartIcon />,
+      color: '#10b981',
       change: typeof performance.sales?.growth?.orderGrowth === 'number' ? performance.sales?.growth?.orderGrowth : 0,
-      changeLabel: 'from last period',
-      description: 'Number of completed orders'
+      description: 'Orders successfully placed'
     },
     {
       title: 'Active Products',
-      value: typeof products.activeProducts === 'number' ? products.activeProducts.toLocaleString() : (typeof products.totalProducts === 'number' ? products.totalProducts.toLocaleString() : validProductCount.toLocaleString()),
-      icon: <InventoryIcon sx={{ fontSize: 32 }} />,
-      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      change: typeof products.totalProducts === 'number' ? products.totalProducts - (typeof products.activeProducts === 'number' ? products.activeProducts : 0) : 0,
-      changeLabel: 'inactive products',
-      description: 'Products currently listed'
+      value: (products.activeProducts || products.totalProducts || validProductCount).toLocaleString(),
+      icon: <InventoryIcon />,
+      color: '#f59e0b',
+      description: 'Items currently in your catalog'
     },
     {
-      title: 'Customers',
-      value: typeof customers.total === 'number' ? customers.total.toLocaleString() : 0,
-      icon: <PeopleIcon sx={{ fontSize: 32 }} />,
-      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      change: typeof customers.averageValue === 'number' ? `$${customers.averageValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00',
-      changeLabel: 'avg. order value',
-      description: 'Unique customers served'
+      title: 'Avg. Order Value',
+      value: format(customers.averageValue || 0),
+      icon: <PeopleIcon />,
+      color: '#ef4444',
+      description: 'Average spending per customer'
     }
   ];
 
@@ -383,42 +437,42 @@ const EnhancedVendorDashboard = () => {
   const kpiData = [
     {
       title: 'Conversion Rate',
-      value: `${sales.totalOrders && validProductCount ? 
+      value: `${sales.totalOrders && validProductCount ?
         ((sales.totalOrders / Math.max(validProductCount, 1)) * 100).toFixed(2) : '0.00'}%`,
       icon: <ShowChartIcon />,
       color: '#4CAF50',
       description: 'Percentage of visitors who make a purchase',
-      trend: sales.totalOrders && validProductCount ? 
+      trend: sales.totalOrders && validProductCount ?
         ((sales.totalOrders / Math.max(validProductCount, 1)) * 100) > 5 ? 'up' : 'down' : 'neutral'
     },
     {
       title: 'Inventory Turnover',
-      value: inventory.inventoryValue && sales.totalRevenue ? 
+      value: inventory.inventoryValue && sales.totalRevenue ?
         (sales.totalRevenue / Math.max(inventory.inventoryValue, 1)).toFixed(2) : '0.00',
       icon: <InventoryIcon />,
       color: '#2196F3',
       description: 'How many times inventory is sold and replaced',
-      trend: inventory.inventoryValue && sales.totalRevenue ? 
+      trend: inventory.inventoryValue && sales.totalRevenue ?
         (sales.totalRevenue / Math.max(inventory.inventoryValue, 1)) > 1 ? 'up' : 'down' : 'neutral'
     },
     {
       title: 'Customer Retention',
-      value: customers.total ? 
+      value: customers.total ?
         `${Math.min(100, (customers.total * 0.75)).toFixed(0)}%` : '0%',
       icon: <PeopleIcon />,
       color: '#FF9800',
       description: 'Percentage of returning customers',
-      trend: customers.total ? 
+      trend: customers.total ?
         (customers.total * 0.75) > 50 ? 'up' : 'down' : 'neutral'
     },
     {
       title: 'Avg. Order Value',
-      value: sales.totalOrders && sales.totalRevenue ? 
+      value: sales.totalOrders && sales.totalRevenue ?
         `$${(sales.totalRevenue / Math.max(sales.totalOrders, 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00',
       icon: <AttachMoneyIcon />,
       color: '#9C27B0',
       description: 'Average amount spent per order',
-      trend: sales.totalOrders && sales.totalRevenue ? 
+      trend: sales.totalOrders && sales.totalRevenue ?
         (sales.totalRevenue / Math.max(sales.totalOrders, 1)) > 50 ? 'up' : 'down' : 'neutral'
     }
   ];
@@ -450,8 +504,8 @@ const EnhancedVendorDashboard = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               size="small"
               onClick={handleRefresh}
               disabled={isDashboardFetching || isSalesFetching || isProductFetching || isCustomerFetching || isInventoryFetching}
@@ -469,7 +523,7 @@ const EnhancedVendorDashboard = () => {
                   // Update date range based on selection
                   const endDate = new Date();
                   let startDate;
-                  switch(e.target.value) {
+                  switch (e.target.value) {
                     case '7d':
                       startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
                       break;
@@ -501,47 +555,14 @@ const EnhancedVendorDashboard = () => {
       </Box>
 
       {/* Quick Stats */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 6 }}>
         {quickStats.map((stat, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ background: stat.color, color: 'white', height: '100%' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  {stat.icon}
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h4" fontWeight="bold">
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                      {typeof stat.change === 'number' && stat.change !== 0 && (
-                        stat.change > 0 ? 
-                        <ArrowUpwardIcon sx={{ fontSize: 16, color: '#4caf50' }} /> : 
-                        <ArrowDownwardIcon sx={{ fontSize: 16, color: '#f44336' }} />
-                      )}
-                      {stat.changeLabel}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Typography variant="h6" gutterBottom>
-                  {stat.title}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {stat.description}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {typeof stat.change === 'number' ? 
-                    (stat.change > 0 ? '+' : '') + stat.change.toFixed(2) + '%' : 
-                    stat.change}
-                  <Box component="span" sx={{ ml: 0.5 }}>
-                    {stat.changeLabel}
-                  </Box>
-                </Typography>
-              </CardContent>
-            </Card>
+            <StatCard {...stat} />
           </Grid>
         ))}
       </Grid>
-      
+
       {/* Quick Actions */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" gutterBottom>
@@ -549,8 +570,8 @@ const EnhancedVendorDashboard = () => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               fullWidth
               href="/vendor/product/add"
               startIcon={<InventoryIcon />}
@@ -560,8 +581,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               fullWidth
               href="/vendor/allproductslist"
               startIcon={<InventoryIcon />}
@@ -571,8 +592,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               fullWidth
               href="/orders"
               startIcon={<ShoppingCartIcon />}
@@ -582,8 +603,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               fullWidth
               href="/vendor/inventory"
               startIcon={<InventoryIcon />}
@@ -597,9 +618,9 @@ const EnhancedVendorDashboard = () => {
 
       {/* Tabs for Different Views */}
       <Box sx={{ mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange} 
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
         >
@@ -618,77 +639,125 @@ const EnhancedVendorDashboard = () => {
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {/* Sales Trend Chart */}
             <Grid item xs={12} lg={8}>
-              <Card>
-                <CardHeader
-                  title="Sales Trend"
-                  subheader="Track your revenue and order volume over time"
-                  avatar={<TrendingUpIcon />}
-                />
-                <CardContent>
-                  {salesChartData && salesChartData.length > 0 ? (
-                    renderChart(
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={salesChartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="date" />
-                          <YAxis />
-                          <RechartsTooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} />
-                          <Line type="monotone" dataKey="orders" stroke="#82ca9d" />
-                        </LineChart>
-                      </ResponsiveContainer>,
-                      "Sales data visualization coming soon"
-                    )
-                  ) : (
-                    <Box sx={{ textAlign: 'center', py: 5 }}>
-                      <Typography>No sales data available for the selected period</Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 4,
+                  borderRadius: 6,
+                  border: '1px solid #e2e8f0',
+                  bgcolor: "#fff",
+                  height: '100%',
+                }}
+              >
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h5" fontWeight={900} color="#1e293b">
+                    Sales Trend
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Track your revenue and order volume over time
+                  </Typography>
+                </Box>
+                {salesChartData && salesChartData.length > 0 ? (
+                  renderChart(
+                    <ResponsiveContainer width="100%" height={350}>
+                      <LineChart data={salesChartData}>
+                        <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                          dy={10}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#64748b', fontWeight: 500, fontSize: 12 }}
+                          tickFormatter={(val) => `${symbol}${val}`}
+                        />
+                        <RechartsTooltip
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                        />
+                        <Legend verticalAlign="top" align="right" iconType="circle" />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#6366f1"
+                          strokeWidth={4}
+                          dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="orders"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          strokeDasharray="5 5"
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>,
+                    "Sales data visualization coming soon"
+                  )
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
+                    <CircularProgress size={40} sx={{ color: '#6366f1', mb: 2 }} />
+                    <Typography color="text.secondary">Waiting for sales data...</Typography>
+                  </Box>
+                )}
+              </Paper>
             </Grid>
-            
+
             {/* Customer Segments */}
             <Grid item xs={12} md={6} lg={4}>
-              <Card>
-                <CardHeader
-                  title="Customer Segments"
-                  subheader="Distribution of your customer base"
-                  avatar={<PeopleIcon />}
-                />
-                <CardContent>
-                  {customerSegments && customerSegments.length > 0 ? (
-                    renderChart(
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={customerSegments}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {customerSegments.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>,
-                      "Customer segmentation visualization coming soon"
-                    )
-                  ) : (
-                    <Box sx={{ textAlign: 'center', py: 5 }}>
-                      <Typography>No customer data available</Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 4,
+                  borderRadius: 6,
+                  border: '1px solid #e2e8f0',
+                  bgcolor: "#fff",
+                  height: '100%',
+                }}
+              >
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h5" fontWeight={900} color="#1e293b">
+                    Customer Segments
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Distribution of your customer base
+                  </Typography>
+                </Box>
+                {customerSegments && customerSegments.length > 0 ? (
+                  renderChart(
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={customerSegments}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {customerSegments.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend iconType="circle" />
+                      </PieChart>
+                    </ResponsiveContainer>,
+                    "Customer segmentation visualization coming soon"
+                  )
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
+                    <Typography color="text.secondary">No customer data available</Typography>
+                  </Box>
+                )}
+              </Paper>
             </Grid>
           </Grid>
 
@@ -734,33 +803,33 @@ const EnhancedVendorDashboard = () => {
                       <Typography variant="body2">In Stock</Typography>
                       <Typography variant="body2">{inventory.inStock?.toLocaleString() || 0}</Typography>
                     </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={inventory.inStock ? (inventory.inStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={inventory.inStock ? (inventory.inStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0}
                       sx={{ mb: 2 }}
                     />
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2">Low Stock</Typography>
                       <Typography variant="body2">{inventory.lowStock?.toLocaleString() || 0}</Typography>
                     </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={inventory.lowStock ? (inventory.lowStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={inventory.lowStock ? (inventory.lowStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0}
                       color="warning"
                       sx={{ mb: 2 }}
                     />
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2">Out of Stock</Typography>
                       <Typography variant="body2">{inventory.outOfStock?.toLocaleString() || 0}</Typography>
                     </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={inventory.outOfStock ? (inventory.outOfStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={inventory.outOfStock ? (inventory.outOfStock / Math.max(inventory.totalProducts || 1, 1)) * 100 : 0}
                       color="error"
                     />
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: '1px solid #eee' }}>
                       <Typography variant="body2" fontWeight="bold">Total Inventory Value</Typography>
                       <Typography variant="body2" fontWeight="bold">
@@ -768,11 +837,11 @@ const EnhancedVendorDashboard = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  
+
                   {/* Low Stock Alert */}
                   {typeof inventory.lowStock === 'number' && inventory.lowStock > 0 && (
-                    <Alert 
-                      severity="warning" 
+                    <Alert
+                      severity="warning"
                       icon={<WarningIcon />}
                       sx={{ mt: 2 }}
                     >
@@ -784,7 +853,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             {/* Recent Orders */}
             <Grid item xs={12} md={6}>
               <Card>
@@ -833,17 +902,17 @@ const EnhancedVendorDashboard = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Chip 
-                                  label={order.isPaid ? 'Paid' : 'Pending'} 
-                                  size="small" 
-                                  color={order.isPaid ? 'success' : 'warning'} 
+                                <Chip
+                                  label={order.isPaid ? 'Paid' : 'Pending'}
+                                  size="small"
+                                  color={order.isPaid ? 'success' : 'warning'}
                                   sx={{ mb: 0.5 }}
                                 />
                                 <br />
-                                <Chip 
-                                  label={order.isDelivered ? 'Delivered' : 'Processing'} 
-                                  size="small" 
-                                  color={order.isDelivered ? 'success' : 'info'} 
+                                <Chip
+                                  label={order.isDelivered ? 'Delivered' : 'Processing'}
+                                  size="small"
+                                  color={order.isDelivered ? 'success' : 'info'}
                                 />
                               </TableCell>
                             </TableRow>
@@ -863,7 +932,7 @@ const EnhancedVendorDashboard = () => {
               </Card>
             </Grid>
           </Grid>
-          
+
           {/* Summary Section */}
           <Card>
             <CardContent>
@@ -873,18 +942,18 @@ const EnhancedVendorDashboard = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Your store is performing 
+                    Your store is performing
                     <Box component="span" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                       above average
                     </Box>
                     compared to similar vendors in your category.
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Based on your recent activity, we recommend focusing on 
+                    Based on your recent activity, we recommend focusing on
                     <Box component="span" sx={{ fontWeight: 'bold' }}>
                       inventory management
                     </Box>
-                    and 
+                    and
                     <Box component="span" sx={{ fontWeight: 'bold' }}>
                       customer engagement
                     </Box>
@@ -952,7 +1021,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card>
                 <CardHeader
@@ -994,9 +1063,9 @@ const EnhancedVendorDashboard = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  
+
                   <Divider sx={{ my: 2 }} />
-                  
+
                   <Box>
                     <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
                       Growth Metrics
@@ -1012,7 +1081,7 @@ const EnhancedVendorDashboard = () => {
                               </Typography>
                             </Box>
                             <Typography variant="h5" color={performance.sales?.growth?.revenueGrowth > 0 ? 'success.main' : 'error.main'}>
-                              {typeof performance.sales?.growth?.revenueGrowth === 'number' ? 
+                              {typeof performance.sales?.growth?.revenueGrowth === 'number' ?
                                 (performance.sales.growth.revenueGrowth > 0 ? '+' : '') + performance.sales.growth.revenueGrowth.toFixed(2) + '%' : '0.00%'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -1031,7 +1100,7 @@ const EnhancedVendorDashboard = () => {
                               </Typography>
                             </Box>
                             <Typography variant="h5" color={performance.sales?.growth?.orderGrowth > 0 ? 'success.main' : 'error.main'}>
-                              {typeof performance.sales?.growth?.orderGrowth === 'number' ? 
+                              {typeof performance.sales?.growth?.orderGrowth === 'number' ?
                                 (performance.sales.growth.orderGrowth > 0 ? '+' : '') + performance.sales.growth.orderGrowth.toFixed(2) + '%' : '0.00%'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -1045,7 +1114,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card>
                 <CardHeader
@@ -1064,9 +1133,9 @@ const EnhancedVendorDashboard = () => {
                               <Typography variant="body2">{day.date}</Typography>
                               <Typography variant="body2" fontWeight="bold">${typeof day.revenue === 'number' ? day.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</Typography>
                             </Box>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={(day.revenue / Math.max(...salesChartData.map(d => d.revenue))) * 100} 
+                            <LinearProgress
+                              variant="determinate"
+                              value={(day.revenue / Math.max(...salesChartData.map(d => d.revenue))) * 100}
                               color="primary"
                             />
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
@@ -1125,10 +1194,10 @@ const EnhancedVendorDashboard = () => {
                               <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                   {product.productImage ? (
-                                    <Avatar 
-                                      src={product.productImage} 
-                                      alt={product.productName} 
-                                      sx={{ width: 40, height: 40, mr: 2 }} 
+                                    <Avatar
+                                      src={product.productImage}
+                                      alt={product.productName}
+                                      sx={{ width: 40, height: 40, mr: 2 }}
                                     />
                                   ) : (
                                     <Avatar sx={{ width: 40, height: 40, mr: 2 }}>
@@ -1164,10 +1233,10 @@ const EnhancedVendorDashboard = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell align="right">
-                                <Chip 
-                                  label={typeof product.currentStock === 'number' ? product.currentStock.toLocaleString() : 'N/A'} 
-                                  size="small" 
-                                  color={product.currentStock > 10 ? 'success' : product.currentStock > 0 ? 'warning' : 'error'} 
+                                <Chip
+                                  label={typeof product.currentStock === 'number' ? product.currentStock.toLocaleString() : 'N/A'}
+                                  size="small"
+                                  color={product.currentStock > 10 ? 'success' : product.currentStock > 0 ? 'warning' : 'error'}
                                 />
                                 <Typography variant="caption" color="text.secondary" display="block">
                                   {typeof product.currentStock === 'number' && product.currentStock <= 5 ? 'Low stock' : ''}
@@ -1189,7 +1258,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card>
                 <CardHeader
@@ -1222,14 +1291,14 @@ const EnhancedVendorDashboard = () => {
                         Inactive products
                       </Typography>
                       <Typography variant="body2">
-                        {typeof products.totalProducts === 'number' && typeof products.activeProducts === 'number' ? 
+                        {typeof products.totalProducts === 'number' && typeof products.activeProducts === 'number' ?
                           (products.totalProducts - products.activeProducts).toLocaleString() : 0}
                       </Typography>
                     </Box>
                   </Box>
-                  
+
                   <Divider sx={{ my: 2 }} />
-                  
+
                   <Box>
                     <Typography variant="h6" gutterBottom>
                       Inventory Value
@@ -1257,7 +1326,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card>
                 <CardHeader
@@ -1273,10 +1342,10 @@ const EnhancedVendorDashboard = () => {
                             <Typography variant="body2" fontWeight="bold">
                               {product.productName}
                             </Typography>
-                            <Chip 
-                              label={`${typeof product.currentStock === 'number' ? product.currentStock.toLocaleString() : 'N/A'} left`} 
-                              size="small" 
-                              color="error" 
+                            <Chip
+                              label={`${typeof product.currentStock === 'number' ? product.currentStock.toLocaleString() : 'N/A'} left`}
+                              size="small"
+                              color="error"
                             />
                           </Box>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -1357,7 +1426,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={4}>
               <Card>
                 <CardHeader
@@ -1376,7 +1445,7 @@ const EnhancedVendorDashboard = () => {
                       Total customers
                     </Typography>
                   </Box>
-                  
+
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" gutterBottom>
                       Average Value
@@ -1388,7 +1457,7 @@ const EnhancedVendorDashboard = () => {
                       Per customer
                     </Typography>
                   </Box>
-                  
+
                   <Box>
                     <Typography variant="h6" gutterBottom>
                       Segments
@@ -1403,7 +1472,7 @@ const EnhancedVendorDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12}>
               <Card>
                 <CardHeader
@@ -1424,7 +1493,7 @@ const EnhancedVendorDashboard = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
                         <AttachMoneyIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
@@ -1436,7 +1505,7 @@ const EnhancedVendorDashboard = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
                         <ShoppingCartIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
@@ -1448,7 +1517,7 @@ const EnhancedVendorDashboard = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    
+
                     <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
                         <BarChartIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
@@ -1461,7 +1530,7 @@ const EnhancedVendorDashboard = () => {
                       </Box>
                     </Grid>
                   </Grid>
-                  
+
                   {/* Customer Segments */}
                   {customerData?.segmentSummary && customerData.segmentSummary.length > 0 && (
                     <Box sx={{ mt: 3 }}>
@@ -1487,7 +1556,7 @@ const EnhancedVendorDashboard = () => {
                       </Grid>
                     </Box>
                   )}
-                  
+
                   <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
                     <Typography variant="body2" color="info.dark">
                       <InfoIcon sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
@@ -1514,7 +1583,7 @@ const EnhancedVendorDashboard = () => {
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 Promote your products and engage with customers.
               </Typography>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
@@ -1529,7 +1598,7 @@ const EnhancedVendorDashboard = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
@@ -1543,7 +1612,7 @@ const EnhancedVendorDashboard = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
@@ -1557,7 +1626,7 @@ const EnhancedVendorDashboard = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
@@ -1571,7 +1640,7 @@ const EnhancedVendorDashboard = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
@@ -1585,7 +1654,7 @@ const EnhancedVendorDashboard = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={4}>
                   <Card variant="outlined" sx={{ height: '100%' }}>
                     <CardContent>
@@ -1611,8 +1680,8 @@ const EnhancedVendorDashboard = () => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="text" 
+            <Button
+              variant="text"
               fullWidth
               href="/vendor/help"
               sx={{ justifyContent: 'flex-start' }}
@@ -1622,8 +1691,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="text" 
+            <Button
+              variant="text"
               fullWidth
               href="/vendor/support"
               sx={{ justifyContent: 'flex-start' }}
@@ -1633,8 +1702,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="text" 
+            <Button
+              variant="text"
               fullWidth
               href="/vendor/faq"
               sx={{ justifyContent: 'flex-start' }}
@@ -1644,8 +1713,8 @@ const EnhancedVendorDashboard = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="text" 
+            <Button
+              variant="text"
               fullWidth
               href="/vendor/community"
               sx={{ justifyContent: 'flex-start' }}

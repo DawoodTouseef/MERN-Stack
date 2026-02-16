@@ -46,6 +46,8 @@ import { FaSearch, FaFilter } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import DocumentTitle from "react-document-title";
+import useCurrency from "../../hooks/useCurrency";
+import { APP_NAME } from "../../redux/constants";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -77,37 +79,54 @@ const getPaymentChip = (status) => {
 };
 
 // Status card component for order statistics
-const StatusCard = ({ title, count, icon, color, bgColor }) => (
-  <Card
+const StatCard = ({ title, count, icon, color, description }) => (
+  <Paper
+    elevation={0}
     sx={{
-      bgcolor: bgColor,
-      borderRadius: 3,
-      boxShadow: 3,
-      height: '100%',
+      p: 3,
+      borderRadius: 4,
+      bgcolor: '#fff',
+      border: '1px solid #e2e8f0',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      height: '100%',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      }
     }}
   >
-    <CardContent>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h6" sx={{ color: color, fontWeight: 600 }}>
-            {title}
-          </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mt: 1 }}>
-            {count}
-          </Typography>
-        </Box>
-        <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
-          {icon}
-        </Avatar>
-      </Box>
-    </CardContent>
-  </Card>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+      <Avatar
+        sx={{
+          bgcolor: `${color}15`,
+          color: color,
+          width: 48,
+          height: 48,
+          borderRadius: 3,
+        }}
+      >
+        {icon}
+      </Avatar>
+    </Box>
+    <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
+      {title}
+    </Typography>
+    <Typography variant="h4" fontWeight={900} color="#1e293b" sx={{ mb: 1 }}>
+      {count}
+    </Typography>
+    {description && (
+      <Typography variant="caption" color="text.secondary">
+        {description}
+      </Typography>
+    )}
+  </Paper>
 );
 
 const OrderList = ({ isAdmin = false }) => {
   const { userInfo } = useSelector((state) => state.auth);
+  const { format } = useCurrency();
 
   // Use different hooks based on user role
   const {
@@ -302,7 +321,7 @@ const OrderList = ({ isAdmin = false }) => {
       width: 120,
       renderCell: (params) => (
         <Typography variant="body2" fontWeight={700} color="primary.main">
-          ${params.value?.toFixed(2)}
+          {format(params.value, params.row.currency || 'USD')}
         </Typography>
       )
     },
@@ -323,7 +342,13 @@ const OrderList = ({ isAdmin = false }) => {
             label={params.value}
             color={getStatusColor(params.value)}
             size="small"
-            sx={{ fontWeight: 600 }}
+            sx={{
+              fontWeight: 700,
+              borderRadius: 1.5,
+              textTransform: 'uppercase',
+              fontSize: '0.65rem',
+              letterSpacing: '0.05em'
+            }}
           />
           {params.value === "Delivered" && params.row.deliveredAt && (
             <Typography variant="caption" color="success.main" sx={{ display: "block", mt: 0.5 }}>
@@ -388,7 +413,7 @@ const OrderList = ({ isAdmin = false }) => {
   ];
 
   return (
-    <DocumentTitle title={isAdmin ? "Order Management | Nexus Mart" : "My Orders | Nexus Mart"}>
+    <DocumentTitle title={isAdmin ? `Order Management | ${APP_NAME}` : `My Orders | ${APP_NAME}`}>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc", py: 6, px: { xs: 1, md: 4 } }}>
         <Fade in>
           <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: "#fff" }}>
@@ -405,39 +430,39 @@ const OrderList = ({ isAdmin = false }) => {
             {/* Status Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid item xs={12} sm={6} md={3}>
-                <StatusCard
+                <StatCard
                   title="Pending Orders"
                   count={orderStats.pending}
                   icon={<PendingIcon />}
                   color="#ff9800"
-                  bgColor="#2d2d2d"
+                  description="Awaiting fulfillment"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <StatusCard
+                <StatCard
                   title="Completed Orders"
                   count={orderStats.completed}
                   icon={<CheckCircleIcon />}
-                  color="#4caf50"
-                  bgColor="#2d2d2d"
+                  color="#10b981"
+                  description="Successfully delivered"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <StatusCard
+                <StatCard
                   title="COD Orders"
                   count={orderStats.cod}
                   icon={<AttachMoneyIcon />}
-                  color="#f44336"
-                  bgColor="#2d2d2d"
+                  color="#ef4444"
+                  description="Cash on delivery"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <StatusCard
+                <StatCard
                   title="Online Payments"
                   count={orderStats.online}
                   icon={<CreditCardIcon />}
-                  color="#2196f3"
-                  bgColor="#2d2d2d"
+                  color="#6366f1"
+                  description="Paid electronically"
                 />
               </Grid>
             </Grid>

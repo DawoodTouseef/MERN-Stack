@@ -12,22 +12,30 @@ import {
   Typography,
   Paper,
   Grid,
+  Button,
+  Collapse,
 } from "@mui/material";
 import { useSelector } from "react-redux";
+import { FaEdit } from "react-icons/fa";
 
 const ProductTabs = ({
   product,
   userInfo,
 }) => {
   const { data: relatedProducts, isLoading } = useGetTopProductsQuery();
-  const [activeTab, setActiveTab] = useState(1); // Default to All Reviews
+  const [activeTab, setActiveTab] = useState(0); // Default to All Reviews
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
   const handleReviewSubmitted = () => {
-    setActiveTab(1); // Switch to reviews tab after submission
+    setShowReviewForm(false); // Hide form after submission
+  };
+
+  const toggleReviewForm = () => {
+    setShowReviewForm(!showReviewForm);
   };
 
   return (
@@ -44,55 +52,42 @@ const ProductTabs = ({
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          indicatorColor="secondary"
-          textColor="secondary"
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{
-            borderBottom: 1,
-            borderColor: "divider",
-            "& .MuiTab-root": {
-              fontWeight: 700,
-              fontSize: "1.13rem",
-              letterSpacing: 0.2,
-              color: "#6366f1",
-              "&.Mui-selected": {
-                color: "#ec4899",
+            mb: 4,
+            '& .MuiTabs-indicator': {
+              display: 'none',
+            },
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+              mr: 2,
+              borderRadius: 3,
+              transition: 'all 0.2s',
+              minHeight: 48,
+              px: 3,
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                color: 'white',
+                bgcolor: 'primary.main',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
               },
-            },
-            "& .MuiTabs-indicator": {
-              background: "linear-gradient(90deg,#ec4899 0%,#6366f1 100%)",
-              height: 4,
-              borderRadius: 2,
-            },
+              '&:hover:not(.Mui-selected)': {
+                bgcolor: 'rgba(99, 102, 241, 0.08)',
+                color: 'primary.main'
+              }
+            }
           }}
         >
-          <Tab label="Write Your Review" />
           <Tab label={`All Reviews (${product.reviews.length})`} />
           <Tab label="Related Products" />
         </Tabs>
       </Paper>
 
-      {/* Write Review */}
-      {activeTab === 0 && (
-        <Paper
-          sx={{
-            p: { xs: 2, md: 4 },
-            borderRadius: 3,
-            mb: 3,
-            bgcolor: "#f9fafb",
-            boxShadow: "0 2px 12px #ec489933",
-          }}
-        >
-          <EnhancedReviewForm
-            product={product}
-            userInfo={userInfo}
-            onReviewSubmitted={handleReviewSubmitted}
-          />
-        </Paper>
-      )}
-
       {/* All Reviews */}
-      {activeTab === 1 && (
+      {activeTab === 0 && (
         <Paper
           sx={{
             p: { xs: 2, md: 4 },
@@ -106,11 +101,48 @@ const ProductTabs = ({
             product={product}
             userInfo={userInfo}
           />
+
+          {/* Write Review Button */}
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={toggleReviewForm}
+              sx={{
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: 'none',
+                background: 'linear-gradient(45deg, #6366f1 30%, #8b5cf6 90%)',
+                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.39)',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 20px rgba(99, 102, 241, 0.23)',
+                  filter: 'brightness(1.1)'
+                },
+              }}
+            >
+              <FaEdit style={{ marginRight: 8 }} />
+              {showReviewForm ? 'Cancel' : 'Write a Review'}
+            </Button>
+          </Box>
+
+          {/* Review Form (Collapsible) */}
+          <Collapse in={showReviewForm}>
+            <Box sx={{ mt: 3 }}>
+              <EnhancedReviewForm
+                product={product}
+                userInfo={userInfo}
+                onReviewSubmitted={handleReviewSubmitted}
+              />
+            </Box>
+          </Collapse>
         </Paper>
       )}
 
       {/* Related Products */}
-      {activeTab === 2 && (
+      {activeTab === 1 && (
         <Paper
           sx={{
             p: { xs: 2, md: 4 },

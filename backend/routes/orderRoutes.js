@@ -21,7 +21,10 @@ import {
   updateDeliveryPreferences,
   getOrdersWithFilters,
   submitOrderFeedback,
-  getVendorOrders
+  getVendorOrders,
+  // Role-based functions
+  cancelOrder,
+  getAdminOrders
 } from "../controllers/orderController.js";
 
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
@@ -72,5 +75,11 @@ router.route("/:id/feedback").post(authenticate, submitOrderFeedback);
 
 // Public tracking route (no authentication required)
 router.route("/track/:orderNumber").get(trackOrderByNumber);
+
+// Cancel order (customer only)
+router.route("/:id/cancel").put(authenticate, cancelOrder);
+
+// Get all orders (admin only)
+router.route("/admin/all").get(authenticate, authorizeVendor, getAdminOrders);
 
 export default router;

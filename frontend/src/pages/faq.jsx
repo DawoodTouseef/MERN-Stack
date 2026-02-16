@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { FaSearch } from "react-icons/fa";
 import { ExpandMore } from "@mui/icons-material";
+import { APP_NAME } from "../redux/constants";
 
 const Faq = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +58,7 @@ const Faq = () => {
         {
           question: "Do you ship internationally?",
           answer:
-            "Yes, Nexus Mart ships to over 50 countries. International shipping costs and delivery times vary by destination. Check our <a href='/shipping'>Shipping Policy</a> for details.",
+            "Yes, {APP_NAME} ships to over 50 countries. International shipping costs and delivery times vary by destination. Check our <a href='/shipping'>Shipping Policy</a> for details.",
         },
         {
           question: "What if my order is delayed?",
@@ -165,21 +166,21 @@ const Faq = () => {
         minHeight: "100vh",
         py: { xs: 4, md: 8 },
         px: { xs: 2, md: 4 },
-        background: "linear-gradient(135deg, #f3e7e9 0%, #e3eeff 100%)",
+        bgcolor: "#f8fafc", // Cool Slate Gray
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
       }}
     >
       <Paper
-        elevation={6}
+        elevation={0}
         sx={{
           maxWidth: 900,
           width: "100%",
           mx: "auto",
           p: { xs: 3, md: 5 },
           borderRadius: 4,
-          boxShadow: "0 8px 32px 0 rgba(236,72,153,0.15)",
+          border: `1px solid ${alpha('#6366f1', 0.1)}`,
           background: "#fff",
         }}
       >
@@ -187,13 +188,13 @@ const Faq = () => {
           variant="h3"
           fontWeight="bold"
           sx={{
-            color: "#ec4899",
+            color: "#1e293b",
             mb: 2,
-            letterSpacing: 0.5,
+            letterSpacing: '-0.02em',
             textAlign: { xs: "center", md: "left" },
           }}
         >
-          Nexus Mart FAQ
+          Frequently Asked <Box component="span" sx={{ color: '#6366f1' }}>Questions</Box>
         </Typography>
         <Typography
           variant="subtitle1"
@@ -218,12 +219,12 @@ const Faq = () => {
           }}
           sx={{
             mb: 4,
-            bgcolor: "#f9fafb",
-            borderRadius: 2,
+            bgcolor: "#fff",
             "& .MuiOutlinedInput-root": {
-              "& fieldset": { borderColor: "#e3eeff" },
-              "&:hover fieldset": { borderColor: "#ec4899" },
-              "&.Mui-focused fieldset": { borderColor: "#ec4899" },
+              borderRadius: 2,
+              "& fieldset": { borderColor: alpha('#6366f1', 0.2) },
+              "&:hover fieldset": { borderColor: '#6366f1' },
+              "&.Mui-focused fieldset": { borderColor: '#6366f1' },
             },
           }}
         />
@@ -273,12 +274,12 @@ const Faq = () => {
         ) : (
           filteredFaqs.map((category) => (
             <Box key={category.id} id={category.id} sx={{ mb: 3 }}>
-              <Accordion defaultExpanded>
+              <Accordion defaultExpanded elevation={0} sx={{ border: `1px solid ${alpha('#6366f1', 0.1)}`, borderRadius: '8px !important', overflow: 'hidden' }}>
                 <AccordionSummary
-                  expandIcon={<ExpandMore />}
-                  sx={{ bgcolor: "#f3e7e9", borderRadius: 1, mb: 1 }}
+                  expandIcon={<ExpandMore sx={{ color: '#6366f1' }} />}
+                  sx={{ bgcolor: alpha('#6366f1', 0.03) }}
                 >
-                  <Typography variant="h6" fontWeight="bold" sx={{ color: "#18181b" }}>
+                  <Typography variant="h6" fontWeight="bold" sx={{ color: "#1e293b" }}>
                     {category.title}
                   </Typography>
                 </AccordionSummary>

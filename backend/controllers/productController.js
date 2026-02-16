@@ -5,7 +5,7 @@ import { findVariantById } from "../utils/variantUtils.js";
 
 const addProduct = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock,  shippingWeight, shippingLength, shippingWidth, shippingHeight, shippingClass, taxProductCode, isTaxable, taxCategory, taxExempt, currency, prices } = req.fields;
+    const { name, description, price, category, quantity, brand, warrantyPeriod, returnPolicy, tags, countInStock, shippingWeight, shippingLength, shippingWidth, shippingHeight, shippingClass, taxProductCode, isTaxable, taxCategory, taxExempt, currency, prices } = req.fields;
     // Validation
     switch (true) {
       case !name:
@@ -88,7 +88,7 @@ const addProduct = asyncHandler(async (req, res) => {
         size: variant.size || '',
         storage: variant.storage || ''
       });
-      
+
       return {
         ...variant,
         sku: variantSKU
@@ -112,7 +112,7 @@ const addProduct = asyncHandler(async (req, res) => {
         storage: ''
       });
     }
-    
+
     const productData = {
       name,
       description,
@@ -181,7 +181,7 @@ const updateProductDetails = asyncHandler(async (req, res) => {
 
     // Validate product ID
     const productId = req.params.id;
-    
+
 
     // Fetch the existing product
     const existingProduct = await Product.findById(productId).populate("category").populate("brand");
@@ -210,14 +210,14 @@ const updateProductDetails = asyncHandler(async (req, res) => {
         variantsArray[index][field] = req.fields[key];
       }
     });
-    const tags=[];
+    const tags = [];
     Object.keys(req.fields).forEach((key) => {
       const specMatch = key.match(/tags\[(.+)\]/);
       if (specMatch) {
         tags.push(req.fields[key]);
       }
     });
-        const mediaArray = [];
+    const mediaArray = [];
     Object.keys(req.fields).forEach((key) => {
       const mediaMatch = key.match(/media\[(\d+)\]\[(\w+)\]/);
       if (mediaMatch) {
@@ -227,7 +227,7 @@ const updateProductDetails = asyncHandler(async (req, res) => {
         mediaArray[index][field] = req.fields[key];
       }
     });
-    
+
     // Construct updated product data
     const updatedProductData = {
       name: name || existingProduct.name,
@@ -260,7 +260,7 @@ const updateProductDetails = asyncHandler(async (req, res) => {
     const updatedProduct = await Product.findByIdAndUpdate(productId, updatedProductData, { new: true })
       .populate("category")
       .populate("brand");
-  
+
     res.status(200).json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
@@ -271,7 +271,7 @@ const updateProductDetails = asyncHandler(async (req, res) => {
 const removeProduct = asyncHandler(async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
-    .populate("category")
+      .populate("category")
       .populate('brand');
     res.json(product);
   } catch (error) {
@@ -285,17 +285,17 @@ const fetchProducts = asyncHandler(async (req, res) => {
     const pageSize = 6;
     const keyword = req.query.keyword
       ? {
-          $or: [
-            { name: { $regex: req.query.keyword, $options: "i" } },
-            { description: { $regex: req.query.keyword, $options: "i" } },
-            { tags: { $in: [new RegExp(req.query.keyword, "i")] } }
-          ]
-        }
+        $or: [
+          { name: { $regex: req.query.keyword, $options: "i" } },
+          { description: { $regex: req.query.keyword, $options: "i" } },
+          { tags: { $in: [new RegExp(req.query.keyword, "i")] } }
+        ]
+      }
       : {};
 
     const count = await Product.countDocuments({ ...keyword })
-    .populate('category')
-    .populate('brand');
+      .populate('category')
+      .populate('brand');
     const products = await Product.find({ ...keyword }).limit(pageSize).populate("category")
       .populate('brand');
 
@@ -342,9 +342,9 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
 
 const addProductReview = asyncHandler(async (req, res) => {
   try {
-    const { 
-      rating, 
-      comment, 
+    const {
+      rating,
+      comment,
       title,
       images,
       videos,
@@ -352,7 +352,7 @@ const addProductReview = asyncHandler(async (req, res) => {
       cons,
       usageContext
     } = req.body;
-    
+
     const product = await Product.findById(req.params.id)
       .populate("category")
       .populate('brand');
@@ -396,21 +396,21 @@ const addProductReview = asyncHandler(async (req, res) => {
       comment,
       title: title || '',
       user: req.user._id,
-      
+
       // Purchase verification
       isVerifiedPurchase: !!verifiedPurchase,
       orderId: verifiedPurchase?._id,
       purchaseDate: verifiedPurchase?.deliveredAt,
-      
+
       // Media
       images: images || [],
       videos: videos || [],
-      
+
       // Review details
       pros: pros || [],
       cons: cons || [],
       usageContext: usageContext || {},
-      
+
       // Quality metrics
       qualityScore,
       moderationStatus: qualityScore < 30 ? 'pending' : 'approved'
@@ -418,13 +418,13 @@ const addProductReview = asyncHandler(async (req, res) => {
 
     product.reviews.push(review);
     product.numReviews = product.reviews.length;
-    
+
     // Calculate weighted rating (verified purchases count more)
     const weightedRating = calculateWeightedRating(product.reviews);
     product.rating = weightedRating;
 
     await product.save();
-    
+
     // Track user behavior for recommendations
     const { UserBehavior } = await import('../models/recommendationModel.js');
     await trackUserBehavior({
@@ -434,7 +434,7 @@ const addProductReview = asyncHandler(async (req, res) => {
       metadata: { rating, isVerifiedPurchase: !!verifiedPurchase }
     });
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: "Review added successfully",
       review: {
         ...review,
@@ -450,7 +450,7 @@ const addProductReview = asyncHandler(async (req, res) => {
 const fetchTopProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find({}).sort({ rating: -1 }).limit(4)
-    .populate('category').populate('brand');
+      .populate('category').populate('brand');
     res.json(products);
   } catch (error) {
     console.error(error);
@@ -461,7 +461,7 @@ const fetchTopProducts = asyncHandler(async (req, res) => {
 const fetchNewProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find().sort({ _id: -1 }).limit(5)
-    .populate('category').populate('brand');
+      .populate('category').populate('brand');
     res.json(products);
   } catch (error) {
     console.error(error);
@@ -476,7 +476,7 @@ const filterProducts = asyncHandler(async (req, res) => {
     if (checked.length > 0) args.category = checked;
     if (radio.length) args.price = { $gte: radio[0], $lte: radio[1] };
     const products = await Product.find(args)
-    .populate('category').populate('brand');
+      .populate('category').populate('brand');
     res.json(products);
   } catch (error) {
     console.error(error);
@@ -660,7 +660,7 @@ const advancedSearch = asyncHandler(async (req, res) => {
     ];
 
     const [result] = await Product.aggregate(pipeline);
-    
+
     const totalProducts = result.totalCount[0]?.total || 0;
     const totalPages = Math.ceil(totalProducts / pageSize);
 
@@ -693,10 +693,10 @@ const advancedSearch = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Advanced search error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: "Advanced search failed",
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -791,7 +791,7 @@ const facetedSearch = asyncHandler(async (req, res) => {
     if (offers && offers.length > 0) {
       const offersArray = Array.isArray(offers) ? offers : [offers];
       const offerConditions = [];
-      
+
       if (offersArray.includes('flash_sale')) {
         offerConditions.push({ discount: { $gt: 30 } });
       }
@@ -804,10 +804,10 @@ const facetedSearch = asyncHandler(async (req, res) => {
       if (offersArray.includes('no_cost_emi')) {
         offerConditions.push({ emiAvailable: true });
       }
-      
+
       if (offerConditions.length > 0) {
-        searchQuery.$or = searchQuery.$or ? 
-          [...(searchQuery.$or || []), ...offerConditions] : 
+        searchQuery.$or = searchQuery.$or ?
+          [...(searchQuery.$or || []), ...offerConditions] :
           offerConditions;
       }
     }
@@ -998,7 +998,7 @@ const facetedSearch = asyncHandler(async (req, res) => {
     ];
 
     const [result] = await Product.aggregate(pipeline);
-    
+
     const totalProducts = result.totalCount[0]?.total || 0;
     const totalPages = Math.ceil(totalProducts / pageSize);
 
@@ -1039,17 +1039,17 @@ const facetedSearch = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Faceted search error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: "Faceted search failed",
-      message: error.message 
+      message: error.message
     });
   }
 });
 const getSearchSuggestions = asyncHandler(async (req, res) => {
   try {
     const { query, limit = 10 } = req.query;
-    
+
     if (!query || query.length < 2) {
       return res.json({ suggestions: [] });
     }
@@ -1160,9 +1160,9 @@ const getSearchSuggestions = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Search suggestions error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: "Failed to get search suggestions" 
+      error: "Failed to get search suggestions"
     });
   }
 });
@@ -1170,7 +1170,7 @@ const getSearchSuggestions = asyncHandler(async (req, res) => {
 // Helper function to calculate review quality score
 const calculateReviewQuality = (reviewData) => {
   let score = 0;
-  
+
   // Comment length and detail (40 points max)
   if (reviewData.comment) {
     const wordCount = reviewData.comment.split(' ').length;
@@ -1179,54 +1179,54 @@ const calculateReviewQuality = (reviewData) => {
     else if (wordCount >= 10) score += 20;
     else score += 10;
   }
-  
+
   // Title presence (10 points)
   if (reviewData.title && reviewData.title.length > 5) {
     score += 10;
   }
-  
+
   // Pros and cons (20 points)
   if (reviewData.pros && reviewData.pros.length > 0) score += 10;
   if (reviewData.cons && reviewData.cons.length > 0) score += 10;
-  
+
   // Usage context (15 points)
   if (reviewData.usageContext && Object.keys(reviewData.usageContext).length > 0) {
     score += 15;
   }
-  
+
   // Media attachments (15 points)
   if (reviewData.hasImages) score += 10;
   if (reviewData.hasVideos) score += 5;
-  
+
   return Math.min(score, 100);
 };
 
 // Helper function to calculate weighted rating
 const calculateWeightedRating = (reviews) => {
   if (reviews.length === 0) return 0;
-  
+
   let totalScore = 0;
   let totalWeight = 0;
-  
+
   reviews.forEach(review => {
     let weight = 1;
-    
+
     // Verified purchases get higher weight
     if (review.isVerifiedPurchase) weight += 0.5;
-    
+
     // High quality reviews get higher weight
     if (review.qualityScore >= 70) weight += 0.3;
     else if (review.qualityScore >= 50) weight += 0.1;
-    
+
     // Recent reviews get slightly higher weight
     const daysSinceReview = (Date.now() - new Date(review.createdAt)) / (1000 * 60 * 60 * 24);
     if (daysSinceReview <= 30) weight += 0.2;
     else if (daysSinceReview <= 90) weight += 0.1;
-    
+
     totalScore += review.rating * weight;
     totalWeight += weight;
   });
-  
+
   return totalWeight > 0 ? totalScore / totalWeight : 0;
 };
 
@@ -1234,9 +1234,9 @@ const calculateWeightedRating = (reviews) => {
 const trackUserBehavior = async ({ userId, action, productId, metadata = {} }) => {
   try {
     const { UserBehavior } = await import('../models/recommendationModel.js');
-    
+
     const sessionId = `session_${userId}_${Date.now()}`;
-    
+
     await UserBehavior.findOneAndUpdate(
       { user: userId },
       {
@@ -1261,22 +1261,22 @@ const trackUserBehavior = async ({ userId, action, productId, metadata = {} }) =
 const voteOnReview = asyncHandler(async (req, res) => {
   try {
     const { productId, reviewId, isHelpful } = req.body;
-    
+
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     const review = product.reviews.id(reviewId);
     if (!review) {
       return res.status(404).json({ error: "Review not found" });
     }
-    
+
     // Check if user already voted
     const existingVote = review.helpfulVotes.find(
       vote => vote.user.toString() === req.user._id.toString()
     );
-    
+
     if (existingVote) {
       // Update existing vote
       if (existingVote.isHelpful !== isHelpful) {
@@ -1298,16 +1298,16 @@ const voteOnReview = asyncHandler(async (req, res) => {
         isHelpful,
         votedAt: new Date()
       });
-      
+
       if (isHelpful) {
         review.helpfulCount += 1;
       } else {
         review.notHelpfulCount += 1;
       }
     }
-    
+
     await product.save();
-    
+
     res.json({
       message: "Vote recorded successfully",
       helpfulCount: review.helpfulCount,
@@ -1323,42 +1323,42 @@ const voteOnReview = asyncHandler(async (req, res) => {
 const reportReview = asyncHandler(async (req, res) => {
   try {
     const { productId, reviewId, reason, description } = req.body;
-    
+
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     const review = product.reviews.id(reviewId);
     if (!review) {
       return res.status(404).json({ error: "Review not found" });
     }
-    
+
     // Check if user already reported this review
     const existingReport = review.reports.find(
       report => report.user.toString() === req.user._id.toString()
     );
-    
+
     if (existingReport) {
       return res.status(400).json({ error: "You have already reported this review" });
     }
-    
+
     review.reports.push({
       user: req.user._id,
       reason,
       description: description || '',
       reportedAt: new Date()
     });
-    
+
     review.reportCount += 1;
-    
+
     // Auto-flag if too many reports
     if (review.reportCount >= 3 && review.moderationStatus === 'approved') {
       review.moderationStatus = 'flagged';
     }
-    
+
     await product.save();
-    
+
     res.json({ message: "Review reported successfully" });
   } catch (error) {
     console.error('Report review error:', error);
@@ -1369,48 +1369,48 @@ const reportReview = asyncHandler(async (req, res) => {
 // Get reviews with filters and sorting
 const getProductReviews = asyncHandler(async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      sortBy = 'newest', 
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'newest',
       filterBy,
       rating,
       verified,
       withMedia
     } = req.query;
-    
+
     const product = await Product.findById(req.params.id)
       .populate({
         path: 'reviews.user',
         select: 'username'
       });
-    
+
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     let reviews = [...product.reviews];
-    
+
     // Apply filters
     if (rating) {
       reviews = reviews.filter(r => r.rating === parseInt(rating));
     }
-    
+
     if (verified === 'true') {
       reviews = reviews.filter(r => r.isVerifiedPurchase);
     }
-    
+
     if (withMedia === 'true') {
-      reviews = reviews.filter(r => 
-        (r.images && r.images.length > 0) || 
+      reviews = reviews.filter(r =>
+        (r.images && r.images.length > 0) ||
         (r.videos && r.videos.length > 0)
       );
     }
-    
+
     if (filterBy === 'helpful') {
       reviews = reviews.filter(r => r.helpfulCount >= 3);
     }
-    
+
     // Apply sorting
     switch (sortBy) {
       case 'newest':
@@ -1434,19 +1434,19 @@ const getProductReviews = asyncHandler(async (req, res) => {
       default:
         reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
-    
+
     // Apply pagination
     const startIndex = (parseInt(page) - 1) * parseInt(limit);
     const endIndex = startIndex + parseInt(limit);
     const paginatedReviews = reviews.slice(startIndex, endIndex);
-    
+
     // Calculate review statistics
     const stats = {
       totalReviews: reviews.length,
       averageRating: product.rating,
       verifiedCount: reviews.filter(r => r.isVerifiedPurchase).length,
-      withMediaCount: reviews.filter(r => 
-        (r.images && r.images.length > 0) || 
+      withMediaCount: reviews.filter(r =>
+        (r.images && r.images.length > 0) ||
         (r.videos && r.videos.length > 0)
       ).length,
       ratingBreakdown: {
@@ -1457,7 +1457,7 @@ const getProductReviews = asyncHandler(async (req, res) => {
         1: reviews.filter(r => r.rating === 1).length
       }
     };
-    
+
     res.json({
       success: true,
       reviews: paginatedReviews,
@@ -1481,17 +1481,17 @@ const updateReview = asyncHandler(async (req, res) => {
   try {
     const { reviewId } = req.params;
     const { rating, comment, title, pros, cons, usageContext } = req.body;
-    
+
     const product = await Product.findOne({ 'reviews._id': reviewId });
     if (!product) {
       return res.status(404).json({ error: "Review not found" });
     }
-    
+
     const review = product.reviews.id(reviewId);
     if (review.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Not authorized to edit this review" });
     }
-    
+
     // Store edit history
     review.editHistory.push({
       editedAt: new Date(),
@@ -1499,7 +1499,7 @@ const updateReview = asyncHandler(async (req, res) => {
       previousRating: review.rating,
       reason: 'User edit'
     });
-    
+
     // Update review fields
     review.rating = rating || review.rating;
     review.comment = comment || review.comment;
@@ -1508,7 +1508,7 @@ const updateReview = asyncHandler(async (req, res) => {
     review.cons = cons || review.cons;
     review.usageContext = usageContext || review.usageContext;
     review.isEdited = true;
-    
+
     // Recalculate quality score
     review.qualityScore = calculateReviewQuality({
       comment: review.comment,
@@ -1519,12 +1519,12 @@ const updateReview = asyncHandler(async (req, res) => {
       hasImages: review.images && review.images.length > 0,
       hasVideos: review.videos && review.videos.length > 0
     });
-    
+
     // Recalculate product rating
     product.rating = calculateWeightedRating(product.reviews);
-    
+
     await product.save();
-    
+
     res.json({
       message: "Review updated successfully",
       review
@@ -1539,31 +1539,31 @@ const updateReview = asyncHandler(async (req, res) => {
 const addVendorResponse = asyncHandler(async (req, res) => {
   try {
     const { productId, reviewId, comment } = req.body;
-    
+
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     // Check if user is vendor/admin
     if (req.user.role !== 'vendor' && req.user.role !== 'admin') {
       return res.status(403).json({ error: "Not authorized to respond to reviews" });
     }
-    
+
     const review = product.reviews.id(reviewId);
     if (!review) {
       return res.status(404).json({ error: "Review not found" });
     }
-    
+
     review.vendorResponse = {
       comment,
       respondedBy: req.user._id,
       respondedAt: new Date(),
       isPublic: true
     };
-    
+
     await product.save();
-    
+
     res.json({ message: "Response added successfully" });
   } catch (error) {
     console.error('Add vendor response error:', error);
@@ -1575,17 +1575,17 @@ const addVendorResponse = asyncHandler(async (req, res) => {
 const getProductVariant = asyncHandler(async (req, res) => {
   try {
     const { productId, variantId } = req.params;
-    
+
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     const variant = findVariantById(product, variantId);
     if (!variant) {
       return res.status(404).json({ error: "Variant not found" });
     }
-    
+
     res.json({
       ...variant.toObject(),
       productName: product.name,
@@ -1627,13 +1627,13 @@ export {
 const getFlashSales = asyncHandler(async (req, res) => {
   try {
     const { active = true, limit = 8 } = req.query;
-    
+
     const currentTime = new Date();
     let flashSaleProducts = [];
-    
+
     // Import Offer model dynamically
     const Offer = (await import('../models/offersModel.js')).default;
-    
+
     const flashOffers = await Offer.find({
       offerType: 'flash',
       ...(active === 'true' && {
@@ -1641,7 +1641,7 @@ const getFlashSales = asyncHandler(async (req, res) => {
         endTime: { $gt: currentTime }
       })
     }).populate('products categories');
-    
+
     // Collect products from flash offers
     for (const offer of flashOffers) {
       // Add products directly in the offer
@@ -1649,7 +1649,7 @@ const getFlashSales = asyncHandler(async (req, res) => {
         const populatedProducts = await Product.find({
           _id: { $in: offer.products.map(p => p._id) }
         }).populate('category brand');
-        
+
         flashSaleProducts.push(...populatedProducts.map(product => ({
           ...product.toObject(),
           flashOffer: {
@@ -1660,14 +1660,14 @@ const getFlashSales = asyncHandler(async (req, res) => {
           }
         })));
       }
-      
+
       // Add products from categories in the offer
       if (offer.categories && offer.categories.length > 0) {
         const categoryProducts = await Product.find({
           category: { $in: offer.categories.map(cat => cat._id) },
           countInStock: { $gt: 0 }
         }).populate('category brand');
-        
+
         flashSaleProducts.push(...categoryProducts.map(product => ({
           ...product.toObject(),
           flashOffer: {
@@ -1679,13 +1679,13 @@ const getFlashSales = asyncHandler(async (req, res) => {
         })));
       }
     }
-    
+
     // Remove duplicates and limit results
     const uniqueProducts = flashSaleProducts.filter(
-      (product, index, self) => 
+      (product, index, self) =>
         index === self.findIndex(p => p._id.toString() === product._id.toString())
     );
-    
+
     res.json(uniqueProducts.slice(0, parseInt(limit)));
   } catch (error) {
     console.error('Flash sales error:', error);
@@ -1698,26 +1698,26 @@ const getFlashSales = asyncHandler(async (req, res) => {
 // @access  Public
 const getTrendingProducts = asyncHandler(async (req, res) => {
   try {
-    const { 
-      limit = 12, 
-      timeframe = '7d', 
-      category, 
-      latitude, 
-      longitude 
+    const {
+      limit = 12,
+      timeframe = '7d',
+      category,
+      latitude,
+      longitude
     } = req.query;
-    
+
     // Calculate date range
     const days = timeframe === '1d' ? 1 : timeframe === '7d' ? 7 : 30;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - days);
-    
+
     let trendingQuery = [];
-    
+
     // If location is provided, prioritize location-based trending
     if (latitude && longitude) {
       // Import Order model dynamically
       const Order = (await import('../models/orderModel.js')).default;
-      
+
       // Find recent orders in the area
       const locationOrders = await Order.aggregate([
         {
@@ -1738,56 +1738,56 @@ const getTrendingProducts = asyncHandler(async (req, res) => {
         { $sort: { orderCount: -1, totalQuantity: -1 } },
         { $limit: parseInt(limit) * 2 }
       ]);
-      
+
       trendingQuery = locationOrders.map(item => item._id);
     }
-    
+
     // Fallback to general trending logic based on reviews and ratings
     if (trendingQuery.length === 0) {
       const trendingProducts = await Product.find({
         createdAt: { $gte: dateFrom },
         countInStock: { $gt: 0 }
       })
-      .sort({ numReviews: -1, rating: -1, createdAt: -1 })
-      .limit(parseInt(limit) * 2);
-      
+        .sort({ numReviews: -1, rating: -1, createdAt: -1 })
+        .limit(parseInt(limit) * 2);
+
       trendingQuery = trendingProducts.map(product => product._id);
     }
-    
+
     // Get product details
     let query = {
       _id: { $in: trendingQuery },
       countInStock: { $gt: 0 }
     };
-    
+
     if (category) {
       query.category = category;
     }
-    
+
     const trendingProducts = await Product.find(query)
       .populate('category', 'name')
       .populate('brand', 'name')
       .sort({ rating: -1, numReviews: -1 })
       .limit(parseInt(limit));
-    
+
     // If not enough trending products found, fill with popular products
     if (trendingProducts.length < parseInt(limit)) {
       const remaining = parseInt(limit) - trendingProducts.length;
       const existingIds = trendingProducts.map(p => p._id);
-      
+
       const popularProducts = await Product.find({
         _id: { $nin: existingIds },
         countInStock: { $gt: 0 },
         ...(category && { category })
       })
-      .populate('category', 'name')
-      .populate('brand', 'name')
-      .sort({ numReviews: -1, rating: -1 })
-      .limit(remaining);
-      
+        .populate('category', 'name')
+        .populate('brand', 'name')
+        .sort({ numReviews: -1, rating: -1 })
+        .limit(remaining);
+
       trendingProducts.push(...popularProducts);
     }
-    
+
     // Add trending metadata
     const productsWithMetadata = trendingProducts.map((product, index) => ({
       ...product.toObject(),
@@ -1795,7 +1795,7 @@ const getTrendingProducts = asyncHandler(async (req, res) => {
       trendingScore: Math.max(0.7, 1 - (index * 0.05)), // Decreasing score
       timeframe
     }));
-    
+
     res.json(productsWithMetadata);
   } catch (error) {
     res.status(500).json({ message: error.message });

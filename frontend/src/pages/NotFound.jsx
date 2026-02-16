@@ -1,6 +1,7 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { FaExclamationTriangle, FaHome, FaSearch } from "react-icons/fa";
+import { APP_NAME } from "../redux/constants";
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -146,7 +147,7 @@ const NotFound = () => {
               href="mailto:support@nexusmart.com"
               style={{ color: "#6366f1", textDecoration: "none" }}
             >
-              support@nexusmart.com
+              support@{APP_NAME.toLowerCase().replace(/\s+/g, '')}.com
             </a>
           </Typography>
         </Box>

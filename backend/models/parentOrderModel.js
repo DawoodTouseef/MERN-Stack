@@ -23,6 +23,7 @@ const parentOrderSchema = mongoose.Schema({
     totalPrice: { type: Number, required: true, default: 0.0 },
     totalTaxPrice: { type: Number, required: true, default: 0.0 },
     totalShippingPrice: { type: Number, required: true, default: 0.0 },
+    currency: { type: String, required: true, default: "USD" },
 
     isPaid: { type: Boolean, required: true, default: false },
     paidAt: { type: Date },

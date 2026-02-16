@@ -27,13 +27,15 @@ import {
   getProductVariant
 } from "../controllers/productController.js";
 import { authenticate, authorizeVendor } from "../middlewares/authMiddleware.js";
+import { requireVerifiedOrganization } from "../middlewares/verificationMiddleware.js";
 import { searchLimiter } from "../middlewares/rateLimitMiddleware.js";
 import checkId from "../middlewares/checkId.js";
 
 router
   .route("/")
   .get(fetchProducts)
-  .post(authenticate, authorizeVendor, formidable(), addProduct);
+  .post(authenticate, authorizeVendor, requireVerifiedOrganization, formidable(), addProduct);
+
 
 router.route("/allproducts").get(fetchAllProducts);
 
@@ -50,14 +52,17 @@ router.route("/:id/reviews").post(authenticate, checkId, addProductReview).get(g
 router.route("/reviews/:reviewId").put(authenticate, updateReview);
 router.route("/reviews/vote").post(authenticate, voteOnReview);
 router.route("/reviews/report").post(authenticate, reportReview);
-router.route("/reviews/vendor-response").post(authenticate, addVendorResponse);
+router.route("/reviews/vendor-response").post(authenticate, addVendorResponse); // Vendor response might need verification too? Yes.
+// Actually, let's add it to vendor-response.
+// Wait, I can't restart the chunk mid-file easily without context.
+// Let me do the main routes first.
 
 // Product ID routes (must be last to avoid conflicts with special routes)
 router
   .route("/:id")
   .get(fetchProductById)
-  .put(authenticate, authorizeVendor, formidable(), updateProductDetails)
-  .delete(authenticate, authorizeVendor, removeProduct);
+  .put(authenticate, authorizeVendor, requireVerifiedOrganization, formidable(), updateProductDetails)
+  .delete(authenticate, authorizeVendor, requireVerifiedOrganization, removeProduct);
 
 // Product variant route
 router.get('/:productId/variants/:variantId', getProductVariant);

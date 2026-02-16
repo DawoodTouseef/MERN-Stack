@@ -20,15 +20,15 @@ const Header = () => {
             variant="h3"
             sx={{
               fontWeight: 900,
-              letterSpacing: 1,
-              color: "secondary.main",
-              mb: 2,
-              textShadow: "2px 2px 12px #f8bbd0",
+              letterSpacing: '-0.02em',
+              color: "#1e293b",
+              mb: 3,
               textAlign: "center",
               px: 2,
+              fontSize: { xs: '2rem', md: '3.5rem' }
             }}
           >
-            Welcome to Our Store
+            Experience Premium Shopping
           </Typography>
         </Slide>
         <Box sx={{ width: "100%" }}>

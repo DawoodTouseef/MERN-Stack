@@ -11,7 +11,8 @@ import {
     deleteGroup,
     submitVerificationDocuments,
     getOrganizations,
-    updateVerificationStatus
+    updateVerificationStatus,
+    getVerificationStatus
 } from "../controllers/organizationController.js";
 import { authenticate, authorizeVendor, requirePermission } from "../middlewares/authMiddleware.js";
 import { cachePermissions } from "../middlewares/permissionCache.js";
@@ -27,6 +28,7 @@ router.get("/me", authenticate, getCurrentOrganization);
 
 // Verification
 router.post("/verify", authenticate, authorizeVendor, submitVerificationDocuments);
+router.get("/verification-status", authenticate, authorizeVendor, getVerificationStatus);
 
 // Sub-user management
 router.route("/users")

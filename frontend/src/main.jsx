@@ -27,6 +27,10 @@ import ProductList from "./pages/Seller/ProductList";
 import AllProducts from "./pages/Seller/AllProducts";
 import ProductUpdate from "./pages/Seller/ProductUpdate";
 import AddProduct from "./pages/Seller/AddProduct";
+import VendorProductDetails from "./pages/Seller/VendorProductDetails";
+import VendorProductUpdate from "./pages/Seller/VendorProductUpdate";
+import SellerProductUpdate from "./pages/Seller/SellerProductUpdate";
+import AdminProductUpdate from "./pages/Admin/AdminProductUpdate";
 
 import Home from "./pages/Home.jsx";
 import Favorites from "./pages/Products/Favorites.jsx";
@@ -47,6 +51,11 @@ import Search from "./pages/Search.jsx"
 import AdvancedSearch from "./pages/AdvancedSearch.jsx";
 import UserOrder from "./pages/User/UserOrder.jsx";
 import Address from "./pages/Orders/Address.jsx";
+
+// Role-based order pages
+import CustomerOrders from "./pages/Orders/CustomerOrders.jsx";
+import VendorOrders from "./pages/Orders/VendorOrders.jsx";
+import AdminOrders from "./pages/Orders/AdminOrders.jsx";
 import AdminRegister from "./pages/Seller/SellerRegister.jsx";
 import Privacy from "./pages/privacy.jsx";
 import ContactUs from "./pages/contact_us.jsx";
@@ -56,6 +65,9 @@ import VendorLogin from "./pages/Vendor/VendorLogin.jsx";
 import VendorRegister from "./pages/Vendor/VendorRegister.jsx";
 // Vendor Dashboard
 import SellerDashBoard from "./pages/Vendor/vendorDashboard.jsx";
+import CreateOrganization from "./pages/Vendor/CreateOrganization.jsx";
+import VerificationPending from "./pages/Vendor/VerificationPending.jsx";
+import VerificationGuard from "./pages/Vendor/VerificationGuard.jsx";
 // New pages
 import Returns from "./pages/returns.jsx";
 import TrackOrder from "./pages/trackOrder.jsx";
@@ -79,6 +91,10 @@ import AdminOffer from "./pages/Admin/AdminOffer.jsx";
 
 import CurrencyManagement from "./pages/Admin/CurrencyManagement.jsx";
 import BrandManagement from "./pages/Admin/Brand.jsx";
+import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
+import AdminAnalytics from "./pages/Admin/AdminAnalytics.jsx";
+import Tax from "./pages/Admin/Tax.jsx";
+import AdminDynamicPricing from "./pages/Admin/AdminDynamicPricing.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -121,7 +137,8 @@ const router = createBrowserRouter(
         <Route path="/shipping" element={<Shipping />} />
         <Route path="/placeorder" element={<PlaceOrder />} />
         <Route path="/order/:id" element={<Order />} />
-        <Route path="/orders" element={<UserOrder />} />
+        <Route path="/user/orders" element={<UserOrder />} />
+        <Route path="/orders" element={<CustomerOrders />} />
         <Route path="/support/chat" element={<LiveChat />} />
       </Route>
       {/** Registered Seller*/}
@@ -130,7 +147,8 @@ const router = createBrowserRouter(
         <Route path="productlist/:pageNumber" element={<ProductList />} />
         <Route path="product/update/:_id" element={<ProductUpdate />} />
         <Route path="product/add" element={<AddProduct />} />
-        <Route path="orderlist" element={<OrderList />} />
+        <Route path="product/details/:id" element={<VendorProductDetails />} />
+        <Route path="orders" element={<VendorOrders />} />
       </Route>
       <Route path="/admin" element={<AdminRoute />}>
         <Route path="userlist" element={<UserList />} />
@@ -143,15 +161,31 @@ const router = createBrowserRouter(
         <Route path="currencies" element={<CurrencyManagement />} />
         <Route path="product/add" element={<AddProduct />} />
         <Route path="productlist" element={<AllProducts />} />
+        <Route path="product/details/:id" element={<VendorProductDetails />} />
+        <Route path="product/update/:_id" element={<AdminProductUpdate />} />
         <Route path="orderlist" element={<AdminOrderList />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="tax" element={<Tax />} />
+        <Route path="dynamic-pricing" element={<AdminDynamicPricing />} />
+        <Route path="orders" element={<AdminOrders />} />
       </Route>
       <Route path="/vendor" element={<VendorRoute />}>
-        <Route path="dashboard" element={<SellerDashBoard />} />
-        <Route path="brand" element={<Brand />} />
-        <Route path="allproductslist" element={<AllProducts />} />
-        <Route path="productlist/:pageNumber" element={<ProductList />} />
-        <Route path="product/update/:_id" element={<ProductUpdate />} />
-        <Route path="product/add" element={<AddProduct />} />
+        {/* Public Vendor Routes (Onboarding) */}
+        <Route path="create-organization" element={<CreateOrganization />} />
+        <Route path="verification-pending" element={<VerificationPending />} />
+
+        {/* Protected Vendor Routes (Verified Only) */}
+        <Route element={<VerificationGuard />}>
+          <Route path="dashboard" element={<SellerDashBoard />} />
+          <Route path="brand" element={<Brand />} />
+          <Route path="allproductslist" element={<AllProducts />} />
+          <Route path="productlist/:pageNumber" element={<ProductList />} />
+          <Route path="product/update/:_id" element={<ProductUpdate />} />
+          <Route path="product/add" element={<AddProduct />} />
+          <Route path="product/details/:id" element={<VendorProductDetails />} />
+          <Route path="orders" element={<VendorOrders />} />
+        </Route>
       </Route>
       {/* Catch-all route for 404 */}
       <Route path="*" element={<NotFound />} />

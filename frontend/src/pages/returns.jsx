@@ -15,6 +15,7 @@ import {
   Chip,
 } from "@mui/material";
 import { ExpandMore, CheckCircle, ErrorOutline, AccessTime } from "@mui/icons-material";
+import { APP_NAME } from "../redux/constants";
 
 const Returns = () => {
   const [expanded, setExpanded] = useState(false);
@@ -71,9 +72,9 @@ const Returns = () => {
             Return Policy Overview
           </Typography>
           <Typography variant="body1" sx={{ mb: 2, color: "#555" }}>
-            At Nexus Mart, we want you to be completely satisfied with your purchase. If for any reason you're not happy with your item, you can return it within 30 days of delivery for a full refund or exchange.
+            At {APP_NAME}, we want you to be completely satisfied with your purchase. If for any reason you're not happy with your item, you can return it within 30 days of delivery for a full refund or exchange.
           </Typography>
-          
+
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
             <Chip icon={<CheckCircle />} label="30-Day Returns" color="success" variant="outlined" />
             <Chip icon={<CheckCircle />} label="Free Returns" color="success" variant="outlined" />
@@ -93,27 +94,27 @@ const Returns = () => {
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Items must be in original condition" 
-                  secondary="Unused, unwashed, and with all original tags attached" 
+                <ListItemText
+                  primary="Items must be in original condition"
+                  secondary="Unused, unwashed, and with all original tags attached"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Original packaging included" 
-                  secondary="All original boxes, bags, and documentation must be included" 
+                <ListItemText
+                  primary="Original packaging included"
+                  secondary="All original boxes, bags, and documentation must be included"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Within 30 days of delivery" 
-                  secondary="Returns must be initiated within 30 days of receiving your order" 
+                <ListItemText
+                  primary="Within 30 days of delivery"
+                  secondary="Returns must be initiated within 30 days of receiving your order"
                 />
               </ListItem>
             </List>
@@ -130,27 +131,27 @@ const Returns = () => {
                 <ListItemIcon>
                   <ErrorOutline color="error" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Personal care items" 
-                  secondary="Undergarments, swimwear, cosmetics, and other hygiene-related products" 
+                <ListItemText
+                  primary="Personal care items"
+                  secondary="Undergarments, swimwear, cosmetics, and other hygiene-related products"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <ErrorOutline color="error" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Digital products" 
-                  secondary="Software, e-books, digital downloads, and gift cards" 
+                <ListItemText
+                  primary="Digital products"
+                  secondary="Software, e-books, digital downloads, and gift cards"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <ErrorOutline color="error" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Custom or personalized items" 
-                  secondary="Products made to your specifications or personalized with your information" 
+                <ListItemText
+                  primary="Custom or personalized items"
+                  secondary="Products made to your specifications or personalized with your information"
                 />
               </ListItem>
             </List>
@@ -167,45 +168,45 @@ const Returns = () => {
                 <ListItemIcon>
                   <AccessTime color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Step 1: Initiate Return" 
-                  secondary="Log into your account, go to 'My Orders', select the item, and click 'Return Item'" 
+                <ListItemText
+                  primary="Step 1: Initiate Return"
+                  secondary="Log into your account, go to 'My Orders', select the item, and click 'Return Item'"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <AccessTime color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Step 2: Print Return Label" 
-                  secondary="We'll email you a prepaid return shipping label (where applicable)" 
+                <ListItemText
+                  primary="Step 2: Print Return Label"
+                  secondary="We'll email you a prepaid return shipping label (where applicable)"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <AccessTime color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Step 3: Package Item" 
-                  secondary="Securely pack the item in its original packaging with all accessories" 
+                <ListItemText
+                  primary="Step 3: Package Item"
+                  secondary="Securely pack the item in its original packaging with all accessories"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <AccessTime color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Step 4: Ship Item" 
-                  secondary="Drop off the package at the nearest shipping location" 
+                <ListItemText
+                  primary="Step 4: Ship Item"
+                  secondary="Drop off the package at the nearest shipping location"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <AccessTime color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Step 5: Receive Refund" 
-                  secondary="Once we receive and inspect the item, we'll process your refund within 5-7 business days" 
+                <ListItemText
+                  primary="Step 5: Receive Refund"
+                  secondary="Once we receive and inspect the item, we'll process your refund within 5-7 business days"
                 />
               </ListItem>
             </List>
@@ -225,18 +226,18 @@ const Returns = () => {
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Same Item Exchange" 
-                  secondary="Exchange for the same item in a different size or color at no additional cost" 
+                <ListItemText
+                  primary="Same Item Exchange"
+                  secondary="Exchange for the same item in a different size or color at no additional cost"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Different Item Exchange" 
-                  secondary="Exchange for a different item with price adjustment if applicable" 
+                <ListItemText
+                  primary="Different Item Exchange"
+                  secondary="Exchange for a different item with price adjustment if applicable"
                 />
               </ListItem>
             </List>
@@ -259,27 +260,27 @@ const Returns = () => {
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Original Payment Method" 
-                  secondary="Refunds will be issued to your original payment method" 
+                <ListItemText
+                  primary="Original Payment Method"
+                  secondary="Refunds will be issued to your original payment method"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Store Credit" 
-                  secondary="You can also choose to receive store credit for faster processing" 
+                <ListItemText
+                  primary="Store Credit"
+                  secondary="You can also choose to receive store credit for faster processing"
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <CheckCircle color="success" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Shipping Costs" 
-                  secondary="Return shipping is free for defective items. For other returns, original shipping costs are non-refundable" 
+                <ListItemText
+                  primary="Shipping Costs"
+                  secondary="Return shipping is free for defective items. For other returns, original shipping costs are non-refundable"
                 />
               </ListItem>
             </List>
@@ -295,21 +296,21 @@ const Returns = () => {
           </Typography>
           <List>
             <ListItem>
-              <ListItemText 
-                primary="Email" 
-                secondary={<Link href="mailto:support@nexusmart.com">support@nexusmart.com</Link>} 
+              <ListItemText
+                primary="Email"
+                secondary={<Link href={`mailto:support@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}>{`support@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}</Link>}
               />
             </ListItem>
             <ListItem>
-              <ListItemText 
-                primary="Phone" 
-                secondary={<Link href="tel:+18001234567">1-800-NEXUS-MART</Link>} 
+              <ListItemText
+                primary="Phone"
+                secondary={<Link href="tel:+18001234567">1-800-{APP_NAME.toUpperCase().replace(/\s+/g, '-')}</Link>}
               />
             </ListItem>
             <ListItem>
-              <ListItemText 
-                primary="Live Chat" 
-                secondary={<Link href="/support/chat">Start a live chat</Link>} 
+              <ListItemText
+                primary="Live Chat"
+                secondary={<Link href="/support/chat">Start a live chat</Link>}
               />
             </ListItem>
           </List>

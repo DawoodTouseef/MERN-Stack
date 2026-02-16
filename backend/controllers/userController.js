@@ -1,5 +1,4 @@
 import User from "../models/userModel.js";
-import Vendor from "../models/vendorModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import createToken from "../utils/createToken.js";
@@ -19,7 +18,6 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist,
     recentlyViewed,
     newsletterSubscribed,
-    VendorProfile
   } = req.body;
 
   if (!username || !email || !password) {
@@ -39,7 +37,7 @@ const createUser = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, salt);
   let default_status = "active";
   if (role === "vendor") {
-    default_status = "inactive"; 
+    default_status = "inactive";
   }
 
   // Build new user object
@@ -53,54 +51,18 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist: Array.isArray(wishlist) ? wishlist : [],
     recentlyViewed: Array.isArray(recentlyViewed) ? recentlyViewed : [],
     newsletterSubscribed: newsletterSubscribed === true,
-    ...(role === "vendor" && { vendorVerified: false }) // Vendors are unverified by default
+    ...(role === "vendor") // Vendors are unverified by default
   });
 
   // Save user and create token cookie
   const savedUser = await newUser.save();
-  
-  // If user is a vendor, create a vendor profile
-  let vendorProfile = null;
-  if (role === "vendor" && VendorProfile) {
-    const vendor = new Vendor({
-      name: VendorProfile.companyName || username,
-      email: email,
-      phone: VendorProfile.phone || "",
-      address: {
-        street: VendorProfile.address || "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "USA"
-      },
-      businessType: "Individual",
-      taxId: VendorProfile.taxId || "",
-      contactPerson: {
-        name: username,
-        email: email
-      },
-      user: savedUser._id // Link to the user account
-    });
-    
-    vendorProfile = await vendor.save();
-  }
-  
+
   // Log successful registration
   await createAuthLog(savedUser._id, "login", req);
-  
+
   createToken(res, savedUser._id);
 
-  // Include vendor profile in response if it exists
-  const responseUser = savedUser.toObject();
-  if (vendorProfile) {
-    responseUser.vendorProfile = {
-      _id: vendorProfile._id,
-      isVerified: vendorProfile.isVerified,
-      isActive: vendorProfile.isActive
-    };
-  }
-
-  res.status(201).json(responseUser);
+  res.status(201).json(savedUser);
 });
 
 // Login user
@@ -110,7 +72,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!email || !password) {
     // Log failed login attempt due to missing credentials
     await createAuthLog(null, "failed_login", req, false, "Missing email or password");
-    
+
     res.status(400);
     throw new Error("Please provide email and password");
   }
@@ -120,7 +82,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!user) {
     // Log failed login attempt due to user not found
     await createAuthLog(null, "failed_login", req, false, "User not found");
-    
+
     res.status(404);
     throw new Error("User not found");
   }
@@ -130,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!isMatch) {
     // Log failed login attempt due to invalid password
     await createAuthLog(user._id, "failed_login", req, false, "Invalid password");
-    
+
     // Optionally, increment loginAttempts here and lock account after threshold
     res.status(401);
     throw new Error("Invalid password");
@@ -140,7 +102,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (user.role === "vendor" && !user.vendorVerified) {
     // Log failed login attempt due to unverified vendor
     await createAuthLog(user._id, "failed_login", req, false, "Vendor not verified");
-    
+
     res.status(401);
     throw new Error("Vendor account is not verified yet. Please contact admin.");
   }
@@ -153,7 +115,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Log successful login
   await createAuthLog(user._id, "login", req);
-  
+
   createToken(res, user._id);
 
   res.status(200).json(user);
@@ -165,7 +127,7 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
   if (req.user) {
     await createAuthLog(req.user._id, "logout", req);
   }
-  
+
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
@@ -181,10 +143,10 @@ const logoutCurrentUser = asyncHandler(async (req, res) => {
 const getAllUsers = asyncHandler(async (req, res) => {
   // Get query parameters for search and filtering
   const { search, role, status, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
-  
+
   // Build filter object
   let filter = {};
-  
+
   // Search by username or email
   if (search) {
     filter.$or = [
@@ -192,32 +154,32 @@ const getAllUsers = asyncHandler(async (req, res) => {
       { email: { $regex: search, $options: 'i' } }
     ];
   }
-  
+
   // Filter by role
   if (role && role !== 'all') {
     filter.role = role;
   }
-  
+
   // Filter by status
   if (status && status !== 'all') {
     filter.status = status;
   }
-  
+
   // Pagination
   const skip = (page - 1) * limit;
-  
+
   // Sorting
   const sort = {};
   sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-  
+
   const users = await User.find(filter)
     .select("-password")
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit));
-    
+
   const totalUsers = await User.countDocuments(filter);
-  
+
   // For vendors, also fetch their vendor profile information
   for (let i = 0; i < users.length; i++) {
     if (users[i].role === 'vendor') {
@@ -230,7 +192,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
       }
     }
   }
-  
+
   res.json({
     users,
     pagination: {
@@ -270,7 +232,7 @@ const updateCurrentUserProfile = asyncHandler(async (req, res) => {
     req.body.newsletterSubscribed !== undefined
       ? req.body.newsletterSubscribed
       : user.newsletterSubscribed;
-  
+
   user.UserVerified =
     req.body.UserVerified !== undefined
       ? req.body.UserVerified
@@ -457,7 +419,7 @@ const upgradeSellerToVendor = asyncHandler(async (req, res) => {
     user.role = "vendor";
     user.vendorVerified = false; // Vendors need to be verified by admin
     user.status = "inactive"; // Vendors are inactive until verified
-    
+
     const updatedUser = await user.save();
 
     // Create vendor profile
@@ -522,8 +484,8 @@ const requestPasswordReset = async (req, res) => {
     console.log("Password Reset Link:", link);
 
     res.status(200).json({
-        message: "Reset link generated",
-      });
+      message: "Reset link generated",
+    });
   } catch (error) {
     console.error("Reset error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -555,7 +517,7 @@ const changePassword = async (req, res) => {
 
     // Delete token after successful password change
     await Token.deleteOne({ _id: tokenDoc._id });
-    res.status(200).json({ message: "Password reset successful",role:user.role });
+    res.status(200).json({ message: "Password reset successful", role: user.role });
   } catch (error) {
     console.error("Change password error:", error);
     res.status(500).json({ message: "Internal server error" });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate ,useParams} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   useUploadProductImageMutation,
   useDeleteProductImageMutation,
@@ -35,9 +35,10 @@ import EditIcon from "@mui/icons-material/Edit";
 
 const ProductList = () => {
   const param = useParams()
+  const { userInfo } = useSelector((state) => state.auth);
   const { data: brands = [] } = useGetBrandsQuery();
   const { data: categories = [] } = useFetchCategoriesQuery();
-  const {data:Product} = useGetProductByIdQuery(param._id);
+  const { data: Product } = useGetProductByIdQuery(param._id);
   const [uploadProductImage] = useUploadProductImageMutation();
   const [deleteProductImage] = useDeleteProductImageMutation();
   const [Updatemutiation] = useUpdateProductMutation();
@@ -150,8 +151,8 @@ const ProductList = () => {
 
 
   const handleRemoveItem = (item) => {
-     setTags((prev) => prev.filter((t) => t !== item));
-     
+    setTags((prev) => prev.filter((t) => t !== item));
+
   };
 
   const handleAddOrUpdateVariant = () => {
@@ -255,7 +256,7 @@ const ProductList = () => {
       formData.append("category", category);
       formData.append("price", Number(price));
       formData.append("quantity", Number(quantity));
-      tags.forEach((tag,i) => formData.append(`tags[${i}]`, tag));
+      tags.forEach((tag, i) => formData.append(`tags[${i}]`, tag));
       formData.append("warrantyPeriod", warrantyPeriod);
       formData.append("returnPolicy", returnPolicy);
       Object.entries(specifications || {}).forEach(([key, value]) => {
@@ -280,26 +281,43 @@ const ProductList = () => {
         formData.append(`media[${i}][url]`, url);
       });
       formData.append("countInStock", Number(stock));
-      
+
       //console.log([...formData.entries()])
-      await Updatemutiation({productId:param._id,formData:formData}).unwrap();
-      toast.success(`${name} is created`);
-      navigate("/vendor/allproductslist");
+      await Updatemutiation({ productId: param._id, formData: formData }).unwrap();
+      toast.success(`${name} updated successfully`);
+      // Determine redirect path based on role
+      const redirectPath = userInfo?.role === "vendor"
+        ? "/vendor/allproductslist"
+        : userInfo?.role === "seller"
+          ? "/seller/allproductslist"
+          : "/admin/productlist";
+
+      navigate(redirectPath);
     } catch (error) {
       console.log(error)
-      toast.error("Product create failed. Try Again.");
+      toast.error("Product update failed. Try Again.");
     }
   };
 
   return (
-    <Box sx={{ maxWidth: "100vw", px: { xs: 1, md: 4 }, py: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: "#f8fafc", py: 8, px: { xs: 2, md: 6 } }}>
       <Paper
-        elevation={3}
-        sx={{ bgcolor: "#151515", color: "#fff", p: 3, mt: 2, mb: 2, borderRadius: 3 }}
+        elevation={0}
+        sx={{
+          p: { xs: 3, md: 6 },
+          borderRadius: 6,
+          border: '1px solid #e2e8f0',
+          bgcolor: "#fff"
+        }}
       >
-        <Typography variant="h5" sx={{ mb: 3 }}>
-         Update Product
-        </Typography>
+        <Box sx={{ mb: 5 }}>
+          <Typography variant="h4" fontWeight={900} color="#1e293b">
+            Update Product
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Modify the details of your existing product
+          </Typography>
+        </Box>
         {images.length > 0 && (
           <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: "wrap" }}>
             {images.map((url, index) => (
@@ -325,21 +343,27 @@ const ProductList = () => {
           </Stack>
         )}
         <Button
-          variant="outlined"
+          variant="dashed"
           component="label"
           fullWidth
           sx={{
-            color: "#fff",
-            borderColor: "#fff",
-            bgcolor: "#222",
-            mb: 3,
-            py: 3,
-            fontWeight: "bold",
-            borderRadius: 2,
+            color: "#6366f1",
+            borderColor: "#6366f1",
+            borderStyle: 'dashed',
+            borderWidth: 2,
+            bgcolor: "#f5f3ff",
+            mb: 5,
+            py: 4,
+            fontWeight: 700,
+            borderRadius: 4,
+            '&:hover': {
+              bgcolor: "#ede9fe",
+              borderColor: "#4f46e5",
+            }
           }}
           startIcon={<AddPhotoAlternateIcon />}
         >
-          Upload Images
+          Click to Upload Product Images (Max 5)
           <input
             type="file"
             accept="image/*"
@@ -358,7 +382,7 @@ const ProductList = () => {
             fullWidth
             value={name}
             onChange={(e) => setName(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <TextField
             label="Price *"
@@ -366,7 +390,7 @@ const ProductList = () => {
             fullWidth
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <TextField
             label="Quantity *"
@@ -374,7 +398,7 @@ const ProductList = () => {
             fullWidth
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <TextField
             label="Description *"
@@ -382,7 +406,7 @@ const ProductList = () => {
             fullWidth
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <TextField
             label="Count In Stock *"
@@ -390,14 +414,14 @@ const ProductList = () => {
             fullWidth
             value={stock}
             onChange={(e) => setStock(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>Brand *</InputLabel>
+            <InputLabel sx={{ color: "#000" }}>Brand *</InputLabel>
             <Select
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              sx={{ color: "#fff" }}
+              sx={{ color: "#000" }}
               label="Brand *"
             >
               {brands.map((b) => (
@@ -408,11 +432,11 @@ const ProductList = () => {
             </Select>
           </FormControl>
           <FormControl fullWidth>
-            <InputLabel sx={{ color: "#fff" }}>Category *</InputLabel>
+            <InputLabel sx={{ color: "#000" }}>Category *</InputLabel>
             <Select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              sx={{ color: "#fff" }}
+              sx={{ color: "#000" }}
               label="Category *"
             >
               {categories.map((c) => (
@@ -426,7 +450,7 @@ const ProductList = () => {
             label="Add Tags (Enter to Add) *"
             fullWidth
             onKeyDown={handleAddTag}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
             {tags.map((tag) => (
@@ -450,14 +474,14 @@ const ProductList = () => {
                   onChange={(e) =>
                     setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
                   }
-                  sx={{ input: { color: "#fff" }, label: { color: "#fff" }, width: "150px" }}
+                  sx={{ input: { color: "#000" }, label: { color: "#000" }, width: "150px" }}
                 />
               )
             )}
             <Button
               onClick={handleAddOrUpdateVariant}
               variant="outlined"
-              sx={{ color: "#fff", borderColor: "#fff" }}
+              sx={{ color: "#6366f1", borderColor: "#6366f1" }}
             >
               {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
             </Button>
@@ -477,7 +501,7 @@ const ProductList = () => {
                 }}
                 variant="outlined"
                 color="secondary"
-                sx={{ color: "#fff", borderColor: "#fff" }}
+                sx={{ color: "#6366f1", borderColor: "#6366f1" }}
               >
                 Cancel
               </Button>
@@ -486,7 +510,7 @@ const ProductList = () => {
           <Stack spacing={1}>
             {variants.map((v, i) => (
               <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography sx={{ color: "#ccc" }}>{JSON.stringify(v)}</Typography>
+                <Typography sx={{ color: "text.secondary" }}>{JSON.stringify(v)}</Typography>
                 <IconButton
                   size="small"
                   color="primary"
@@ -509,14 +533,14 @@ const ProductList = () => {
             fullWidth
             value={warrantyPeriod}
             onChange={(e) => setWarrantyPeriod(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <TextField
             label="Return Policy"
             fullWidth
             value={returnPolicy}
             onChange={(e) => setReturnPolicy(e.target.value)}
-            sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+            sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
           <Typography variant="h6" sx={{ mt: 2 }}>
             Specifications
@@ -526,18 +550,18 @@ const ProductList = () => {
               label="Key"
               value={specKey}
               onChange={(e) => setSpecKey(e.target.value)}
-              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+              sx={{ input: { color: "#000" }, label: { color: "#000" } }}
             />
             <TextField
               label="Value"
               value={specValue}
               onChange={(e) => setSpecValue(e.target.value)}
-              sx={{ input: { color: "#fff" }, label: { color: "#fff" } }}
+              sx={{ input: { color: "#000" }, label: { color: "#000" } }}
             />
             <Button
               onClick={handleAddOrUpdateSpecification}
               variant="outlined"
-              sx={{ color: "#fff", borderColor: "#fff" }}
+              sx={{ color: "#6366f1", borderColor: "#6366f1" }}
             >
               {editSpecKey !== null ? "Update" : "Add"}
             </Button>
@@ -550,7 +574,7 @@ const ProductList = () => {
                 }}
                 variant="outlined"
                 color="secondary"
-                sx={{ color: "#fff", borderColor: "#fff" }}
+                sx={{ color: "#6366f1", borderColor: "#6366f1" }}
               >
                 Cancel
               </Button>
@@ -559,7 +583,7 @@ const ProductList = () => {
           <Stack>
             {Object.entries(specifications).map(([k, v]) => (
               <Box key={k} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography sx={{ color: "#ccc" }}>
+                <Typography sx={{ color: "text.secondary" }}>
                   {k}: {v}
                 </Typography>
                 <IconButton
@@ -579,24 +603,24 @@ const ProductList = () => {
               </Box>
             ))}
           </Stack>
-          <Stack direction="row" spacing={2} flexWrap="wrap" sx={{justifyContent:"center"}}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
-          >
-            Update Product
-          </Button>
-          <Divider></Divider>
-          <Button
-            type="submit"
-            variant="contained"
-            color="error"
-            sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
-          >
-            Delete Product
-          </Button>
+          <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ justifyContent: "center" }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
+            >
+              Update Product
+            </Button>
+            <Divider></Divider>
+            <Button
+              type="submit"
+              variant="contained"
+              color="error"
+              sx={{ py: 2, borderRadius: 2, fontWeight: "bold" }}
+            >
+              Delete Product
+            </Button>
           </Stack>
         </Box>
       </Paper>

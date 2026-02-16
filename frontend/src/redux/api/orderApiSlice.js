@@ -76,6 +76,33 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
       }),
     }),
+
+    // Cancel order (customer)
+    cancelOrder: builder.mutation({
+      query: ({ orderId, reason }) => ({
+        url: `${ORDERS_URL}/${orderId}/cancel`,
+        method: "PUT",
+        body: { reason },
+      }),
+    }),
+
+    // Update order status (vendor/admin)
+    updateOrderStatus: builder.mutation({
+      query: ({ orderId, status, notes, location }) => ({
+        url: `${ORDERS_URL}/${orderId}/status`,
+        method: "PUT",
+        body: { status, notes, location },
+      }),
+    }),
+
+    // Get admin orders with filters
+    getAdminOrders: builder.query({
+      query: (params) => ({
+        url: `${ORDERS_URL}/admin/all`,
+        params, // Pass status, startDate, endDate, vendor, customer, page, limit, etc.
+      }),
+      keepUnusedDataFor: 5,
+    }),
   }),
 });
 
@@ -93,4 +120,8 @@ export const {
   useGetOrdersQuery,
   useDeleteOrderMutation,
   useGetVendorOrdersQuery,
+  // Role-based hooks
+  useCancelOrderMutation,
+  useUpdateOrderStatusMutation,
+  useGetAdminOrdersQuery,
 } = orderApiSlice;

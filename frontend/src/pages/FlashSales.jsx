@@ -10,7 +10,6 @@ import {
   Button,
   Chip,
   Grid,
-  CircularProgress,
   LinearProgress,
   IconButton,
   Alert,
@@ -40,7 +39,7 @@ const FlashSales = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const [favorites, setFavorites] = useState(new Set());
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -198,7 +197,7 @@ const FlashSales = () => {
                 filter: isEnded ? 'grayscale(50%)' : 'none'
               }}
             />
-            
+
             {/* Countdown Overlay */}
             <Box
               sx={{
@@ -258,9 +257,9 @@ const FlashSales = () => {
                 <Typography variant="h6" color="error.main" fontWeight="bold">
                   ${flashSale.discountedPrice}
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     textDecoration: 'line-through',
                     color: 'text.secondary'
                   }}
@@ -291,8 +290,8 @@ const FlashSales = () => {
                   borderRadius: 4,
                   bgcolor: 'grey.200',
                   '& .MuiLinearProgress-bar': {
-                    bgcolor: progressPercentage > 80 ? 'error.main' : 
-                             progressPercentage > 50 ? 'warning.main' : 'success.main',
+                    bgcolor: progressPercentage > 80 ? 'error.main' :
+                      progressPercentage > 50 ? 'warning.main' : 'success.main',
                     borderRadius: 4
                   }
                 }}
@@ -318,9 +317,9 @@ const FlashSales = () => {
                 }
               }}
             >
-              {isEnded ? 'Sale Ended' : 
-               flashSale.remainingQuantity <= 0 ? 'Sold Out' : 
-               'Add to Cart'}
+              {isEnded ? 'Sale Ended' :
+                flashSale.remainingQuantity <= 0 ? 'Sold Out' :
+                  'Add to Cart'}
             </Button>
           </CardActions>
         </Card>
@@ -366,9 +365,9 @@ const FlashSales = () => {
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
             <FlashOn sx={{ fontSize: 40, color: 'error.main', mr: 1 }} />
-            <Typography 
-              variant="h3" 
-              sx={{ 
+            <Typography
+              variant="h3"
+              sx={{
                 fontWeight: 'bold',
                 background: 'linear-gradient(45deg, #f44336, #ff9800)',
                 backgroundClip: 'text',

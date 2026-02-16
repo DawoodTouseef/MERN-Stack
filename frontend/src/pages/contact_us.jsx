@@ -15,6 +15,7 @@ import {
 import { FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { APP_NAME } from "../redux/constants";
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -105,7 +106,7 @@ const ContactUs = () => {
             textAlign: { xs: "center", md: "left" },
           }}
         >
-          Contact Nexus Mart
+          Contact {APP_NAME}
         </Typography>
         <Typography
           variant="subtitle1"
@@ -124,10 +125,10 @@ const ContactUs = () => {
               <Stack direction="row" spacing={2} alignItems="center">
                 <FaEnvelope style={{ color: "#ec4899", fontSize: 20 }} />
                 <Link
-                  href="mailto:support@nexusmart.com"
+                  href={`mailto:support@${APP_NAME.toLowerCase().replace(/\s+/g, '')}.com`}
                   sx={{ color: "#18181b", textDecoration: "none", "&:hover": { color: "#ec4899" } }}
                 >
-                  support@nexusmart.com
+                  support@{APP_NAME.toLowerCase().replace(/\s+/g, '')}.com
                 </Link>
               </Stack>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -150,21 +151,21 @@ const ContactUs = () => {
                   Follow us:
                 </Typography>
                 <IconButton
-                  href="https://facebook.com/nexusmart"
+                  href={`https://facebook.com/${APP_NAME.toLowerCase().replace(/\s+/g, '')}`}
                   target="_blank"
                   sx={{ color: "#3b5998" }}
                 >
                   <FaFacebookF />
                 </IconButton>
                 <IconButton
-                  href="https://twitter.com/nexusmart"
+                  href={`https://twitter.com/${APP_NAME.toLowerCase().replace(/\s+/g, '')}`}
                   target="_blank"
                   sx={{ color: "#1da1f2" }}
                 >
                   <FaTwitter />
                 </IconButton>
                 <IconButton
-                  href="https://instagram.com/nexusmart"
+                  href={`https://instagram.com/${APP_NAME.toLowerCase().replace(/\s+/g, '')}`}
                   target="_blank"
                   sx={{ color: "#e1306c" }}
                 >

@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   getCurrentLocation,
-  updateUserLocation,
+  updateOrganizationLocation,
   getLocationBasedProducts,
   getLocationOffers,
   getTrendingByLocation,
@@ -12,15 +12,15 @@ import {
   getWeatherBasedProducts,
   trackLocationEvent
 } from '../controllers/locationController.js';
-import {authenticate as  protect } from '../middlewares/authMiddleware.js';
+import { authenticate as protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Get current user location
 router.get('/current', protect, getCurrentLocation);
 
-// Update user location
-router.post('/update', protect, updateUserLocation);
+// Update organization location
+router.post('/update', protect, updateOrganizationLocation);
 
 // Get location-based products
 router.get('/products', getLocationBasedProducts);

@@ -12,7 +12,7 @@ const paymentGatewaySchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: false
   },
   supportedMethods: [{
     type: String,
