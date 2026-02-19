@@ -35,7 +35,7 @@ import {
 } from "../../redux/api/orderApiSlice";
 import { useFetchOffersQuery } from "../../redux/api/offerApiSlice";
 import useCurrency from "../../hooks/useCurrency";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const Order = () => {
@@ -145,7 +145,7 @@ const Order = () => {
               </Box>
 
               <Grid container spacing={4}>
-                <Grid item xs={12} lg={8}>
+                <Grid size={{ xs: 12, lg: 8 }}>
                   <Stack spacing={3}>
                     {/* Items Section */}
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
@@ -181,7 +181,7 @@ const Order = () => {
                     {/* Shipping & Payment Info */}
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
                       <Grid container spacing={4}>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <Typography variant="subtitle2" color="text.secondary" fontWeight={800} sx={{ mb: 2, textTransform: 'uppercase' }}>Shipping Details</Typography>
                           <Typography variant="body2" fontWeight={600} color="#1e293b">{order.user?.username}</Typography>
                           <Typography variant="body2" color="#475569" sx={{ mt: 1 }}>
@@ -190,7 +190,7 @@ const Order = () => {
                             {order.shippingAddress?.country} - {order.shippingAddress?.postalCode}
                           </Typography>
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <Typography variant="subtitle2" color="text.secondary" fontWeight={800} sx={{ mb: 2, textTransform: 'uppercase' }}>Payment Info</Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                             <Typography variant="body2" fontWeight={800} color="#1e293b">Method:</Typography>
@@ -211,7 +211,7 @@ const Order = () => {
                   </Stack>
                 </Grid>
 
-                <Grid item xs={12} lg={4}>
+                <Grid size={{ xs: 12, lg: 4 }}>
                   <Stack spacing={3}>
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
                       <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b' }}>Summary</Typography>

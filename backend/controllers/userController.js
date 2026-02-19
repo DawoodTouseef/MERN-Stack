@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import Organization from "../models/organizationModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import createToken from "../utils/createToken.js";
@@ -51,7 +52,7 @@ const createUser = asyncHandler(async (req, res) => {
     wishlist: Array.isArray(wishlist) ? wishlist : [],
     recentlyViewed: Array.isArray(recentlyViewed) ? recentlyViewed : [],
     newsletterSubscribed: newsletterSubscribed === true,
-    ...(role === "vendor") // Vendors are unverified by default
+    vendorVerified: role === "vendor" ? false : undefined
   });
 
   // Save user and create token cookie
@@ -182,12 +183,12 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
   // For vendors, also fetch their vendor profile information
   for (let i = 0; i < users.length; i++) {
-    if (users[i].role === 'vendor') {
-      const vendorProfile = await Vendor.findOne({ user: users[i]._id });
-      if (vendorProfile) {
+    if (users[i].role === 'vendor' || users[i].role === 'seller') {
+      const orgProfile = await Organization.findOne({ owner: users[i]._id });
+      if (orgProfile) {
         users[i].vendorProfile = {
-          isVerified: vendorProfile.isVerified,
-          isActive: vendorProfile.isActive
+          isVerified: orgProfile.isVerified,
+          isActive: orgProfile.isActive
         };
       }
     }
@@ -267,9 +268,9 @@ const deleteUserById = asyncHandler(async (req, res) => {
     throw new Error("Cannot delete admin user");
   }
 
-  // If user is a vendor, also delete the vendor profile
-  if (user.role === "vendor") {
-    await Vendor.deleteOne({ user: user._id });
+  // If user is a vendor/seller, also delete the organization
+  if (user.role === "vendor" || user.role === "seller") {
+    await Organization.deleteOne({ owner: user._id });
   }
 
   await User.deleteOne({ _id: user._id });
@@ -347,8 +348,8 @@ const verifyVendor = asyncHandler(async (req, res) => {
   user.status = "active"; // Activate the vendor account when verified
   const updatedUser = await user.save();
 
-  // Also verify the vendor profile
-  await Vendor.updateOne({ user: user._id }, { isVerified: true, isActive: true });
+  // Also verify the organization profile
+  await Organization.updateOne({ owner: user._id }, { isVerified: true, isActive: true, verificationStatus: 'verified' });
 
   res.json({ message: "Vendor verified successfully", user: updatedUser });
 });
@@ -371,8 +372,8 @@ const rejectVendor = asyncHandler(async (req, res) => {
   user.status = "banned"; // Ban the vendor account when rejected
   const updatedUser = await user.save();
 
-  // Also reject the vendor profile
-  await Vendor.updateOne({ user: user._id }, { isVerified: false, isActive: false });
+  // Also reject the organization profile
+  await Organization.updateOne({ owner: user._id }, { isVerified: false, isActive: false, verificationStatus: 'rejected' });
 
   res.json({ message: "Vendor rejected successfully", user: updatedUser });
 });
@@ -422,11 +423,14 @@ const upgradeSellerToVendor = asyncHandler(async (req, res) => {
 
     const updatedUser = await user.save();
 
-    // Create vendor profile
-    const vendor = new Vendor({
+    // Create organization profile instead of vendor
+    const organization = new Organization({
       name: companyName,
-      email: user.email,
-      phone,
+      slug: companyName.toLowerCase().replace(/ /g, '-'),
+      type: 'vendor',
+      owner: user._id,
+      businessType,
+      taxId: taxId || "",
       address: {
         street: address,
         city: "",
@@ -434,27 +438,25 @@ const upgradeSellerToVendor = asyncHandler(async (req, res) => {
         zipCode: "",
         country: "USA"
       },
-      businessType,
-      taxId: taxId || "",
       bankDetails: {
         accountNumber: bankAccountNumber || "",
         routingNumber: bankRoutingNumber || ""
       },
       contactPerson: {
         name: contactPersonName,
-        email: contactPersonEmail
+        email: contactPersonEmail,
+        phone: phone
       },
-      user: user._id,
       isVerified: false,
       isActive: false
     });
 
-    const vendorProfile = await vendor.save();
+    const orgProfile = await organization.save();
 
     res.status(200).json({
       message: "Seller upgraded to vendor successfully. Awaiting admin verification.",
       user: updatedUser,
-      vendor: vendorProfile
+      organization: orgProfile
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

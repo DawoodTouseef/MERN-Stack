@@ -38,7 +38,7 @@ import {
 import { FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useUploadProductImageMutation, useDeleteProductImageMutation } from "../../redux/api/productApiSlice";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const Brand = () => {
@@ -422,7 +422,7 @@ const Brand = () => {
           <DialogTitle sx={{ fontWeight: 700 }}>Add New Brand</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Brand Name"
                   fullWidth
@@ -431,7 +431,7 @@ const Brand = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Website"
                   fullWidth
@@ -440,7 +440,7 @@ const Brand = () => {
                   placeholder="https://example.com"
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Description"
                   fullWidth
@@ -450,7 +450,7 @@ const Brand = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -461,7 +461,7 @@ const Brand = () => {
                   label="Active"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Button variant="outlined" component="label" fullWidth startIcon={<ImageIcon />}>
                   Upload Logo
                   <input
@@ -473,7 +473,7 @@ const Brand = () => {
                 </Button>
               </Grid>
               {imagePreview && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Avatar src={imagePreview} sx={{ width: 80, height: 80 }} />
                   </Box>
@@ -499,7 +499,7 @@ const Brand = () => {
           <DialogTitle sx={{ fontWeight: 700 }}>Edit Brand</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Brand Name"
                   fullWidth
@@ -508,7 +508,7 @@ const Brand = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Website"
                   fullWidth
@@ -517,7 +517,7 @@ const Brand = () => {
                   placeholder="https://example.com"
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Description"
                   fullWidth
@@ -527,7 +527,7 @@ const Brand = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -538,7 +538,7 @@ const Brand = () => {
                   label="Active"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Button variant="outlined" component="label" fullWidth startIcon={<ImageIcon />}>
                   Change Logo
                   <input
@@ -550,7 +550,7 @@ const Brand = () => {
                 </Button>
               </Grid>
               {imagePreview && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Avatar src={imagePreview} sx={{ width: 80, height: 80 }} />
                   </Box>

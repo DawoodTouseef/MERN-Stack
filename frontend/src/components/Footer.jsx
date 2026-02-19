@@ -116,7 +116,7 @@ const Footer = () => {
         {/* Main Footer Content */}
         <Grid container spacing={{ xs: 4, md: 6 }} sx={{ mb: 6 }}>
           {/* Brand & About */}
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <motion.div variants={sectionVariants} initial="hidden" animate="visible">
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ mb: 1 }}>
@@ -207,7 +207,7 @@ const Footer = () => {
           </Grid>
 
           {/* Customer Links */}
-          <Grid item xs={6} md={2}>
+          <Grid xs={6} md={2}>
             <motion.div variants={sectionVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
               <Typography variant="h6" fontWeight={700} mb={2.5} color="primary.main">
                 Customer Service
@@ -223,7 +223,7 @@ const Footer = () => {
           </Grid>
 
           {/* Quick Links */}
-          <Grid item xs={6} md={2}>
+          <Grid xs={6} md={2}>
             <motion.div variants={sectionVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
               <Typography variant="h6" fontWeight={700} mb={2.5} color="primary.main">
                 Quick Links
@@ -239,7 +239,7 @@ const Footer = () => {
           </Grid>
 
           {/* Newsletter & Preferences */}
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <motion.div variants={sectionVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
               {/* Newsletter */}
               <Box sx={{ mb: 4 }}>
@@ -317,7 +317,7 @@ const Footer = () => {
                   </Button>
                   <Button
                     variant="outlined"
-                    startIcon={<svg class="kOqhQd" aria-hidden="true" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path fill="none" d="M0,0h40v40H0V0z"></path><g><path d="M19.7,19.2L4.3,35.3c0,0,0,0,0,0c0.5,1.7,2.1,3,4,3c0.8,0,1.5-0.2,2.1-0.6l0,0l17.4-9.9L19.7,19.2z" fill="#EA4335"></path><path d="M35.3,16.4L35.3,16.4l-7.5-4.3l-8.4,7.4l8.5,8.3l7.5-4.2c1.3-0.7,2.2-2.1,2.2-3.6C37.5,18.5,36.6,17.1,35.3,16.4z" fill="#FBBC04"></path><path d="M4.3,4.7C4.2,5,4.2,5.4,4.2,5.8v28.5c0,0.4,0,0.7,0.1,1.1l16-15.7L4.3,4.7z" fill="#4285F4"></path><path d="M19.8,20l8-7.9L10.5,2.3C9.9,1.9,9.1,1.7,8.3,1.7c-1.9,0-3.6,1.3-4,3c0,0,0,0,0,0L19.8,20z" fill="#34A853"></path></g></svg>}
+                    startIcon={<svg className="kOqhQd" aria-hidden="true" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path fill="none" d="M0,0h40v40H0V0z"></path><g><path d="M19.7,19.2L4.3,35.3c0,0,0,0,0,0c0.5,1.7,2.1,3,4,3c0.8,0,1.5-0.2,2.1-0.6l0,0l17.4-9.9L19.7,19.2z" fill="#EA4335"></path><path d="M35.3,16.4L35.3,16.4l-7.5-4.3l-8.4,7.4l8.5,8.3l7.5-4.2c1.3-0.7,2.2-2.1,2.2-3.6C37.5,18.5,36.6,17.1,35.3,16.4z" fill="#FBBC04"></path><path d="M4.3,4.7C4.2,5,4.2,5.4,4.2,5.8v28.5c0,0.4,0,0.7,0.1,1.1l16-15.7L4.3,4.7z" fill="#4285F4"></path><path d="M19.8,20l8-7.9L10.5,2.3C9.9,1.9,9.1,1.7,8.3,1.7c-1.9,0-3.6,1.3-4,3c0,0,0,0,0,0L19.8,20z" fill="#34A853"></path></g></svg>}
                     sx={{
                       color: "#fff",
                       borderColor: "#444",
@@ -360,7 +360,7 @@ const Footer = () => {
                     <MenuItem value="de">German</MenuItem>
                   </Select>
                   <Select
-                    value={selectedCurrency || (currencies.length > 0 ? currencies[0]?.code : "")}
+                    value={(currencies.filter(c => c.isEnabled).some(c => c.code === selectedCurrency) ? selectedCurrency : (currencies.filter(c => c.isEnabled)[0]?.code || ""))}
                     size="small"
                     onChange={handleCurrencyChange}
                     sx={{
@@ -393,7 +393,7 @@ const Footer = () => {
 
         {/* Bottom Footer */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
               {FOOTER_LINKS.bottomLinks.map((link) => (
                 <Link key={link.name} href={link.path} underline="hover" color="#a1a1aa" sx={{ fontSize: "0.875rem" }}>
@@ -402,7 +402,7 @@ const Footer = () => {
               ))}
             </Stack>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-start", md: "flex-end" }}>
               <Chip
                 label="We Accept"

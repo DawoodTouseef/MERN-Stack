@@ -53,7 +53,7 @@ router.route('/')
 
 router.route('/:id')
   .get(authenticate, IsAdmin, getVendorById)
-  .put(authenticate, IsAdmin, updateVendor)
+  .put(authenticate, updateVendor)
   .delete(authenticate, IsAdmin, deleteVendor);
 
 // Admin verification routes

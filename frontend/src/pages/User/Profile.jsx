@@ -49,7 +49,7 @@ import {
   CheckCircle as CheckCircleIcon,
   History as HistoryIcon
 } from "@mui/icons-material";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { useUpgradeToVendorMutation } from "../../redux/api/usersApiSlice";
 import { useGetVendorProfileQuery } from "../../redux/api/vendorApiSlice";
 import { APP_NAME } from "../../redux/constants";
@@ -158,7 +158,7 @@ const Profile = () => {
   const renderOverview = () => (
     <Box>
       <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
             <Avatar
               sx={{
@@ -187,7 +187,7 @@ const Profile = () => {
             />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b' }}>
             Account Details
           </Typography>
@@ -261,7 +261,7 @@ const Profile = () => {
       ) : (
         <form onSubmit={submitHandler}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Name"
@@ -270,7 +270,7 @@ const Profile = () => {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Email Address"
@@ -279,7 +279,7 @@ const Profile = () => {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="New Password"
@@ -298,7 +298,7 @@ const Profile = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Confirm Password"
@@ -357,7 +357,7 @@ const Profile = () => {
             <Loader />
           ) : vendorData ? (
             <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Stack spacing={3}>
                   <Box>
                     <Typography variant="caption" fontWeight={700} color="text.secondary">COMPANY NAME</Typography>
@@ -373,7 +373,7 @@ const Profile = () => {
                   </Box>
                 </Stack>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Stack spacing={3}>
                   <Box>
                     <Typography variant="caption" fontWeight={700} color="text.secondary">CONTACT PERSON</Typography>
@@ -394,7 +394,7 @@ const Profile = () => {
                   </Box>
                 </Stack>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="caption" fontWeight={700} color="text.secondary">BUSINESS ADDRESS</Typography>
                 <Typography variant="body1" fontWeight={500}>
@@ -487,7 +487,7 @@ const Profile = () => {
 
           {/* Quick Shortcuts */}
           <Grid container spacing={3} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 component={Link}
                 to="/orders"
@@ -518,7 +518,7 @@ const Profile = () => {
                 </Box>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 component={Link}
                 to="/address"
@@ -575,7 +575,7 @@ const Profile = () => {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Phone Number"
@@ -585,7 +585,7 @@ const Profile = () => {
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}>
                     <InputLabel>Business Type</InputLabel>
                     <Select
@@ -612,7 +612,7 @@ const Profile = () => {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Tax ID / Registration"
@@ -621,7 +621,7 @@ const Profile = () => {
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Account Manager Name"

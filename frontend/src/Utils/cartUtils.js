@@ -1,7 +1,7 @@
 export const addDecimals = (num) => {
   return (Math.round(num * 100) / 100).toFixed(2);
-};  
-  const calculateDiscountedPrice = (product, offers) => {
+};
+const calculateDiscountedPrice = (product, offers) => {
   if (!product || !product.price) return 0; // Return 0 if product or price is undefined
   if (!offers || offers.length === 0) return product.price; // Return original price if no offers
 
@@ -30,18 +30,19 @@ export const addDecimals = (num) => {
   });
   return discountedPrice;
 };
-  
-  const discountPrice = (p,offers) => {
-    return calculateDiscountedPrice(p,offers)
-  };
 
-export const updateCart = (state,offers) => {
+const discountPrice = (p, offers) => {
+  return calculateDiscountedPrice(p, offers)
+};
+
+export const updateCart = (state, offers) => {
   // Ensure cartItems is an array
   state.cartItems = state.cartItems || [];
+  state.savedItems = state.savedItems || [];
   // Calculate the items price
   state.itemsPrice = Number(
     addDecimals(
-      state.cartItems.reduce((acc, item) => acc + discountPrice(item,offers) * item.qty, 0)
+      state.cartItems.reduce((acc, item) => acc + discountPrice(item, offers) * item.qty, 0)
     )
   );
 
@@ -55,7 +56,7 @@ export const updateCart = (state,offers) => {
   state.totalPrice = Number(
     (
       Number(state.itemsPrice) +
-      Number(state.shippingPrice) 
+      Number(state.shippingPrice)
     ).toFixed(2)
   );
 

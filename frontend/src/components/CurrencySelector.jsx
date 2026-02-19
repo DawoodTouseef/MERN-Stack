@@ -34,15 +34,19 @@ const CurrencySelector = () => {
     return null; // Don't show selector if there's only one currency
   }
 
-  // Check if selected currency exists in the list
-  const isValidCurrency = currencies.some(currency => currency.code === selectedCurrency);
+  // Filter only enabled currencies
+  const enabledCurrencies = currencies.filter(currency => currency.isEnabled);
+
+  // Check if selected currency exists and is enabled in the list
+  const isValidCurrency = enabledCurrencies.some(currency => currency.code === selectedCurrency);
+  const displayValue = isValidCurrency ? selectedCurrency : (enabledCurrencies[0]?.code || "");
 
   return (
     <Box sx={{ minWidth: 120 }}>
       <FormControl fullWidth size="small">
-        <InputLabel 
-          id="currency-select-label" 
-          sx={{ 
+        <InputLabel
+          id="currency-select-label"
+          sx={{
             color: "#fff",
             "&.Mui-focused": { color: "#fff" }
           }}
@@ -52,10 +56,10 @@ const CurrencySelector = () => {
         <Select
           labelId="currency-select-label"
           id="currency-select"
-          value={isValidCurrency ? selectedCurrency : (currencies[0]?.code || "")}
+          value={displayValue}
           label="Currency"
           onChange={handleChange}
-          sx={{ 
+          sx={{
             color: "#fff",
             ".MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
             "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
@@ -66,11 +70,11 @@ const CurrencySelector = () => {
           {currencies
             .filter(currency => currency.isEnabled)
             .map((currency) => (
-              <MenuItem 
-                key={currency.code} 
+              <MenuItem
+                key={currency.code}
                 value={currency.code}
-                sx={{ 
-                  display: "flex", 
+                sx={{
+                  display: "flex",
                   justifyContent: "space-between",
                   color: "#000"
                 }}

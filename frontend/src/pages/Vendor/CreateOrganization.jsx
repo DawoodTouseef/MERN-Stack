@@ -229,7 +229,7 @@ const CreateOrganization = () => {
                             </FormControl>
 
                             <Grid container spacing={3}>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Organization / Company Name"
@@ -238,7 +238,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Contact Person Name"
@@ -247,7 +247,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Contact Phone"
@@ -256,7 +256,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Street Address"
@@ -267,7 +267,7 @@ const CreateOrganization = () => {
                                         rows={2}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="City"
@@ -276,7 +276,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="State"
@@ -285,7 +285,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="ZIP / Postal Code"
@@ -383,7 +383,7 @@ const CreateOrganization = () => {
                             </Typography>
 
                             <Grid container spacing={3} sx={{ mb: 4 }}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="PAN Number"
@@ -393,7 +393,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="GSTIN Number"
@@ -403,7 +403,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <FileUpload
                                         label="GST Registration Certificate"
                                         onFileSelect={(file) => updateFormData('gstCertificate', file)}
@@ -462,7 +462,7 @@ const CreateOrganization = () => {
                             </Typography>
 
                             <Grid container spacing={3} sx={{ mb: 4 }}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Account Holder Name"
@@ -471,7 +471,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Account Number"
@@ -480,7 +480,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="Bank Name"
@@ -489,7 +489,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="IFSC Code"
@@ -498,7 +498,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                <Grid size={{ xs: 12, md: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="Branch Name"
@@ -507,7 +507,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <FileUpload
                                         label="Cancelled Cheque OR Bank Statement"
                                         onFileSelect={(file) => updateFormData('cancelledCheque', file)}
@@ -520,7 +520,7 @@ const CreateOrganization = () => {
 
                             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Authorized Signatory</Typography>
                             <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Signatory Name"
@@ -529,7 +529,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Designation"
@@ -538,7 +538,7 @@ const CreateOrganization = () => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <FileUpload
                                         label="Signatory ID Proof (Aadhaar / Passport)"
                                         onFileSelect={(file) => updateFormData('signatoryIdProof', file)}
@@ -622,7 +622,7 @@ const CreateOrganization = () => {
             <Container maxWidth="lg">
                 <Grid container spacing={4}>
                     {/* Left Side - Stepper */}
-                    <Grid item xs={12} md={4} lg={3}>
+                    <Grid size={{ xs: 12, md: 4, lg: 3 }}>
                         <Card sx={{ borderRadius: 4, height: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                             <CardContent sx={{ p: 4 }}>
                                 <Typography variant="h5" fontWeight={800} sx={{ color: '#1e293b', mb: 1 }}>
@@ -648,7 +648,7 @@ const CreateOrganization = () => {
                     </Grid>
 
                     {/* Right Side - Form Content */}
-                    <Grid item xs={12} md={8} lg={9}>
+                    <Grid size={{ xs: 12, md: 8, lg: 9 }}>
                         <Card sx={{ borderRadius: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', minHeight: 600, display: 'flex', flexDirection: 'column' }}>
                             <CardContent sx={{ p: 4, flex: 1 }}>
 

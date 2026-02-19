@@ -23,7 +23,7 @@ const FeaturedCategories = ({ categories = [] }) => {
   if (!categories.length) return null;
 
   return (
-    <Box sx={{ my: 10 }}>
+    <Box sx={{ mt: 6, mb: 5 }}>
       <Box sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
@@ -63,7 +63,14 @@ const FeaturedCategories = ({ categories = [] }) => {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid spacing={5} sx={{
+        display: "block",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        mb: 5,
+        textAlign: "center"
+      }}>
         {categories.slice(0, 6).map((category, index) => (
           <Grid item xs={6} sm={4} md={2} key={category._id}>
             <motion.div

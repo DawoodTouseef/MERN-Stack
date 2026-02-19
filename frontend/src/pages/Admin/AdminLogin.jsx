@@ -23,7 +23,7 @@ import { useLoginMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const AdminLogin = () => {

@@ -40,7 +40,7 @@ import {
   Error as ErrorIcon,
 } from "@mui/icons-material";
 import { FaSearch, FaFilter } from "react-icons/fa";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import useCurrency from "../../hooks/useCurrency";
@@ -97,7 +97,6 @@ const AllProducts = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const { format } = useCurrency();
-  console.log(products)
   // State management
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -405,7 +404,7 @@ const AllProducts = () => {
 
             {/* Inventory Stats */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Total Products"
                   value={inventoryStats.total}
@@ -414,7 +413,7 @@ const AllProducts = () => {
                   description="All listed items"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="In Stock"
                   value={inventoryStats.inStock}
@@ -423,7 +422,7 @@ const AllProducts = () => {
                   description="Available for purchase"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Low Stock"
                   value={inventoryStats.lowStock}
@@ -432,7 +431,7 @@ const AllProducts = () => {
                   description="Threshold: 10 units"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Out of Stock"
                   value={inventoryStats.outOfStock}
@@ -446,7 +445,7 @@ const AllProducts = () => {
             {/* Filters */}
             <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     placeholder="Search products..."
@@ -459,7 +458,7 @@ const AllProducts = () => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Category</InputLabel>
                     <Select
@@ -475,7 +474,7 @@ const AllProducts = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Stock Status</InputLabel>
                     <Select
@@ -490,7 +489,7 @@ const AllProducts = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     variant="text"
                     startIcon={<FaFilter />}

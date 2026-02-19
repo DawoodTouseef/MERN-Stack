@@ -1,7 +1,7 @@
 import { Box, Grid, Stack } from "@mui/material";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import ProductTabs from "./ProductTabs";
 import SimilarProducts from "../../components/SimilarProducts";
 import useProductLogic from "./hooks/useProductLogic";
@@ -37,11 +37,14 @@ const ProductDetails = () => {
     rating,
     numReviews,
     getVariantPrice,
-    isOwnProduct
+    isOwnProduct,
+    getCurrentName,
+    getCurrentDescription,
+    getCurrentSpecifications
   } = useProductLogic();
 
   return (
-    <DocumentTitle title={`${product?.name || "Product"} - Details`}>
+    <DocumentTitle title={`${getCurrentName() || "Product"} - Details`}>
       <Box sx={{ minHeight: "100vh", py: 4, bgcolor: "#f3f4f6" }}>
         <Box sx={{ maxWidth: "1280px", mx: "auto" }}>
           {isLoading ? (
@@ -52,7 +55,7 @@ const ProductDetails = () => {
             <>
               <Grid container spacing={4} sx={{ px: { xs: 2, md: 4 } }}>
                 {/* Product Media */}
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <ProductImageGallery
                     images={getCurrentImages()}
                     selectedVariant={selectedVariant}
@@ -79,6 +82,9 @@ const ProductDetails = () => {
                   offerpercent={offerpercent}
                   taxInfo={taxInfo}
                   getVariantPrice={getVariantPrice}
+                  getCurrentName={getCurrentName}
+                  getCurrentDescription={getCurrentDescription}
+                  getCurrentSpecifications={getCurrentSpecifications}
                 />
 
 
@@ -98,15 +104,15 @@ const ProductDetails = () => {
               </Grid>
 
               {/* Product Specifications */}
-              {product.specifications && (
-                <Grid item xs={12} sx={{ mt: 4 }}>
-                  <ProductSpecifications specifications={product.specifications} />
+              {getCurrentSpecifications() && (
+                <Grid xs={12} sx={{ mt: 4 }}>
+                  <ProductSpecifications specifications={getCurrentSpecifications()} />
                 </Grid>
               )}
 
 
               {/* Product Reviews */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <ProductTabs
                   userInfo={userInfo}
                   product={product}

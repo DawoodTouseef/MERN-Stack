@@ -38,15 +38,19 @@ const HeaderCurrencySelector = () => {
     return null; // Don't show selector if there's only one currency
   }
 
-  // Check if selected currency exists in the list
-  const isValidCurrency = currencies.some(currency => currency.code === selectedCurrency);
+  // Filter only enabled currencies
+  const enabledCurrencies = currencies.filter(currency => currency.isEnabled);
+
+  // Check if selected currency exists and is enabled in the list
+  const isValidCurrency = enabledCurrencies.some(currency => currency.code === selectedCurrency);
+  const displayValue = isValidCurrency ? selectedCurrency : (enabledCurrencies[0]?.code || "");
 
   return (
     <Box sx={{ minWidth: 120, display: "flex", alignItems: "center" }}>
       <Tooltip title="Change Currency">
-        <IconButton 
+        <IconButton
           onClick={() => setOpen(!open)}
-          sx={{ 
+          sx={{
             color: "#fff",
             mr: 1,
             display: { xs: "none", md: "flex" }
@@ -55,11 +59,11 @@ const HeaderCurrencySelector = () => {
           <CurrencyExchangeIcon />
         </IconButton>
       </Tooltip>
-      
-      <FormControl 
-        fullWidth 
+
+      <FormControl
+        fullWidth
         size="small"
-        sx={{ 
+        sx={{
           minWidth: 120,
           display: { xs: "none", md: "block" }
         }}
@@ -68,9 +72,9 @@ const HeaderCurrencySelector = () => {
           open={open}
           onClose={() => setOpen(false)}
           onOpen={() => setOpen(true)}
-          value={isValidCurrency ? selectedCurrency : (currencies[0]?.code || "")}
+          value={displayValue}
           onChange={handleChange}
-          sx={{ 
+          sx={{
             color: "#fff",
             ".MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.5)" },
             "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
@@ -81,11 +85,11 @@ const HeaderCurrencySelector = () => {
           {currencies
             .filter(currency => currency.isEnabled)
             .map((currency) => (
-              <MenuItem 
-                key={currency.code} 
+              <MenuItem
+                key={currency.code}
                 value={currency.code}
-                sx={{ 
-                  display: "flex", 
+                sx={{
+                  display: "flex",
                   justifyContent: "space-between",
                   color: "#000"
                 }}
@@ -100,19 +104,19 @@ const HeaderCurrencySelector = () => {
             ))}
         </Select>
       </FormControl>
-      
+
       {/* Mobile version - just the icon */}
-      <FormControl 
-        fullWidth 
+      <FormControl
+        fullWidth
         size="small"
-        sx={{ 
+        sx={{
           display: { xs: "block", md: "none" }
         }}
       >
         <Select
-          value={isValidCurrency ? selectedCurrency : (currencies[0]?.code || "")}
+          value={displayValue}
           onChange={handleChange}
-          sx={{ 
+          sx={{
             color: "#fff",
             ".MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.5)" },
             "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
@@ -123,11 +127,11 @@ const HeaderCurrencySelector = () => {
           {currencies
             .filter(currency => currency.isEnabled)
             .map((currency) => (
-              <MenuItem 
-                key={currency.code} 
+              <MenuItem
+                key={currency.code}
                 value={currency.code}
-                sx={{ 
-                  display: "flex", 
+                sx={{
+                  display: "flex",
                   justifyContent: "space-between",
                   color: "#000"
                 }}

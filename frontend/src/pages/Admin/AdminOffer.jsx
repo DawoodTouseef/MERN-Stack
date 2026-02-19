@@ -40,7 +40,7 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const AdminOffer = () => {
@@ -290,7 +290,7 @@ const AdminOffer = () => {
 
   const OfferForm = ({ formData, setFormData }) => (
     <Grid container spacing={2} sx={{ mt: 0.5 }}>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Offer Title"
           fullWidth
@@ -299,7 +299,7 @@ const AdminOffer = () => {
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth required>
           <InputLabel>Offer Type</InputLabel>
           <Select
@@ -315,7 +315,7 @@ const AdminOffer = () => {
           </Select>
         </FormControl>
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TextField
           label="Description"
           fullWidth
@@ -325,7 +325,7 @@ const AdminOffer = () => {
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Discount Value"
           type="number"
@@ -336,7 +336,7 @@ const AdminOffer = () => {
           inputProps={{ min: 0 }}
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth required>
           <InputLabel>Discount Unit</InputLabel>
           <Select
@@ -349,7 +349,7 @@ const AdminOffer = () => {
           </Select>
         </FormControl>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Promo Code"
           fullWidth
@@ -358,7 +358,7 @@ const AdminOffer = () => {
           placeholder="SAVE20"
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Min Cart Value"
           type="number"
@@ -368,7 +368,7 @@ const AdminOffer = () => {
           inputProps={{ min: 0 }}
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Start Time"
           type="datetime-local"
@@ -378,7 +378,7 @@ const AdminOffer = () => {
           onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="End Time"
           type="datetime-local"
@@ -388,7 +388,7 @@ const AdminOffer = () => {
           onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <Autocomplete
           multiple
           options={categories}
@@ -398,7 +398,7 @@ const AdminOffer = () => {
           renderInput={(params) => <TextField {...params} label="Categories" placeholder="Select categories" />}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <Autocomplete
           multiple
           options={products}

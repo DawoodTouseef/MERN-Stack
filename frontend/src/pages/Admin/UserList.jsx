@@ -10,7 +10,7 @@ import {
   useRejectVendorMutation,
   useGetUserDetailsQuery
 } from "../../redux/api/usersApiSlice";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { toast } from "react-toastify";
 import {
   Box,
@@ -406,7 +406,7 @@ const UserList = () => {
             {/* Filters Section */}
             <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     placeholder="Search by name, email, or ID..."
@@ -419,7 +419,7 @@ const UserList = () => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={6} md={2}>
+                <Grid size={{ xs: 6, md: 2 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Role</InputLabel>
                     <Select value={roleFilter} label="Role" onChange={handleRoleFilterChange} sx={{ borderRadius: 2, bgcolor: 'white' }}>
@@ -431,7 +431,7 @@ const UserList = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={6} md={2}>
+                <Grid size={{ xs: 6, md: 2 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Status</InputLabel>
                     <Select value={statusFilter} label="Status" onChange={handleStatusFilterChange} sx={{ borderRadius: 2, bgcolor: 'white' }}>
@@ -442,7 +442,7 @@ const UserList = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     variant="text"
                     startIcon={<FaFilter />}
@@ -627,7 +627,7 @@ const UserList = () => {
           <DialogContent sx={{ bgcolor: '#f8fafc', p: 3 }}>
             {userDetailDialog.user && (
               <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Card sx={{ height: '100%', borderRadius: 3 }}>
                     <CardContent sx={{ textAlign: 'center', py: 4 }}>
                       <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: 32 }}>
@@ -660,7 +660,7 @@ const UserList = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   <Stack spacing={3}>
                     {/* Security & Access */}
                     <Paper sx={{ p: 3, borderRadius: 3 }}>
@@ -668,21 +668,21 @@ const UserList = () => {
                         <VerifiedIcon color="primary" fontSize="small" /> Security & Access Control
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Typography variant="caption" color="text.secondary">Account Verification</Typography>
                           <Typography variant="body2">{userDetailDialog.user.emailVerified ? 'Verified' : 'Pending'}</Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Typography variant="caption" color="text.secondary">Two-Factor Auth</Typography>
                           <Typography variant="body2">{userDetailDialog.user.twoFactorEnabled ? 'Active' : 'Disabled'}</Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Typography variant="caption" color="text.secondary">Login Failures</Typography>
                           <Typography variant="body2" color={userDetailDialog.user.loginAttempts > 3 ? 'error.main' : 'inherit'}>
                             {userDetailDialog.user.loginAttempts || 0} Attempts
                           </Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Typography variant="caption" color="text.secondary">Last System Entry</Typography>
                           <Typography variant="body2">{userDetailDialog.user.lastLoginAt ? formatDate(userDetailDialog.user.lastLoginAt) : 'None Recorded'}</Typography>
                         </Grid>
@@ -695,15 +695,15 @@ const UserList = () => {
                         <ShoppingCart color="primary" fontSize="small" /> Marketplace Activity
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }}>
                           <Typography variant="caption" color="text.secondary">Wishlist</Typography>
                           <Typography variant="body1" fontWeight={600}>{userDetailDialog.user.wishlist?.length || 0} Items</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }}>
                           <Typography variant="caption" color="text.secondary">Session Count</Typography>
                           <Typography variant="body1" fontWeight={600}>{userDetailDialog.user.behaviorData?.sessionData?.sessionCount || 0}</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={{ xs: 4 }}>
                           <Typography variant="caption" color="text.secondary">Cart Abandons</Typography>
                           <Typography variant="body1" fontWeight={600} color="warning.main">{userDetailDialog.user.behaviorData?.sessionData?.cartAbandonmentCount || 0}</Typography>
                         </Grid>

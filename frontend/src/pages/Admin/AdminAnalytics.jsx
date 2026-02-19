@@ -29,7 +29,7 @@ import {
     FilterList as FilterIcon,
     MoreVert as MoreIcon
 } from "@mui/icons-material";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 
 const AdminAnalytics = () => {
     const theme = useTheme();
@@ -110,7 +110,7 @@ const AdminAnalytics = () => {
                     {/* Header Section */}
                     <Box sx={{ mb: 6 }}>
                         <Grid container spacing={3} alignItems="center">
-                            <Grid item xs={12} md={6}>
+                            <Grid size={{ xs: 12, md: 6 }}>
                                 <Stack direction="row" spacing={2} alignItems="center">
                                     <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'primary.main', color: '#fff', display: 'flex' }}>
                                         <InsightsIcon fontSize="large" />
@@ -125,7 +125,7 @@ const AdminAnalytics = () => {
                                     </Box>
                                 </Stack>
                             </Grid>
-                            <Grid item xs={12} md={6} sx={{ textAlign: { md: 'right' } }}>
+                            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { md: 'right' } }}>
                                 <Stack direction="row" spacing={2} justifyContent={{ xs: 'flex-start', md: 'flex-end' }}>
                                     <Button variant="outlined" startIcon={<DownloadIcon />} sx={{ borderRadius: 2.5, px: 3, fontWeight: 700, textTransform: 'none' }}>
                                         Export CSV
@@ -141,7 +141,7 @@ const AdminAnalytics = () => {
                     {/* Main Analytics Grid */}
                     <Grid container spacing={4}>
                         {/* Volume & Momentum */}
-                        <Grid item xs={12} lg={8}>
+                        <Grid size={{ xs: 12, lg: 8 }}>
                             <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
                                     <Box>
@@ -154,13 +154,13 @@ const AdminAnalytics = () => {
                                 </Stack>
 
                                 <Grid container spacing={3} sx={{ mb: 4 }}>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderStyle: 'dashed', bgcolor: '#f8fafc' }}>
                                             <Typography variant="caption" fontWeight={700} color="text.secondary">TOTAL VOLUME</Typography>
                                             <Typography variant="h3" fontWeight={900}>${sales?.totalSales?.toLocaleString() || 0}</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderStyle: 'dashed', bgcolor: '#f8fafc' }}>
                                             <Typography variant="caption" fontWeight={700} color="text.secondary">TOTAL TRANSACTIONS</Typography>
                                             <Typography variant="h3" fontWeight={900}>{orders?.totalOrders || 0}</Typography>
@@ -173,7 +173,7 @@ const AdminAnalytics = () => {
                         </Grid>
 
                         {/* Merchant Distribution */}
-                        <Grid item xs={12} lg={4}>
+                        <Grid size={{ xs: 12, lg: 4 }}>
                             <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
                                 <Typography variant="h6" fontWeight={800} sx={{ mb: 4 }}>Merchant Health Index</Typography>
 

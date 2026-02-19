@@ -180,13 +180,13 @@ const Brands = () => {
             Featured Brands
           </Typography>
           <Divider sx={{ mb: 3, bgcolor: "#e3eeff" }} />
-          
+
           <Grid container spacing={4}>
             {mockBrands
               .filter(brand => brand.featured)
               .slice(0, 4)
               .map((brand) => (
-                <Grid item xs={12} sm={6} md={3} key={brand._id}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={brand._id}>
                   <Card
                     sx={{
                       height: "100%",
@@ -252,11 +252,11 @@ const Brands = () => {
             All Brands
           </Typography>
           <Divider sx={{ mb: 3, bgcolor: "#e3eeff" }} />
-          
+
           {isLoading ? (
             <Grid container spacing={4}>
               {[...Array(8)].map((_, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                   <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 3, mb: 1 }} />
                   <Skeleton variant="text" sx={{ fontSize: "1rem" }} />
                   <Skeleton variant="text" sx={{ fontSize: "0.875rem" }} />
@@ -267,7 +267,7 @@ const Brands = () => {
             <>
               <Grid container spacing={4}>
                 {currentBrands.map((brand) => (
-                  <Grid item xs={12} sm={6} md={3} key={brand._id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={brand._id}>
                     <Card
                       sx={{
                         height: "100%",

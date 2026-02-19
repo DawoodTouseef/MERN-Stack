@@ -117,7 +117,7 @@ const ContactUs = () => {
 
         <Grid container spacing={4}>
           {/* Contact Details */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Typography variant="h6" fontWeight="bold" sx={{ color: "#18181b", mb: 3 }}>
               Get in Touch
             </Typography>
@@ -200,7 +200,7 @@ const ContactUs = () => {
           </Grid>
 
           {/* Contact Form */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="h6" fontWeight="bold" sx={{ color: "#18181b", mb: 3 }}>
               Send Us a Message
             </Typography>

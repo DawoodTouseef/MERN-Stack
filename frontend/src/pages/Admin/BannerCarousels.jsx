@@ -30,7 +30,7 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const BannerCarousels = () => {
@@ -349,7 +349,7 @@ const BannerCarousels = () => {
           <DialogTitle sx={{ fontWeight: 700 }}>Add New Banner</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Title"
                   fullWidth
@@ -358,7 +358,7 @@ const BannerCarousels = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Subtitle"
                   fullWidth
@@ -376,7 +376,7 @@ const BannerCarousels = () => {
                   placeholder="https://example.com/banner.jpg"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="CTA Text"
                   fullWidth
@@ -385,7 +385,7 @@ const BannerCarousels = () => {
                   placeholder="Shop Now"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="CTA Link"
                   fullWidth
@@ -394,7 +394,7 @@ const BannerCarousels = () => {
                   placeholder="/shop"
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   label="Start Date"
                   type="date"
@@ -404,7 +404,7 @@ const BannerCarousels = () => {
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   label="End Date"
                   type="date"
@@ -414,7 +414,7 @@ const BannerCarousels = () => {
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   label="Priority"
                   type="number"

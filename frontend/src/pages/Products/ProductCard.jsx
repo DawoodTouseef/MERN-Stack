@@ -109,14 +109,17 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
   const hasDiscount = offerpercent.percentage > 0;
 
   const calculateDiscountedPrice = (product, offers) => {
-    if (!product || !product.price) return 0;
-    if (!offers || offers.length === 0) return product.price * price;
+    if (!product) return 0;
 
-    let discountedPrice = product.price;
+    // Determine the base price in the selected currency
+    const basePrice = (product.prices && product.prices[currency])
+      ? product.prices[currency]
+      : (product.price || 0) * price;
 
-    // Find the best discount for this product
-    let bestDiscount = 0;
-    let bestDiscountType = null;
+    if (!offers || offers.length === 0) return basePrice;
+
+    let maxReduction = 0;
+    let bestDiscountedPrice = basePrice;
 
     offers.forEach((offer) => {
       const isProductInOffer =
@@ -125,27 +128,31 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
         (offer.brand && offer.brand._id === product.brand?._id);
 
       if (isProductInOffer) {
-        if (offer.discountUnit === "percent" && offer.discountValue > bestDiscount) {
-          bestDiscount = offer.discountValue;
-          bestDiscountType = "percent";
-        } else if (offer.discountUnit === "flat" && offer.discountValue > bestDiscount) {
-          bestDiscount = offer.discountValue;
-          bestDiscountType = "flat";
+        let reduction = 0;
+        if (offer.discountUnit === "percent") {
+          reduction = (basePrice * offer.discountValue / 100);
+        } else if (offer.discountUnit === "flat") {
+          // Convert flat discount from base currency to selected currency
+          reduction = offer.discountValue * price;
+        }
+
+        if (reduction > maxReduction) {
+          maxReduction = reduction;
+          bestDiscountedPrice = Math.max(0, basePrice - reduction);
         }
       }
     });
 
-    if (bestDiscountType === "percent") {
-      discountedPrice = product.price - (product.price * bestDiscount / 100);
-    } else if (bestDiscountType === "flat") {
-      discountedPrice = Math.max(0, product.price - bestDiscount);
-    }
-
-    return discountedPrice * price;
+    return bestDiscountedPrice;
   };
 
-  const discountedPrice = useMemo(() => calculateDiscountedPrice(product, offers), [product, offers, price]);
-  const originalPrice = useMemo(() => product.price * price, [product, price]);
+  const discountedPrice = useMemo(() => calculateDiscountedPrice(product, offers), [product, offers, price, currency]);
+  const originalPrice = useMemo(() => {
+    if (product.prices && product.prices[currency]) {
+      return product.prices[currency];
+    }
+    return (product.price || 0) * price;
+  }, [product, price, currency]);
 
   // Format prices
   const formattedDiscountedPrice = useMemo(() => new Intl.NumberFormat('en-US', {

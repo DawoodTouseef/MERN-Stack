@@ -26,7 +26,7 @@ import {
   Stack,
 } from "@mui/material";
 import { FaShoppingCart, FaStore } from "react-icons/fa";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 
 
@@ -54,20 +54,20 @@ const Product = () => {
   const currency = useSelector((state) => state.currency.selectedCurrency);
   const price = useSelector((state) => state.currency.price);
   const getCurrencySymbol = () => {
-          try {
-            const formatter = new Intl.NumberFormat('en', {
-              style: 'currency',
-              currency: currency,
-              currencyDisplay: 'symbol',
-            });
-      
-            const parts = formatter.formatToParts(1);
-            const symbol = parts.find(part => part.type === 'currency')?.value;
-            return symbol || currency;
-          } catch (err) {
-            return currency; // fallback if currency code is invalid
-          }
-        };
+    try {
+      const formatter = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: currency,
+        currencyDisplay: 'symbol',
+      });
+
+      const parts = formatter.formatToParts(1);
+      const symbol = parts.find(part => part.type === 'currency')?.value;
+      return symbol || currency;
+    } catch (err) {
+      return currency; // fallback if currency code is invalid
+    }
+  };
   const addToCartHandler = () => {
     const selectedVariant = product.variants?.find(
       (v) => v.sku === variant
@@ -100,11 +100,11 @@ const Product = () => {
 
   let discountedPrice = product?.discount
     ? (
-        product.price -
-        product.price * (product.discount.percentage / 100)
-      ).toFixed(2)
+      product.price -
+      product.price * (product.discount.percentage / 100)
+    ).toFixed(2)
     : product?.price;
-  discountedPrice=discountedPrice*price
+  discountedPrice = discountedPrice * price
   return (
     <DocumentTitle title={`${product?.name || "Product"} - Details`}>
       <Box sx={{ minHeight: "100vh", py: 4, bgcolor: "#f3e7e9" }}>
@@ -135,7 +135,7 @@ const Product = () => {
             >
               <Grid container spacing={4}>
                 {/* Product Media */}
-                <Grid item xs={12} md={5} lg={4}>
+                <Grid size={{ xs: 12, md: 5, lg: 4 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -233,7 +233,7 @@ const Product = () => {
                 </Grid>
 
                 {/* Product Info */}
-                <Grid item xs={12} md={4} lg={5}>
+                <Grid size={{ xs: 12, md: 4, lg: 5 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -309,14 +309,14 @@ const Product = () => {
                           textDecoration: "line-through",
                         }}
                       >
-                        Original Price: {getCurrencySymbol()}{product.price*price}
+                        Original Price: {getCurrencySymbol()}{product.price * price}
                       </Typography>
                     )}
                   </Paper>
                 </Grid>
 
                 {/* Buy/Cart Section */}
-                <Grid item xs={12} md={3} lg={3}>
+                <Grid size={{ xs: 12, md: 3, lg: 3 }}>
                   <Paper
                     elevation={4}
                     sx={{
@@ -383,7 +383,7 @@ const Product = () => {
                 </Grid>
 
                 {/* Product Tabs & Reviews */}
-                <Grid item xs={12} sx={{ mt: 4 }}>
+                <Grid size={12} sx={{ mt: 4 }}>
                   <ProductTabs
                     loadingProductReview={loadingProductReview}
                     userInfo={userInfo}

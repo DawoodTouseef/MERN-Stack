@@ -5,7 +5,7 @@
 /**
  * Get variant by selected options
  * @param {Object} product - The product object
- * @param {Object} selectedOptions - The selected options { color, size, storage }
+ * @param {Object} selectedOptions - The selected options { [attributeName]: value }
  * @returns {Object|null} The matching variant or null if not found
  */
 export const getVariant = (product, selectedOptions) => {
@@ -15,6 +15,14 @@ export const getVariant = (product, selectedOptions) => {
 
   // Find the variant that matches all selected options
   return product.variants.find(variant => {
+    // Check dynamic attributes
+    if (variant.attributes && variant.attributes.length > 0) {
+      return variant.attributes.every(attr => {
+        return selectedOptions[attr.name] === attr.value;
+      });
+    }
+
+    // Fallback to old structure (color, size, storage)
     return (
       (selectedOptions.color === undefined || variant.color === selectedOptions.color) &&
       (selectedOptions.size === undefined || variant.size === selectedOptions.size) &&
@@ -26,18 +34,46 @@ export const getVariant = (product, selectedOptions) => {
 /**
  * Get available options for a product
  * @param {Object} product - The product object
- * @returns {Object} Available options { colors, sizes, storages }
+ * @returns {Object} Available options { [attributeName]: [values] }
  */
 export const getAvailableOptions = (product) => {
   if (!product || !product.variants) {
-    return { colors: [], sizes: [], storages: [] };
+    return {};
   }
 
-  const colors = [...new Set(product.variants.map(v => v.color).filter(Boolean))];
-  const sizes = [...new Set(product.variants.map(v => v.size).filter(Boolean))];
-  const storages = [...new Set(product.variants.map(v => v.storage).filter(Boolean))];
+  const options = {};
 
-  return { colors, sizes, storages };
+  product.variants.forEach(variant => {
+    // Collect from attributes array
+    if (variant.attributes && variant.attributes.length > 0) {
+      variant.attributes.forEach(attr => {
+        if (!options[attr.name]) options[attr.name] = new Set();
+        options[attr.name].add(attr.value);
+      });
+    }
+
+    // Fallback/Legacy collectors
+    if (variant.color) {
+      if (!options.color) options.color = new Set();
+      options.color.add(variant.color);
+    }
+    if (variant.size) {
+      if (!options.size) options.size = new Set();
+      options.size.add(variant.size);
+    }
+    if (variant.storage) {
+      if (!options.storage) options.storage = new Set();
+      options.storage.add(variant.storage);
+    }
+  });
+
+  // Convert Sets to Arrays
+  const formattedOptions = {};
+  Object.keys(options).forEach(key => {
+    formattedOptions[key] = Array.from(options[key]);
+  });
+
+  return formattedOptions;
 };
 
 /**
@@ -47,13 +83,41 @@ export const getAvailableOptions = (product) => {
  */
 export const formatVariantAttributes = (variant) => {
   if (!variant) return '';
-  
+
   const attributes = [];
-  if (variant.color) attributes.push(`Color: ${variant.color}`);
-  if (variant.size) attributes.push(`Size: ${variant.size}`);
-  if (variant.storage) attributes.push(`Storage: ${variant.storage}`);
-  
+
+  if (variant.attributes && variant.attributes.length > 0) {
+    variant.attributes.forEach(attr => {
+      attributes.push(`${attr.name}: ${attr.value}`);
+    });
+  } else {
+    // Fallback
+    if (variant.color) attributes.push(`Color: ${variant.color}`);
+    if (variant.size) attributes.push(`Size: ${variant.size}`);
+    if (variant.storage) attributes.push(`Storage: ${variant.storage}`);
+  }
+
   return attributes.join(', ');
+};
+
+/**
+ * Get field from variant or product (fallback)
+ * @param {Object} variant - The variant object
+ * @param {Object} product - The product object
+ * @param {String} fieldName - The field name to retrieve
+ * @returns {any} The field value
+ */
+export const getVariantField = (variant, product, fieldName) => {
+  // Try variant first
+  if (variant && variant[fieldName] !== undefined && variant[fieldName] !== null && variant[fieldName] !== '') {
+    // For nested objects like specifications, merge or choose
+    if (fieldName === 'specifications' && product?.specifications) {
+      return { ...product.specifications, ...variant.specifications };
+    }
+    return variant[fieldName];
+  }
+  // Fallback to product
+  return product ? product[fieldName] : null;
 };
 
 /**
@@ -84,10 +148,10 @@ export const getVariantPrice = (variant) => {
  */
 export const getVariantImages = (variant, product) => {
   if (!variant && !product) return [];
-  
+
   // Use variant images if available, otherwise fall back to product media
-  const images = variant?.images || product?.media?.map(m => m.url) || [];
-  
+  let images = (variant?.images?.length > 0) ? variant.images : (product?.media?.map(m => m.url) || []);
+
   // Filter out any falsy values and ensure we have strings
   return images.filter(img => typeof img === 'string' && img.length > 0);
 };
@@ -147,6 +211,7 @@ export default {
   getVariant,
   getAvailableOptions,
   formatVariantAttributes,
+  getVariantField,
   isVariantInStock,
   getVariantPrice,
   getVariantImages,

@@ -38,7 +38,7 @@ import {
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { useAllProductsQuery } from "../../redux/api/productApiSlice";
 import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
 import { format } from "date-fns";
@@ -204,7 +204,7 @@ const AdminDashboard = () => {
           {/* Header */}
           <Box sx={{ mb: 6 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h3" fontWeight={900} color="text.primary" sx={{ letterSpacing: '-1.5px', mb: 1 }}>
                   Business Overview
                 </Typography>
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
                   Welcome back, {userInfo?.username}. Here's what's happening today.
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6} sx={{ textAlign: { md: 'right' } }}>
+              <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { md: 'right' } }}>
                 <Stack direction="row" spacing={2} justifyContent={{ xs: 'flex-start', md: 'flex-end' }}>
                   <Tooltip title="Refresh Data">
                     <IconButton sx={{ bgcolor: '#fff', border: '1px solid #e2e8f0', borderRadius: 2 }}>
@@ -234,7 +234,7 @@ const AdminDashboard = () => {
 
           {/* Stats Grid */}
           <Grid container spacing={3} sx={{ mb: 6 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 icon={<SalesIcon />}
                 label="Total Revenue"
@@ -244,7 +244,7 @@ const AdminDashboard = () => {
                 delay={0}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 icon={<OrderIcon />}
                 label="Total Orders"
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
                 delay={100}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 icon={<UsersIcon />}
                 label="Customers"
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
                 delay={200}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 icon={<ProductIcon />}
                 label="Active Products"
@@ -278,7 +278,7 @@ const AdminDashboard = () => {
 
           {/* Middle Section: Chart & Detailed Metrics */}
           <Grid container spacing={4}>
-            <Grid item xs={12} lg={8}>
+            <Grid size={{ xs: 12, lg: 8 }}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
                   <Box>
@@ -302,7 +302,7 @@ const AdminDashboard = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} lg={4}>
+            <Grid size={{ xs: 12, lg: 4 }}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', height: '100%' }}>
                 <Typography variant="h6" fontWeight={800} sx={{ mb: 4 }}>Partner Distribution</Typography>
 

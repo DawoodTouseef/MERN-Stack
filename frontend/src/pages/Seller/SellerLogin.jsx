@@ -92,7 +92,7 @@ const SellerLogin = () => {
     }}>
       <Grid container>
         {/* Left Side - Image/Brand (Indigo/Purple for Sellers) */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           justifyContent: 'center',
@@ -133,7 +133,7 @@ const SellerLogin = () => {
         </Grid>
 
         {/* Right Side - Form */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',

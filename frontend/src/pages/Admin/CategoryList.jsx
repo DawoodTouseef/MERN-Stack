@@ -279,7 +279,7 @@ const CategoryList = () => {
               <Grid container spacing={3}>
                 <AnimatePresence>
                   {categories.map((category) => (
-                    <Grid item xs={12} sm={6} lg={4} key={category._id}>
+                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={category._id}>
                       <motion.div
                         layout
                         initial={{ opacity: 0, scale: 0.9 }}

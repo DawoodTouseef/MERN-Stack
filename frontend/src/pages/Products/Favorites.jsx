@@ -1,9 +1,12 @@
 import { useSelector } from "react-redux";
 import { selectFavoriteProduct } from "../../redux/features/favorites/favoriteSlice";
 import Product from "./Product";
-import { Box, Grid, Typography, Paper, Fade } from "@mui/material";
+import { Box, Grid, Typography, Paper, Fade, Button } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import DocumentTitle from "react-document-title";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import { alpha } from "@mui/material/styles";
+import { Link } from "react-router-dom";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 const Favorites = () => {
   const favorites = useSelector(selectFavoriteProduct);

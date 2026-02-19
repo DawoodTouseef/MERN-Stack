@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Loader from "../../components/Loader";
 import { useLoginMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
+import DocumentTitle from "../../components/DocumentTitle";
 import { toast } from "react-toastify";
 import {
   Box,
@@ -20,10 +21,10 @@ import {
   useMediaQuery,
   alpha
 } from "@mui/material";
-import { 
-  Visibility, 
-  VisibilityOff, 
-  Google, 
+import {
+  Visibility,
+  VisibilityOff,
+  Google,
   Microsoft,
   Login as LoginIcon
 } from "@mui/icons-material";
@@ -37,7 +38,7 @@ const MICROSOFT_CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
 const Login = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -105,14 +106,14 @@ const Login = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: "100vh", 
+    <Box sx={{
+      minHeight: "100vh",
       display: "flex",
       bgcolor: theme.palette.background.default
     }}>
       <Grid container>
         {/* Left Side - Image/Brand */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           justifyContent: 'center',
@@ -130,7 +131,7 @@ const Login = () => {
             background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%)',
             zIndex: 1
           }} />
-          
+
           <Box sx={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 480 }}>
             <Typography variant="h2" fontWeight="800" sx={{ mb: 2 }}>
               Welcome Back!
@@ -138,26 +139,26 @@ const Login = () => {
             <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400 }}>
               Access your account to manage orders, track shipments, and explore the latest products.
             </Typography>
-            
-            <Box 
-              component="img" 
-              src="/placeholder-auth.png" 
+
+            <Box
+              component="img"
+              src="/placeholder-auth.png"
               onError={(e) => { e.target.style.display = 'none' }} // Hide if missing
-              sx={{ mt: 6, maxWidth: '80%', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' }} 
+              sx={{ mt: 6, maxWidth: '80%', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' }}
             />
           </Box>
         </Grid>
 
         {/* Right Side - Form */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
           p: { xs: 3, sm: 6, md: 8 }
         }}>
-          <Paper elevation={0} sx={{ 
-            width: '100%', 
+          <Paper elevation={0} sx={{
+            width: '100%',
             maxWidth: 480,
             p: { xs: 3, sm: 4 },
             borderRadius: 3,
@@ -187,7 +188,7 @@ const Login = () => {
                       sx: { borderRadius: 2 }
                     }}
                   />
-                  
+
                   <TextField
                     label="Password"
                     type={showPassword ? "text" : "password"}
@@ -240,7 +241,7 @@ const Login = () => {
                       OR CONTINUE WITH
                     </Typography>
                   </Divider>
-                  
+
                   <Stack spacing={1.5}>
                     {GOOGLE_CLIENT_ID && (
                       <Button
@@ -248,8 +249,8 @@ const Login = () => {
                         fullWidth
                         startIcon={<Google />}
                         onClick={handleGoogleAuth}
-                        sx={{ 
-                          py: 1.2, 
+                        sx={{
+                          py: 1.2,
                           borderRadius: 2,
                           textTransform: 'none',
                           color: 'text.primary',
@@ -265,8 +266,8 @@ const Login = () => {
                         fullWidth
                         startIcon={<Microsoft />}
                         onClick={handleMicrosoftAuth}
-                        sx={{ 
-                          py: 1.2, 
+                        sx={{
+                          py: 1.2,
                           borderRadius: 2,
                           textTransform: 'none',
                           color: 'text.primary',
@@ -280,9 +281,9 @@ const Login = () => {
                 </Box>
               )}
 
-              <Stack 
-                direction="row" 
-                justifyContent="space-between" 
+              <Stack
+                direction="row"
+                justifyContent="space-between"
                 alignItems="center"
                 sx={{ fontSize: '0.875rem', mt: 2 }}
               >

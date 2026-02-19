@@ -29,7 +29,7 @@ import VendorDashboard from "./Vendor/vendorDashboard";
 import { useFetchBannersQuery } from "../redux/api/bannerApiSlice";
 import { useFetchOffersQuery } from "../redux/api/offerApiSlice";
 import PersonalizedHomepage from "../components/PersonalizedHomepage";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../components/DocumentTitle";
 import { APP_NAME } from "../redux/constants";
 
 const fadeIn = {
@@ -343,10 +343,10 @@ const Home = () => {
                   <Box sx={{
                     display: "flex",
                     flexWrap: "wrap",
-                    gap: 1.5,
+                    gap: 5,
                     my: 6,
                     justifyContent: "center",
-                    px: { xs: 2, md: 0 },
+                    px: { xs: 4, md: 2 },
                   }}>
                     {categories?.slice(0, 8).map((cat, index) => (
                       <motion.div

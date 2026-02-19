@@ -38,7 +38,7 @@ export const getVendors = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const getVendorById = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id).populate('user', 'username email status vendorVerified');
+    const vendor = await Organization.findById(req.params.id).populate('owner', 'username email status vendorVerified');
 
     if (vendor) {
       res.json(vendor);
@@ -66,14 +66,14 @@ export const createVendor = asyncHandler(async (req, res) => {
       contactPerson
     } = req.body;
 
-    const vendorExists = await Vendor.findOne({ email });
+    const vendorExists = await Organization.findOne({ email });
 
     if (vendorExists) {
       res.status(400);
       throw new Error('Vendor already exists with this email');
     }
 
-    const vendor = new Vendor({
+    const vendor = new Organization({
       name,
       email,
       phone,
@@ -81,7 +81,9 @@ export const createVendor = asyncHandler(async (req, res) => {
       businessType,
       taxId,
       bankDetails,
-      contactPerson
+      contactPerson,
+      owner: req.user._id,
+      type: 'vendor'
     });
 
     const createdVendor = await vendor.save();
@@ -120,10 +122,10 @@ export const updateVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const deleteVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Organization.findById(req.params.id);
 
     if (vendor) {
-      await vendor.remove();
+      await Organization.findByIdAndDelete(req.params.id);
       res.json({ message: 'Vendor removed' });
     } else {
       res.status(404).json({ message: 'Vendor not found' });
@@ -138,7 +140,7 @@ export const deleteVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const verifyVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id).populate('user');
+    const vendor = await Organization.findById(req.params.id).populate('owner');
 
     if (vendor) {
       vendor.isVerified = true;
@@ -146,8 +148,8 @@ export const verifyVendor = asyncHandler(async (req, res) => {
       const updatedVendor = await vendor.save();
 
       // Also verify the user account if it exists
-      if (vendor.user) {
-        const user = await User.findById(vendor.user._id);
+      if (vendor.owner) {
+        const user = await User.findById(vendor.owner._id);
         if (user && user.role === 'vendor') {
           user.vendorVerified = true;
           user.status = 'active';
@@ -172,12 +174,12 @@ export const verifyVendor = asyncHandler(async (req, res) => {
           isActive: updatedVendor.isActive,
           createdAt: updatedVendor.createdAt,
           updatedAt: updatedVendor.updatedAt,
-          user: vendor.user ? {
-            _id: vendor.user._id,
-            username: vendor.user.username,
-            email: vendor.user.email,
-            status: vendor.user.status,
-            vendorVerified: vendor.user.vendorVerified
+          owner: vendor.owner ? {
+            _id: vendor.owner._id,
+            username: vendor.owner.username,
+            email: vendor.owner.email,
+            status: vendor.owner.status,
+            vendorVerified: vendor.owner.vendorVerified
           } : null
         }
       });
@@ -194,7 +196,7 @@ export const verifyVendor = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const rejectVendor = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id).populate('user');
+    const vendor = await Organization.findById(req.params.id).populate('owner');
 
     if (vendor) {
       vendor.isVerified = false;
@@ -202,8 +204,8 @@ export const rejectVendor = asyncHandler(async (req, res) => {
       const updatedVendor = await vendor.save();
 
       // Also reject the user account if it exists
-      if (vendor.user) {
-        const user = await User.findById(vendor.user._id);
+      if (vendor.owner) {
+        const user = await User.findById(vendor.owner._id);
         if (user && user.role === 'vendor') {
           user.vendorVerified = false;
           user.status = 'banned';
@@ -228,12 +230,12 @@ export const rejectVendor = asyncHandler(async (req, res) => {
           isActive: updatedVendor.isActive,
           createdAt: updatedVendor.createdAt,
           updatedAt: updatedVendor.updatedAt,
-          user: vendor.user ? {
-            _id: vendor.user._id,
-            username: vendor.user.username,
-            email: vendor.user.email,
-            status: vendor.user.status,
-            vendorVerified: vendor.user.vendorVerified
+          owner: vendor.owner ? {
+            _id: vendor.owner._id,
+            username: vendor.owner.username,
+            email: vendor.owner.email,
+            status: vendor.owner.status,
+            vendorVerified: vendor.owner.vendorVerified
           } : null
         }
       });
@@ -253,7 +255,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
     const vendorId = req.user._id;
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
 
     // Get comprehensive vendor performance metrics
@@ -289,7 +291,7 @@ export const getVendorSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy = 'day' } = req.query;
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -377,7 +379,7 @@ export const getVendorProductAnalytics = asyncHandler(async (req, res) => {
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'revenue';
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -471,7 +473,7 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate, segment = 'all' } = req.query;
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
     // Validate date parameters
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -566,7 +568,7 @@ export const getVendorCustomerAnalytics = asyncHandler(async (req, res) => {
       },
       {
         $group: {
-          _id: '$user',
+          _id: '$owner',
           totalSpent: { $sum: { $multiply: ['$orderItems.price', '$orderItems.qty'] } },
           totalOrders: { $sum: 1 }
         }
@@ -614,7 +616,7 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
     const vendorId = req.user._id;
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
     // Inventory metrics
     const totalProducts = products.length;
@@ -653,7 +655,7 @@ export const getVendorInventoryAnalytics = asyncHandler(async (req, res) => {
 // @access  Private/Vendor
 export const getVendorProfile = asyncHandler(async (req, res) => {
   try {
-    const vendor = await Vendor.findOne({ user: req.user._id }).populate('user', 'username email');
+    const vendor = await Organization.findOne({ owner: req.user._id }).populate('owner', 'username email');
 
     if (vendor) {
       res.json(vendor);
@@ -673,7 +675,7 @@ export const checkVendorProducts = asyncHandler(async (req, res) => {
     const vendorId = req.user._id;
 
     // Get vendor products
-    const products = await Product.find({ vendor: vendorId });
+    const products = await Product.find({ user: vendorId });
 
     res.json({
       vendorId,

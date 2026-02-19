@@ -42,7 +42,7 @@ import {
     FilterList as FilterIcon
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 
 const Tax = () => {
     const [activeTab, setActiveTab] = useState(0);
@@ -286,25 +286,25 @@ const Tax = () => {
                         </DialogTitle>
                         <DialogContent sx={{ p: 4 }}>
                             <Grid container spacing={3} sx={{ mt: 1 }}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField label="Country *" name="country" fullWidth value={formData.country} onChange={handleFormChange} required />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField label="State/Region" name="region" fullWidth value={formData.region} onChange={handleFormChange} />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField label="Tax Rate (%) *" name="rate" type="number" fullWidth value={formData.rate} onChange={handleFormChange} required />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField select label="Type" name="type" fullWidth value={formData.type} onChange={handleFormChange}>
                                         <MenuItem value="percentage">Percentage</MenuItem>
                                         <MenuItem value="fixed">Fixed Amount</MenuItem>
                                     </TextField>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <TextField label="Internal Description" name="description" fullWidth multiline rows={2} value={formData.description} onChange={handleFormChange} />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <FormControlLabel
                                         control={<Switch checked={formData.isActive} name="isActive" onChange={handleFormChange} color="success" />}
                                         label={<Typography fontWeight={600}>Active Rule</Typography>}

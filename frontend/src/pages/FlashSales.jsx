@@ -399,7 +399,7 @@ const FlashSales = () => {
         >
           <Grid container spacing={3}>
             {flashSales.data.map((product, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product._id}>
                 <motion.div
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}

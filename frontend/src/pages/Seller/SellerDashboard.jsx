@@ -29,7 +29,7 @@ import { MdOutlineBarChart, MdInventory2 as InventoryIcon } from "react-icons/md
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useAllProductsQuery } from "../../redux/api/productApiSlice";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { useGetCurrenciesQuery } from "../../redux/api/currencyApiSlice";
 import useCurrency from "../../hooks/useCurrency";
 import { APP_NAME } from "../../redux/constants";
@@ -200,7 +200,7 @@ const SellerDashBoard = () => {
 
         {/* Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 6 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               icon={<AiOutlineDollarCircle size={28} />}
               label="Total Sales"
@@ -208,7 +208,7 @@ const SellerDashBoard = () => {
               color="#6366f1"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               icon={<InventoryIcon size={28} sx={{ color: '#fff' }} />}
               label="Products"
@@ -216,15 +216,15 @@ const SellerDashBoard = () => {
               color="#10b981"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               icon={<AiOutlineShoppingCart size={28} />}
               label="All Orders"
-              value={loadingOrders ? <Loader size={20} /> : orders?.totalOrders || 0}
+              value={isLoading ? <Loader size={20} /> : orders?.totalOrders || 0}
               color="#f59e0b"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               icon={<MdOutlineBarChart size={28} />}
               label="Avg. Order Value"

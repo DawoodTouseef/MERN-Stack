@@ -113,6 +113,15 @@ const productSchema = mongoose.Schema({
   variants: [
     {
       sku: String,
+      name: String, // Variant-specific name
+      description: String, // Variant-specific description
+      attributes: [
+        {
+          name: { type: String, required: true },
+          value: { type: String, required: true }
+        }
+      ],
+      // Fallback fields for backward compatibility
       color: String,
       size: String,
       storage: String,
@@ -124,6 +133,7 @@ const productSchema = mongoose.Schema({
       },
       countInStock: Number,
       images: [String],
+      specifications: mongoose.Schema.Types.Mixed, // Variant-specific specifications
       // Shipping information
       shippingWeight: { type: Number },
       shippingLength: { type: Number },

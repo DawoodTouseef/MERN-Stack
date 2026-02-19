@@ -19,7 +19,7 @@ class VendorAnalyticsService {
       }
 
       // Get vendor products
-      const vendorProducts = await Product.find({ vendor: vendorId });
+      const vendorProducts = await Product.find({ user: vendorId });
       const productIds = vendorProducts.map(p => p._id);
 
       if (productIds.length === 0) {
@@ -435,7 +435,7 @@ class VendorAnalyticsService {
   // Get vendor ranking based on performance
   static async getVendorRanking(limit = 10) {
     try {
-      const vendorPerformance = await Vendor.aggregate([
+      const vendorPerformance = await Organization.aggregate([
         {
           $lookup: {
             from: 'products',

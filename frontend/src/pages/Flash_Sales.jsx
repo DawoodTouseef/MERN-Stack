@@ -16,7 +16,7 @@ import {
   Stack,
   Fade,
 } from "@mui/material";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../components/DocumentTitle";
 
 const FlashSales = () => {
   const dispatch = useDispatch();
@@ -33,10 +33,10 @@ const FlashSales = () => {
   useEffect(() => {
     if (offers) {
       const productsWithOffers = offers
-  .filter((offer) => offer.offerType === "flash")
-  
+        .filter((offer) => offer.offerType === "flash")
+
       setFilteredProducts(productsWithOffers);
-      
+
     }
 
   }, [offers]);
@@ -103,54 +103,54 @@ const FlashSales = () => {
           ) : (
             filteredProducts.map((products) => (
               <>
-              {products.products.map((product)=>(
-                <>
-                  <Fade in key={product._id}>
-                <Paper
-                  key={product._id}
-                  elevation={6}
-                  sx={{
-                    p: 2,
-                    borderRadius: 4,
-                    bgcolor: "#fff",
-                    minWidth: 260,
-                    maxWidth: 320,
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-8px) scale(1.03)",
-                      boxShadow: 10,
-                      borderColor: "secondary.main",
-                    },
-                    boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
-                  }}
-                  className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
-                >
-                  <ProductCard product={product} offers={offers}/>
-                  {product.countInStock === 0 && (
-                    <Chip
-                      label="Out of Stock"
-                      color="error"
-                      sx={{
-                        position: "absolute",
-                        top: 12,
-                        left: 12,
-                        fontWeight: 600,
-                        fontSize: "0.95rem",
-                        borderRadius: "999px",
-                        zIndex: 2,
-                        bgcolor: "#f87171",
-                        color: "#fff",
-                        boxShadow: "0 2px 8px #f8717166",
-                      }}
-                    />
-                  )}
-                </Paper>
-              </Fade>
-            
-                </>
-              ))} 
-            
-            </>
+                {products.products.map((product) => (
+                  <>
+                    <Fade in key={product._id}>
+                      <Paper
+                        key={product._id}
+                        elevation={6}
+                        sx={{
+                          p: 2,
+                          borderRadius: 4,
+                          bgcolor: "#fff",
+                          minWidth: 260,
+                          maxWidth: 320,
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          "&:hover": {
+                            transform: "translateY(-8px) scale(1.03)",
+                            boxShadow: 10,
+                            borderColor: "secondary.main",
+                          },
+                          boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
+                        }}
+                        className="hover:scale-105 hover:shadow-2xl transition-transform duration-200"
+                      >
+                        <ProductCard product={product} offers={offers} />
+                        {product.countInStock === 0 && (
+                          <Chip
+                            label="Out of Stock"
+                            color="error"
+                            sx={{
+                              position: "absolute",
+                              top: 12,
+                              left: 12,
+                              fontWeight: 600,
+                              fontSize: "0.95rem",
+                              borderRadius: "999px",
+                              zIndex: 2,
+                              bgcolor: "#f87171",
+                              color: "#fff",
+                              boxShadow: "0 2px 8px #f8717166",
+                            }}
+                          />
+                        )}
+                      </Paper>
+                    </Fade>
+
+                  </>
+                ))}
+
+              </>
             ))
           )}
         </Box>

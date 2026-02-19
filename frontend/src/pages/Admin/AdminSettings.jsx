@@ -22,7 +22,7 @@ import {
   Payment as PaymentIcon,
   Settings as SettingsIcon
 } from "@mui/icons-material";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 
 const tabs = [
   { id: "payments", label: "Payments", icon: <PaymentIcon /> },
@@ -89,7 +89,7 @@ const AdminSettings = () => {
 
           <Grid container spacing={4}>
             {/* Sidebar Navigation */}
-            <Grid item xs={12} md={3.5}>
+            <Grid size={{ xs: 12, md: 3.5 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -145,7 +145,7 @@ const AdminSettings = () => {
             </Grid>
 
             {/* Content Area */}
-            <Grid item xs={12} md={8.5}>
+            <Grid size={{ xs: 12, md: 8.5 }}>
               <Fade in timeout={400}>
                 <Box>
                   <Paper

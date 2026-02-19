@@ -22,7 +22,7 @@ import {
   CheckCircle as PaidIcon,
   Error as PendingIcon,
 } from "@mui/icons-material";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
 import { APP_NAME } from "../../redux/constants";

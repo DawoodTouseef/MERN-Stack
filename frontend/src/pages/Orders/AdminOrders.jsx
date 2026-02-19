@@ -51,7 +51,7 @@ const AdminOrders = () => {
 
                 {/* Stats Cards */}
                 <Grid container spacing={3}>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Card>
                             <CardContent>
                                 <Stack direction="row" spacing={2} alignItems="center">
@@ -77,7 +77,7 @@ const AdminOrders = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Card>
                             <CardContent>
                                 <Stack direction="row" spacing={2} alignItems="center">
@@ -103,7 +103,7 @@ const AdminOrders = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Card>
                             <CardContent>
                                 <Stack direction="row" spacing={2} alignItems="center">

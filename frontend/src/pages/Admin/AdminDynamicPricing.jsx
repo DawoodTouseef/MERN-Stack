@@ -68,7 +68,7 @@ import {
 } from '../../redux/api/dynamicPricingApiSlice';
 import { useGetProductsQuery } from '../../redux/api/productApiSlice';
 import { useFetchCategoriesQuery } from '../../redux/api/categoryApiSlice';
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from '../../redux/constants';
 
 const AdminDynamicPricing = () => {
@@ -232,7 +232,7 @@ const AdminDynamicPricing = () => {
             {/* Header */}
             <Box sx={{ mb: 6 }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'primary.main', color: '#fff', display: 'flex' }}>
                       <AutoGraphIcon fontSize="large" />
@@ -247,7 +247,7 @@ const AdminDynamicPricing = () => {
                     </Box>
                   </Stack>
                 </Grid>
-                <Grid item xs={12} md={6} sx={{ textAlign: { md: 'right' } }}>
+                <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { md: 'right' } }}>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -327,7 +327,7 @@ const AdminDynamicPricing = () => {
                     <Box>
                       {analytics?.data && (
                         <Grid container spacing={4}>
-                          <Grid item xs={12} md={6}>
+                          <Grid size={{ xs: 12, md: 6 }}>
                             <Paper variant="outlined" sx={{ p: 4, borderRadius: 4, bgcolor: '#f8fafc', borderStyle: 'dashed' }}>
                               <Typography variant="h6" fontWeight={800} gutterBottom>Contribution Analysis</Typography>
                               <Stack spacing={3} sx={{ mt: 3 }}>
@@ -348,7 +348,7 @@ const AdminDynamicPricing = () => {
                               </Stack>
                             </Paper>
                           </Grid>
-                          <Grid item xs={12} md={6}>
+                          <Grid size={{ xs: 12, md: 6 }}>
                             <Typography variant="h6" fontWeight={800} sx={{ mb: 3 }}>Revenue by Model</Typography>
                             {analytics.data.byType?.map((type) => (
                               <Box key={type._id} sx={{ mb: 3 }}>
@@ -374,7 +374,7 @@ const AdminDynamicPricing = () => {
                   <Fade in>
                     <Grid container spacing={3}>
                       {surgeRecommendations?.data?.map((rec) => (
-                        <Grid item xs={12} md={4} key={rec.product.id}>
+                        <Grid size={{ xs: 12, md: 4 }} key={rec.product.id}>
                           <motion.div whileHover={{ y: -5 }}>
                             <Card sx={{ borderRadius: 4, height: '100%', border: '1px solid #e2e8f0', boxShadow: 'none', '&:hover': { borderColor: 'primary.main', boxShadow: '0 8px 20px -10px rgba(0,0,0,0.1)' } }}>
                               <CardContent sx={{ p: 3 }}>
@@ -434,24 +434,24 @@ const AdminDynamicPricing = () => {
 
               <DialogContent sx={{ p: 4 }}>
                 <Grid container spacing={3} sx={{ mt: 1 }}>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField fullWidth label="Algorithm Name *" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField select fullWidth label="Pricing Logic" value={formData.pricingType} onChange={(e) => handleInputChange('pricingType', e.target.value)}>
                       {pricingTypes.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
                     </TextField>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField fullWidth label="Adjustment Value (%) *" type="number" value={formData.pricingRules.discountValue} onChange={(e) => handleInputChange('pricingRules.discountValue', parseFloat(e.target.value))} />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <DateTimePicker label="Start Threshold" value={formData.schedule.startDate} onChange={(d) => handleInputChange('schedule.startDate', d)} slotProps={{ textField: { fullWidth: true } }} />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <DateTimePicker label="End Threshold" value={formData.schedule.endDate} onChange={(d) => handleInputChange('schedule.endDate', d)} slotProps={{ textField: { fullWidth: true } }} />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TextField fullWidth label="Priority Index (1-10)" type="number" value={formData.priority} onChange={(e) => handleInputChange('priority', parseInt(e.target.value))} />
                   </Grid>
                 </Grid>

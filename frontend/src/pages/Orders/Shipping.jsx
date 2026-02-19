@@ -100,7 +100,7 @@ const Shipping = () => {
 
         <Grid container spacing={4}>
           {/* Address Selection Section */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
               <Typography variant="h6" fontWeight={800} sx={{ color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ShippingIcon color="primary" /> Shipping Address
@@ -199,7 +199,7 @@ const Shipping = () => {
           </Grid>
 
           {/* Payment & Action Section */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', position: 'sticky', top: 20 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PaymentIcon color="primary" /> Payment Method

@@ -9,6 +9,7 @@ import {
 } from "../../redux/api/productApiSlice";
 import { useFetchCategoriesQuery } from "../../redux/api/categoryApiSlice";
 import { useGetBrandsQuery } from "../../redux/api/brandApiSlice";
+import { useGetCurrenciesQuery, useConvertCurrencyMutation } from "../../redux/api/currencyApiSlice";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import {
@@ -26,6 +27,8 @@ import {
   OutlinedInput,
   Chip,
   Divider,
+  Card,
+  CardContent,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -38,10 +41,12 @@ const ProductList = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const { data: brands = [] } = useGetBrandsQuery();
   const { data: categories = [] } = useFetchCategoriesQuery();
+  const { data: currencies = [] } = useGetCurrenciesQuery();
   const { data: Product } = useGetProductByIdQuery(param._id);
   const [uploadProductImage] = useUploadProductImageMutation();
   const [deleteProductImage] = useDeleteProductImageMutation();
   const [Updatemutiation] = useUpdateProductMutation();
+  const [convertCurrency] = useConvertCurrencyMutation();
   const [images, setImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [name, setName] = useState("");
@@ -54,14 +59,25 @@ const ProductList = () => {
   const [tags, setTags] = useState([]);
   const [variants, setVariants] = useState([]);
   const [variantForm, setVariantForm] = useState({
+    name: "",
+    description: "",
     sku: "",
-    color: "",
-    size: "",
-    storage: "",
     price: "",
     countInStock: "",
     images: [],
+    attributes: [],
+    specifications: {},
   });
+
+  const [attrKey, setAttrKey] = useState("");
+  const [attrValue, setAttrValue] = useState("");
+
+  // Currency state
+  const [currency, setCurrency] = useState("USD");
+  const [prices, setPrices] = useState({});
+  const [convertedPrices, setConvertedPrices] = useState({});
+  const [showTaxDetails, setShowTaxDetails] = useState(false);
+
   const [warrantyPeriod, setWarrantyPeriod] = useState("");
   const [returnPolicy, setReturnPolicy] = useState("");
   const [specifications, setSpecifications] = useState({});
@@ -80,6 +96,8 @@ const ProductList = () => {
       setStock(Product?.countInStock || "");
       setQuantity(Product?.quantity || "");
       setPrice(Product?.price || "");
+      setCurrency(Product?.currency || "USD");
+      setPrices(Product?.prices || {});
       setImages(Product?.media?.map((image) => image.url) || []);
       setTags(Product?.tags || []);
       setVariants(Product?.variant || []);
@@ -88,6 +106,76 @@ const ProductList = () => {
       setSpecifications(Product?.specifications || "");
     }
   }, [Product]);
+
+  // Update prices when currency changes
+  useEffect(() => {
+    const updateConvertedPrices = async () => {
+      if (currency && currencies.length > 0 && price) {
+        const enabledCurrencies = currencies.filter(c => c.isEnabled);
+
+        const conversionPromises = enabledCurrencies.map(async (targetCurrency) => {
+          if (targetCurrency.code !== currency) {
+            try {
+              const result = await convertCurrency({
+                from: currency,
+                to: targetCurrency.code,
+                amount: parseFloat(price)
+              }).unwrap();
+
+              return {
+                code: targetCurrency.code,
+                convertedAmount: result.convertedAmount,
+              };
+            } catch (error) {
+              console.error(`Failed to convert to ${targetCurrency.code}:`, error);
+              return {
+                code: targetCurrency.code,
+                convertedAmount: parseFloat(price),
+              };
+            }
+          }
+          return null;
+        });
+
+        const results = await Promise.all(conversionPromises);
+        const newPrices = {};
+        results.forEach(result => {
+          if (result) {
+            newPrices[result.code] = result.convertedAmount;
+          }
+        });
+
+        setPrices(newPrices);
+      }
+    };
+
+    updateConvertedPrices();
+  }, [currency, price, currencies, convertCurrency]);
+
+  // Tax and summary preview calculation (simple version for update page)
+  useEffect(() => {
+    if (Object.keys(prices).length > 0) {
+      const taxRate = 8; // Default mock tax rate
+      const convertedPricesWithTax = {};
+      Object.entries(prices).forEach(([currencyCode, convertedPrice]) => {
+        const taxAmount = (convertedPrice * taxRate) / 100;
+        const totalPrice = convertedPrice + taxAmount;
+
+        convertedPricesWithTax[currencyCode] = {
+          basePrice: convertedPrice,
+          taxAmount,
+          taxRate,
+          totalPrice
+        };
+      });
+      setConvertedPrices(convertedPricesWithTax);
+    }
+  }, [prices]);
+
+  const getCurrencySymbol = (currencyCode) => {
+    const curr = currencies.find(c => c.code === currencyCode);
+    return curr ? curr.symbol : '$';
+  };
 
   const uploadFileHandler = async (e) => {
     const files = e.target.files;
@@ -158,13 +246,12 @@ const ProductList = () => {
   const handleAddOrUpdateVariant = () => {
     if (
       !variantForm.sku &&
-      !variantForm.color &&
-      !variantForm.size &&
-      !variantForm.storage &&
+      !variantForm.name &&
       !variantForm.price &&
-      !variantForm.countInStock
+      !variantForm.countInStock &&
+      variantForm.attributes.length === 0
     ) {
-      toast.error("Please fill at least one field for the variant.");
+      toast.error("Please fill at least name, price, or attributes for the variant.");
       return;
     }
     if (editVariantIndex !== null) {
@@ -176,14 +263,35 @@ const ProductList = () => {
       setVariants([...variants, { ...variantForm }]);
     }
     setVariantForm({
+      name: "",
+      description: "",
       sku: "",
-      color: "",
-      size: "",
-      storage: "",
       price: "",
       countInStock: "",
       images: [],
+      attributes: [],
+      specifications: {},
     });
+  };
+
+  const handleAddAttribute = () => {
+    if (!attrKey || !attrValue) {
+      toast.error("Please enter both attribute name and value.");
+      return;
+    }
+    setVariantForm(prev => ({
+      ...prev,
+      attributes: [...prev.attributes, { name: attrKey, value: attrValue }]
+    }));
+    setAttrKey("");
+    setAttrValue("");
+  };
+
+  const handleRemoveAttribute = (index) => {
+    setVariantForm(prev => ({
+      ...prev,
+      attributes: prev.attributes.filter((_, i) => i !== index)
+    }));
   };
 
   const handleEditVariant = (index) => {
@@ -196,13 +304,14 @@ const ProductList = () => {
     if (editVariantIndex === index) {
       setEditVariantIndex(null);
       setVariantForm({
+        name: "",
+        description: "",
         sku: "",
-        color: "",
-        size: "",
-        storage: "",
         price: "",
         countInStock: "",
         images: [],
+        attributes: [],
+        specifications: {},
       });
     }
   };
@@ -255,6 +364,8 @@ const ProductList = () => {
       formData.append("brand", brand);
       formData.append("category", category);
       formData.append("price", Number(price));
+      formData.append("currency", currency);
+      formData.append("prices", JSON.stringify(prices));
       formData.append("quantity", Number(quantity));
       tags.forEach((tag, i) => formData.append(`tags[${i}]`, tag));
       formData.append("warrantyPeriod", warrantyPeriod);
@@ -265,8 +376,21 @@ const ProductList = () => {
       variants.forEach((variant, i) => {
         Object.entries(variant).forEach(([key, value]) => {
           if (key === "images") {
-            value.forEach((img, j) => {
-              formData.append(`variants[${i}][images][${j}]`, img);
+            if (Array.isArray(value)) {
+              value.forEach((img, j) => {
+                formData.append(`variants[${i}][images][${j}]`, img);
+              });
+            }
+          } else if (key === "attributes") {
+            if (Array.isArray(value)) {
+              value.forEach((attr, j) => {
+                formData.append(`variants[${i}][attributes][${j}][name]`, attr.name);
+                formData.append(`variants[${i}][attributes][${j}][value]`, attr.value);
+              });
+            }
+          } else if (key === "specifications") {
+            Object.entries(value || {}).forEach(([specKey, specVal]) => {
+              formData.append(`variants[${i}][specifications][${specKey}]`, specVal);
             });
           } else {
             formData.append(
@@ -384,14 +508,48 @@ const ProductList = () => {
             onChange={(e) => setName(e.target.value)}
             sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#000" }}>Base Currency *</InputLabel>
+            <Select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              sx={{ color: "#000" }}
+              label="Base Currency *"
+            >
+              {currencies.filter(c => c.isEnabled).map((c) => (
+                <MenuItem key={c._id} value={c.code}>
+                  {c.name} ({c.symbol})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
-            label="Price *"
+            label={`Price (in ${currency}) *`}
             type="number"
             fullWidth
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             sx={{ input: { color: "#000" }, label: { color: "#000" } }}
           />
+          {price && Object.keys(convertedPrices).length > 0 && (
+            <Card elevation={0} sx={{ bgcolor: "#f1f5f9", borderRadius: 4, border: '1px solid #e2e8f0' }}>
+              <CardContent>
+                <Typography variant="subtitle2" gutterBottom fontWeight={700}>
+                  Multi-Currency Price Preview (Inc. Est. Tax)
+                </Typography>
+                <Stack spacing={1}>
+                  {Object.entries(convertedPrices).map(([code, info]) => (
+                    <Stack key={code} direction="row" justifyContent="space-between">
+                      <Typography variant="body2">{code}:</Typography>
+                      <Typography variant="body2" fontWeight={600}>
+                        {getCurrencySymbol(code)}{info.totalPrice.toFixed(2)}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
           <TextField
             label="Quantity *"
             type="number"
@@ -462,70 +620,125 @@ const ProductList = () => {
               />
             ))}
           </Stack>
-          <Divider sx={{ my: 2, bgcolor: "#fff" }} />
-          <Typography variant="h6">Add Variant</Typography>
-          <Stack direction="row" spacing={2} flexWrap="wrap">
-            {["sku", "color", "size", "storage", "price", "countInStock"].map(
-              (field) => (
+          <Divider sx={{ my: 2, bgcolor: "#eee" }} />
+          <Typography variant="h6" fontWeight="bold">Manage Product Variants</Typography>
+
+          <Box sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 4, bgcolor: "#f8fafc" }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold">Variant Metadata</Typography>
+            <Stack spacing={2} sx={{ mb: 3 }}>
+              <TextField
+                label="Variant Name"
+                fullWidth
+                value={variantForm.name}
+                onChange={(e) => setVariantForm(prev => ({ ...prev, name: e.target.value }))}
+                sx={{ input: { color: "black" }, label: { color: "#666" } }}
+              />
+              <TextField
+                label="Variant Description"
+                fullWidth
+                multiline
+                rows={2}
+                value={variantForm.description}
+                onChange={(e) => setVariantForm(prev => ({ ...prev, description: e.target.value }))}
+                sx={{ textarea: { color: "black" }, label: { color: "#666" } }}
+              />
+            </Stack>
+
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold">Variant Attributes</Typography>
+            <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center">
+              <TextField
+                label="Attribute Name"
+                value={attrKey}
+                onChange={(e) => setAttrKey(e.target.value)}
+                sx={{ input: { color: "black" }, label: { color: "#666" }, flex: 1 }}
+              />
+              <TextField
+                label="Attribute Value"
+                value={attrValue}
+                onChange={(e) => setAttrValue(e.target.value)}
+                sx={{ input: { color: "black" }, label: { color: "#666" }, flex: 1 }}
+              />
+              <Button variant="outlined" onClick={handleAddAttribute} sx={{ height: "56px" }}>
+                Add
+              </Button>
+            </Stack>
+
+            {variantForm.attributes.length > 0 && (
+              <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: "wrap" }}>
+                {variantForm.attributes.map((attr, idx) => (
+                  <Chip
+                    key={idx}
+                    label={`${attr.name}: ${attr.value}`}
+                    onDelete={() => handleRemoveAttribute(idx)}
+                    sx={{ mb: 1 }}
+                  />
+                ))}
+              </Stack>
+            )}
+
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold">Pricing & Stock</Typography>
+            <Stack direction="row" spacing={2} flexWrap="wrap">
+              {["price", "countInStock", "sku"].map((field) => (
                 <TextField
                   key={field}
-                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  label={field === "countInStock" ? "Stock" : field.toUpperCase()}
                   value={variantForm[field]}
-                  onChange={(e) =>
-                    setVariantForm((prev) => ({ ...prev, [field]: e.target.value }))
-                  }
-                  sx={{ input: { color: "#000" }, label: { color: "#000" }, width: "150px" }}
+                  onChange={(e) => setVariantForm(prev => ({ ...prev, [field]: e.target.value }))}
+                  sx={{ input: { color: "black" }, label: { color: "#666" }, width: "180px", mb: 2 }}
                 />
-              )
-            )}
-            <Button
-              onClick={handleAddOrUpdateVariant}
-              variant="outlined"
-              sx={{ color: "#6366f1", borderColor: "#6366f1" }}
-            >
-              {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
-            </Button>
-            {editVariantIndex !== null && (
+              ))}
+            </Stack>
+
+            <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
               <Button
-                onClick={() => {
-                  setEditVariantIndex(null);
-                  setVariantForm({
-                    sku: "",
-                    color: "",
-                    size: "",
-                    storage: "",
-                    price: "",
-                    countInStock: "",
-                    images: [],
-                  });
-                }}
-                variant="outlined"
-                color="secondary"
-                sx={{ color: "#6366f1", borderColor: "#6366f1" }}
+                onClick={handleAddOrUpdateVariant}
+                variant="contained"
+                sx={{ bgcolor: "#6366f1", '&:hover': { bgcolor: "#4f46e5" }, fontWeight: "bold", px: 4 }}
               >
-                Cancel
+                {editVariantIndex !== null ? "Update Variant" : "Add Variant"}
               </Button>
-            )}
-          </Stack>
-          <Stack spacing={1}>
+              {(editVariantIndex !== null || variantForm.name || variantForm.attributes.length > 0) && (
+                <Button
+                  onClick={() => {
+                    setEditVariantIndex(null);
+                    setVariantForm({
+                      name: "",
+                      description: "",
+                      sku: "",
+                      price: "",
+                      countInStock: "",
+                      images: [],
+                      attributes: [],
+                      specifications: {},
+                    });
+                  }}
+                  variant="outlined"
+                  color="inherit"
+                >
+                  Clear
+                </Button>
+              )}
+            </Stack>
+          </Box>
+
+          <Stack spacing={2} sx={{ mt: 3 }}>
             {variants.map((v, i) => (
-              <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography sx={{ color: "text.secondary" }}>{JSON.stringify(v)}</Typography>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={() => handleEditVariant(i)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteVariant(i)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
+              <Paper key={i} sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #e2e8f0" }}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold">{v.name || `Variant #${i + 1}`}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {v.attributes?.map(a => `${a.name}: ${a.value}`).join(', ') || 'No attributes'} • Price: {getCurrencySymbol(currency)}{v.price} • Stock: {v.countInStock}
+                  </Typography>
+                </Box>
+                <Box>
+                  <IconButton size="small" color="primary" onClick={() => handleEditVariant(i)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => handleDeleteVariant(i)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Paper>
             ))}
           </Stack>
           <TextField

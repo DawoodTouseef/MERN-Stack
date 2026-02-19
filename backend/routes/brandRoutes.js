@@ -10,10 +10,14 @@ import {
 import { authenticate, IsAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
+
+// Public routes
+router.route("/").get(getAllBrands);
+
 router.use(authenticate);
 
-// Create a brand & get all brands (admin or for listing)
-router.route("/").post(IsAdmin,createBrand).get(getAllBrands);
+// Create a brand (admin only)
+router.route("/").post(IsAdmin, createBrand);
 
 // Get all brands for the logged-in user
 router.route("/user/all").get(getUserBrandes);

@@ -29,7 +29,7 @@ import {
   Visibility as VisibilityIcon
 } from "@mui/icons-material";
 import { format } from "date-fns";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import { APP_NAME } from "../../redux/constants";
 
 const Pages = () => {

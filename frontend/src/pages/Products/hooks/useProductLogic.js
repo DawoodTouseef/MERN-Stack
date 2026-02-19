@@ -12,6 +12,7 @@ import {
     getVariant,
     getAvailableOptions,
     formatVariantAttributes,
+    getVariantField,
     isVariantInStock,
     getVariantPrice,
     getVariantImages,
@@ -110,7 +111,19 @@ const useProductLogic = () => {
 
     // Helpers
     const getCurrentPrice = () => {
-        return selectedVariant ? getVariantPrice(selectedVariant) : (product?.price || 0);
+        return getVariantField(selectedVariant, product, 'price') || 0;
+    };
+
+    const getCurrentName = () => {
+        return getVariantField(selectedVariant, product, 'name');
+    };
+
+    const getCurrentDescription = () => {
+        return getVariantField(selectedVariant, product, 'description');
+    };
+
+    const getCurrentSpecifications = () => {
+        return getVariantField(selectedVariant, product, 'specifications');
     };
 
     const getCurrentImages = () => {
@@ -148,8 +161,8 @@ const useProductLogic = () => {
                 _id: `${product._id}-${selectedVariant._id}`,
                 variantId: selectedVariant._id,
                 sku: getVariantSku(selectedVariant),
-                name: `${product.name} (${formatVariantAttributes(selectedVariant)})`,
-                price: getVariantPrice(selectedVariant),
+                name: getCurrentName(),
+                price: getCurrentPrice(),
                 media: getVariantImages(selectedVariant, product).map(url => ({ url })),
                 countInStock: selectedVariant.countInStock,
                 selectedOptions: selectedOptions
@@ -164,7 +177,7 @@ const useProductLogic = () => {
         navigate(redirectPath);
     };
 
-    const availableOptions = product ? getAvailableOptions(product) : { colors: [], sizes: [], storages: [] };
+    const availableOptions = product ? getAvailableOptions(product) : {};
 
     return {
         product,
@@ -179,6 +192,9 @@ const useProductLogic = () => {
         addToShippingHandler: () => handleAddToCart("/shipping"),
         getCurrentImages,
         getCurrentStock,
+        getCurrentName,
+        getCurrentDescription,
+        getCurrentSpecifications,
         isInStock,
         getCurrentPrice,
         availableOptions,

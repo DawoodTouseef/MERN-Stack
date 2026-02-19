@@ -134,7 +134,7 @@ const Address = () => {
 
         <Grid container spacing={4}>
           {/* Address List Section */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#475569', display: 'flex', alignItems: 'center', gap: 1 }}>
               Saved Addresses <Chip label={addresses.length} size="small" sx={{ fontWeight: 800, bgcolor: '#e2e8f0' }} />
             </Typography>
@@ -223,7 +223,7 @@ const Address = () => {
           </Grid>
 
           {/* Form Section */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', position: 'sticky', top: 20 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 4, color: '#1e293b' }}>
                 {editId ? "Update Address" : "Add New Address"}
@@ -258,7 +258,7 @@ const Address = () => {
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                   />
                   <Grid container spacing={2}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <TextField
                         fullWidth
                         label="City"
@@ -269,7 +269,7 @@ const Address = () => {
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                       />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <TextField
                         fullWidth
                         label="State"
@@ -281,7 +281,7 @@ const Address = () => {
                     </Grid>
                   </Grid>
                   <Grid container spacing={2}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <TextField
                         fullWidth
                         label="Postal Code"
@@ -292,7 +292,7 @@ const Address = () => {
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                       />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <TextField
                         fullWidth
                         label="Country"

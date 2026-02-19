@@ -5,6 +5,7 @@ import Loader from "../../components/Loader";
 import { useRegisterMutation } from "../../redux/api/usersApiSlice";
 import { setCredentials } from "../../redux/features/auth/authSlice";
 import { toast } from "react-toastify";
+import DocumentTitle from "../../components/DocumentTitle";
 import {
   Box,
   Typography,
@@ -92,7 +93,7 @@ const Register = () => {
     }}>
       <Grid container>
         {/* Left Side - Image/Brand */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           justifyContent: 'center',
@@ -129,7 +130,7 @@ const Register = () => {
         </Grid>
 
         {/* Right Side - Form */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -179,7 +180,7 @@ const Register = () => {
                   />
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         label="Password"
                         type={showPassword ? "text" : "password"}
@@ -204,7 +205,7 @@ const Register = () => {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         label="Confirm Password"
                         type={showPassword ? "text" : "password"}

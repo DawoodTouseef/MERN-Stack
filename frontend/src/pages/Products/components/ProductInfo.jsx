@@ -18,7 +18,10 @@ const ProductInfo = ({
     currentPrice,
     offerpercent,
     taxInfo,
-    getVariantPrice
+    getVariantPrice,
+    getCurrentName,
+    getCurrentDescription,
+    getCurrentSpecifications
 }) => {
     return (
         <Paper
@@ -40,7 +43,7 @@ const ProductInfo = ({
                     textShadow: "1px 1px 8px #f3e7e9",
                 }}
             >
-                {product.name}
+                {getCurrentName()}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                 <Rating
@@ -71,7 +74,7 @@ const ProductInfo = ({
             <Typography variant="body1" sx={{ mb: 2 }}>
                 <strong>About this item:</strong>
                 <br />
-                {product.description}
+                {getCurrentDescription()}
             </Typography>
 
             {/* Variant Selection */}
@@ -100,24 +103,6 @@ const ProductInfo = ({
                 >
                     Original Price: <MultiCurrencyPriceDisplay product={{ ...product, price: product.price }} showConversion={false} />
                 </Typography>
-            )}
-
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Variant Price: <MultiCurrencyPriceDisplay product={{ ...product, price: getVariantPrice(selectedVariant) }} showConversion={false} />
-            </Typography>
-
-
-            {taxInfo && (
-                <Box sx={{ mt: 2, p: 1, bgcolor: "#f0fdf4", borderRadius: 1, border: '1px solid #bbf7d0' }}>
-                    <Typography variant="body2" color="success.main">
-                        {taxInfo.isInclusive
-                            ? `Includes Tax (${taxInfo.rate}%)`
-                            : `+ Estimated Tax: $${taxInfo.tax} (${taxInfo.rate}%)`}
-                    </Typography>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                        based on 10001 (US)
-                    </Typography>
-                </Box>
             )}
         </Paper>
     );

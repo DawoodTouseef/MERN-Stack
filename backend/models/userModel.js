@@ -16,6 +16,7 @@ const userSchema = mongoose.Schema({
     default: "customer"
   },
   status: { type: String, enum: ["active", "inactive", "banned"], default: "active" },
+  vendorVerified: { type: Boolean, default: false },
 
   // Organization & RBAC
   organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization" },
@@ -174,6 +175,11 @@ userSchema.methods.resetLoginAttempts = function () {
 // Method to compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Alias for matchPassword (used in authController)
+userSchema.methods.matchPassword = async function (candidatePassword) {
+  return await this.comparePassword(candidatePassword);
 };
 
 // Method to check if password was changed after JWT was issued

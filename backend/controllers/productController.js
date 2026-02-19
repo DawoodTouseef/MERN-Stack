@@ -1,5 +1,6 @@
 import asyncHandler from "../middlewares/asyncHandler.js";
 import Product from "../models/productModel.js";
+import Currency from "../models/currencyModel.js";
 import generateSKU from "../utils/codegenerator.js";
 import { findVariantById } from "../utils/variantUtils.js";
 
@@ -47,23 +48,49 @@ const addProduct = asyncHandler(async (req, res) => {
     // Parse variants
     const variantsArray = [];
     Object.keys(req.fields).forEach((key) => {
+      // Check for attributes first: variants[i][attributes][j][name/value]
+      const attrMatch = key.match(/variants\[(\d+)\]\[attributes\]\[(\d+)\]\[(\w+)\]/);
+      if (attrMatch) {
+        const index = parseInt(attrMatch[1]);
+        const attrIndex = parseInt(attrMatch[2]);
+        const attrField = attrMatch[3];
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].attributes) variantsArray[index].attributes = [];
+        if (!variantsArray[index].attributes[attrIndex]) variantsArray[index].attributes[attrIndex] = {};
+        variantsArray[index].attributes[attrIndex][attrField] = req.fields[key];
+        return;
+      }
+
+      // Check for variant specifications: variants[i][specifications][key]
+      const specMatch = key.match(/variants\[(\d+)\]\[specifications\]\[(.+)\]/);
+      if (specMatch) {
+        const index = parseInt(specMatch[1]);
+        const specKey = specMatch[2];
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].specifications) variantsArray[index].specifications = {};
+        variantsArray[index].specifications[specKey] = req.fields[key];
+        return;
+      }
+
+      // Check for images array: variants[i][images][j]
+      const imageMatch = key.match(/variants\[(\d+)\]\[images\]\[(\d+)\]/);
+      if (imageMatch) {
+        const index = parseInt(imageMatch[1]);
+        const imgIndex = parseInt(imageMatch[2]);
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].images) variantsArray[index].images = [];
+        variantsArray[index].images[imgIndex] = req.fields[key];
+        return;
+      }
+
+      // General variant fields: variants[i][name], variants[i][description], etc.
       const variantMatch = key.match(/variants\[(\d+)\]\[(\w+)\]/);
       if (variantMatch) {
         const index = parseInt(variantMatch[1]);
         const field = variantMatch[2];
+        if (field === 'attributes' || field === 'specifications' || field === 'images') return;
         if (!variantsArray[index]) variantsArray[index] = {};
-        // Handle images array specially
-        if (field === 'images') {
-          // Parse nested images array
-          const imageMatch = key.match(/variants\[(\d+)\]\[images\]\[(\d+)\]/);
-          if (imageMatch) {
-            const imgIndex = parseInt(imageMatch[2]);
-            if (!variantsArray[index].images) variantsArray[index].images = [];
-            variantsArray[index].images[imgIndex] = req.fields[key];
-          }
-        } else {
-          variantsArray[index][field] = req.fields[key];
-        }
+        variantsArray[index][field] = req.fields[key];
       }
     });
 
@@ -202,10 +229,46 @@ const updateProductDetails = asyncHandler(async (req, res) => {
     // Parse variants
     const variantsArray = [];
     Object.keys(req.fields).forEach((key) => {
+      // Check for attributes first: variants[i][attributes][j][name/value]
+      const attrMatch = key.match(/variants\[(\d+)\]\[attributes\]\[(\d+)\]\[(\w+)\]/);
+      if (attrMatch) {
+        const index = parseInt(attrMatch[1]);
+        const attrIndex = parseInt(attrMatch[2]);
+        const attrField = attrMatch[3];
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].attributes) variantsArray[index].attributes = [];
+        if (!variantsArray[index].attributes[attrIndex]) variantsArray[index].attributes[attrIndex] = {};
+        variantsArray[index].attributes[attrIndex][attrField] = req.fields[key];
+        return;
+      }
+
+      // Check for variant specifications: variants[i][specifications][key]
+      const specMatch = key.match(/variants\[(\d+)\]\[specifications\]\[(.+)\]/);
+      if (specMatch) {
+        const index = parseInt(specMatch[1]);
+        const specKey = specMatch[2];
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].specifications) variantsArray[index].specifications = {};
+        variantsArray[index].specifications[specKey] = req.fields[key];
+        return;
+      }
+
+      // Check for images array: variants[i][images][j]
+      const imageMatch = key.match(/variants\[(\d+)\]\[images\]\[(\d+)\]/);
+      if (imageMatch) {
+        const index = parseInt(imageMatch[1]);
+        const imgIndex = parseInt(imageMatch[2]);
+        if (!variantsArray[index]) variantsArray[index] = {};
+        if (!variantsArray[index].images) variantsArray[index].images = [];
+        variantsArray[index].images[imgIndex] = req.fields[key];
+        return;
+      }
+
       const variantMatch = key.match(/variants\[(\d+)\]\[(\w+)\]/);
       if (variantMatch) {
         const index = parseInt(variantMatch[1]);
         const field = variantMatch[2];
+        if (field === 'attributes' || field === 'specifications' || field === 'images') return;
         if (!variantsArray[index]) variantsArray[index] = {};
         variantsArray[index][field] = req.fields[key];
       }
@@ -709,17 +772,30 @@ const facetedSearch = asyncHandler(async (req, res) => {
       category,
       brand,
       priceRange,
+      minPrice,
+      maxPrice,
+      discount,
       rating,
       availability,
       delivery,
       seller,
       offers,
       features,
+      currency: selectedCurrency = 'USD',
       sortBy = 'newest',
       sortOrder = 'desc',
       page = 1,
       limit = 24
     } = req.query;
+
+    // Fetch currency rate
+    let rate = 1;
+    if (selectedCurrency !== 'USD') {
+      const currencyData = await Currency.findOne({ code: selectedCurrency });
+      if (currencyData) {
+        rate = currencyData.rate || 1;
+      }
+    }
 
     // Build base search query
     let searchQuery = {};
@@ -749,7 +825,19 @@ const facetedSearch = asyncHandler(async (req, res) => {
     // Price range filter
     if (priceRange && priceRange !== 'all') {
       const [min, max] = priceRange.split('-').map(Number);
-      searchQuery.price = { $gte: min, $lte: max };
+      searchQuery.price = { $gte: min / rate, $lte: max / rate };
+    } else if (minPrice || maxPrice) {
+      searchQuery.price = {};
+      if (minPrice) searchQuery.price.$gte = Number(minPrice) / rate;
+      if (maxPrice) searchQuery.price.$lte = Number(maxPrice) / rate;
+    }
+
+    // Discount filter
+    if (discount && discount !== 'all') {
+      const minDiscount = Number(discount.replace(/[^0-9]/g, ''));
+      if (!isNaN(minDiscount)) {
+        searchQuery.discount = { $gte: minDiscount };
+      }
     }
 
     // Rating filter
@@ -759,9 +847,10 @@ const facetedSearch = asyncHandler(async (req, res) => {
 
     // Availability filter
     if (availability && availability !== 'all') {
-      if (availability === 'in_stock') {
+      const avail = availability.replace('-', '_'); // Handle 'in-stock' -> 'in_stock'
+      if (avail === 'in_stock') {
         searchQuery.countInStock = { $gt: 0 };
-      } else if (availability === 'out_of_stock') {
+      } else if (avail === 'out_of_stock') {
         searchQuery.countInStock = { $lte: 0 };
       }
     }
@@ -891,7 +980,7 @@ const facetedSearch = asyncHandler(async (req, res) => {
             {
               $bucket: {
                 groupBy: '$price',
-                boundaries: [0, 25, 50, 100, 200, 500, 10000],
+                boundaries: [0, 25, 50, 100, 200, 500, 10000].map(b => b / rate),
                 default: 'Other',
                 output: {
                   count: { $sum: 1 },
@@ -1013,8 +1102,16 @@ const facetedSearch = asyncHandler(async (req, res) => {
         hasPrevPage: parseInt(page) > 1
       },
       facets: {
-        priceStats: result.priceStats[0] || { minPrice: 0, maxPrice: 0, avgPrice: 0 },
-        priceRanges: result.priceRanges,
+        priceStats: {
+          minPrice: (result.priceStats[0]?.minPrice || 0) * rate,
+          maxPrice: (result.priceStats[0]?.maxPrice || 0) * rate,
+          avgPrice: (result.priceStats[0]?.avgPrice || 0) * rate,
+        },
+        priceRanges: result.priceRanges.map(range => ({
+          ...range,
+          _id: range._id === 'Other' ? 'Other' : range._id * rate,
+          avgPrice: (range.avgPrice || 0) * rate
+        })),
         categories: result.categories,
         brands: result.brands,
         ratings: result.ratings,

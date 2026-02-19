@@ -139,12 +139,12 @@ const PlaceOrder = () => {
         </Typography>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Stack spacing={3}>
               {/* Shipping & Payment Section */}
               <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff' }}>
                 <Grid container spacing={4}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
                       <ShippingIcon sx={{ color: '#6366f1' }} />
                       <Typography variant="h6" fontWeight={800} color="#1e293b">Shipping Address</Typography>
@@ -155,7 +155,7 @@ const PlaceOrder = () => {
                       {cart.shippingAddress?.country} - {cart.shippingAddress?.postalCode}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
                       <PaymentIcon sx={{ color: '#6366f1' }} />
                       <Typography variant="h6" fontWeight={800} color="#1e293b">Payment Method</Typography>
@@ -225,7 +225,7 @@ const PlaceOrder = () => {
           </Grid>
 
           {/* summary Panel */}
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <Paper elevation={0} sx={{ p: 4, borderRadius: 5, border: '1px solid #e2e8f0', bgcolor: '#fff', position: 'sticky', top: 20 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b' }}>Order Summary</Typography>
               <Stack spacing={2} sx={{ mb: 4 }}>

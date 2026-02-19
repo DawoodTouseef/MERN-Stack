@@ -3,7 +3,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import useProductLogic from "../Products/hooks/useProductLogic";
 import ProductImageGallery from "../Products/components/ProductImageGallery";
 import ProductInfo from "../Products/components/ProductInfo";
@@ -38,11 +38,14 @@ const VendorProductDetails = () => {
         numReviews,
         getVariantPrice,
         isOwnProduct,
-        userInfo
+        userInfo,
+        getCurrentName,
+        getCurrentDescription,
+        getCurrentSpecifications
     } = useProductLogic();
 
     return (
-        <DocumentTitle title={`${product?.name || "Product"} - Vendor Details`}>
+        <DocumentTitle title={`${getCurrentName() || product?.name || "Product"} - Vendor Details`}>
             <Box sx={{ minHeight: "100vh", py: 4, bgcolor: "#f3f4f6" }}>
                 <Box sx={{ maxWidth: "1280px", mx: "auto", px: { xs: 2, md: 4 } }}>
                     <Button
@@ -60,7 +63,7 @@ const VendorProductDetails = () => {
                     ) : (
                         <Grid container spacing={4}>
                             {/* Product Media */}
-                            <Grid item xs={12} md={6}>
+                            <Grid size={{ xs: 12, md: 6 }}>
                                 <ProductImageGallery
                                     images={getCurrentImages()}
                                     selectedVariant={selectedVariant}
@@ -70,7 +73,7 @@ const VendorProductDetails = () => {
                             </Grid>
 
                             {/* Info & Actions */}
-                            <Grid item xs={12} md={5}>
+                            <Grid size={{ xs: 12, md: 5 }}>
                                 <Stack spacing={3}>
                                     <ProductInfo
                                         product={product}
@@ -89,6 +92,9 @@ const VendorProductDetails = () => {
                                         offerpercent={offerpercent}
                                         taxInfo={taxInfo}
                                         getVariantPrice={getVariantPrice}
+                                        getCurrentName={getCurrentName}
+                                        getCurrentDescription={getCurrentDescription}
+                                        getCurrentSpecifications={getCurrentSpecifications}
                                     />
 
                                     <Box sx={{ position: { md: "sticky" }, top: 20, zIndex: 10 }}>
@@ -112,7 +118,7 @@ const VendorProductDetails = () => {
 
                             {/* Product Specifications */}
                             {product.specifications && (
-                                <Grid item xs={12} sx={{ mt: 4 }}>
+                                <Grid size={{ xs: 12 }} sx={{ mt: 4 }}>
                                     <ProductSpecifications specifications={product.specifications} />
                                 </Grid>
                             )}

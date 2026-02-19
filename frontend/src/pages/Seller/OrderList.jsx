@@ -45,7 +45,7 @@ import {
 import { FaSearch, FaFilter } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import useCurrency from "../../hooks/useCurrency";
 import { APP_NAME } from "../../redux/constants";
 
@@ -429,7 +429,7 @@ const OrderList = ({ isAdmin = false }) => {
 
             {/* Status Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Pending Orders"
                   count={orderStats.pending}
@@ -438,7 +438,7 @@ const OrderList = ({ isAdmin = false }) => {
                   description="Awaiting fulfillment"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Completed Orders"
                   count={orderStats.completed}
@@ -447,7 +447,7 @@ const OrderList = ({ isAdmin = false }) => {
                   description="Successfully delivered"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="COD Orders"
                   count={orderStats.cod}
@@ -456,7 +456,7 @@ const OrderList = ({ isAdmin = false }) => {
                   description="Cash on delivery"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Online Payments"
                   count={orderStats.online}
@@ -470,7 +470,7 @@ const OrderList = ({ isAdmin = false }) => {
             {/* Filters */}
             <Box sx={{ mb: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     placeholder="Search by order #, customer..."
@@ -483,7 +483,7 @@ const OrderList = ({ isAdmin = false }) => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Order Status</InputLabel>
                     <Select
@@ -504,7 +504,7 @@ const OrderList = ({ isAdmin = false }) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Payment Status</InputLabel>
                     <Select
@@ -521,7 +521,7 @@ const OrderList = ({ isAdmin = false }) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     variant="text"
                     startIcon={<FaFilter />}

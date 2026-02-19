@@ -11,8 +11,7 @@ import {
     Stack,
     CircularProgress,
     Alert,
-    IconButton,
-    Tooltip
+    Chip
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -20,9 +19,6 @@ import {
     Business as BusinessIcon,
     ContactPhone as PhoneIcon,
     Email as EmailIcon,
-    LocationOn as LocationIcon,
-    Edit as EditIcon,
-    Info as InfoIcon
 } from '@mui/icons-material';
 import { useGetVendorProfileQuery, useUpdateVendorMutation } from '../../redux/api/vendorApiSlice';
 import { toast } from 'react-toastify';
@@ -136,7 +132,7 @@ const VendorShopSettings = () => {
             <form onSubmit={handleSubmit}>
                 <Grid container spacing={4}>
                     {/* Brand Identity */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px solid #e2e8f0', height: '100%' }}>
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Avatar
@@ -180,13 +176,13 @@ const VendorShopSettings = () => {
                     </Grid>
 
                     {/* Form Fields */}
-                    <Grid item xs={12} md={8}>
+                    <Grid size={{ xs: 12, md: 8 }}>
                         <Paper elevation={0} sx={{ p: 4, borderRadius: 4, border: '1px solid #e2e8f0' }}>
                             <Typography variant="h6" fontWeight={800} sx={{ mb: 3, color: '#1e293b' }}>
                                 Store Information
                             </Typography>
                             <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Shop Name"
@@ -197,7 +193,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Phone Number"
@@ -207,7 +203,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <TextField
                                         fullWidth
                                         multiline
@@ -220,13 +216,13 @@ const VendorShopSettings = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <Divider sx={{ my: 1 }}>
                                         <Chip label="Location Details" size="small" />
                                     </Divider>
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <TextField
                                         fullWidth
                                         label="Street Address"
@@ -236,7 +232,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="City"
@@ -246,7 +242,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="State / Province"
@@ -256,7 +252,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Zip / Postal Code"
@@ -266,7 +262,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Country"
@@ -277,13 +273,13 @@ const VendorShopSettings = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                     <Divider sx={{ my: 1 }}>
                                         <Chip label="Account Manager" size="small" />
                                     </Divider>
                                 </Grid>
 
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Contact Name"
@@ -293,7 +289,7 @@ const VendorShopSettings = () => {
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Contact Email"

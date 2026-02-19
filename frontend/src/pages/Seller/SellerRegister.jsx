@@ -179,7 +179,7 @@ const SellerRegister = () => {
     }}>
       <Grid container>
         {/* Left Side - Image/Brand */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           justifyContent: 'center',
@@ -220,7 +220,7 @@ const SellerRegister = () => {
         </Grid>
 
         {/* Right Side - Form */}
-        <Grid item xs={12} md={6} sx={{
+        <Grid size={{ xs: 12, md: 6 }} sx={{
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -383,7 +383,7 @@ const SellerRegister = () => {
                       }}
                     />
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           label="Tax ID"
                           required
@@ -401,7 +401,7 @@ const SellerRegister = () => {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           label="GST ID"
                           required

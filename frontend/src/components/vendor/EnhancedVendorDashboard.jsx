@@ -557,7 +557,7 @@ const EnhancedVendorDashboard = () => {
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mb: 6 }}>
         {quickStats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
             <StatCard {...stat} />
           </Grid>
         ))}
@@ -569,7 +569,7 @@ const EnhancedVendorDashboard = () => {
           Quick Actions
         </Typography>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Button
               variant="contained"
               fullWidth
@@ -580,7 +580,7 @@ const EnhancedVendorDashboard = () => {
               Add Product
             </Button>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Button
               variant="outlined"
               fullWidth
@@ -591,7 +591,7 @@ const EnhancedVendorDashboard = () => {
               Manage Products
             </Button>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Button
               variant="outlined"
               fullWidth
@@ -602,7 +602,7 @@ const EnhancedVendorDashboard = () => {
               View Orders
             </Button>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Button
               variant="outlined"
               fullWidth
@@ -638,7 +638,7 @@ const EnhancedVendorDashboard = () => {
           {/* Charts Section */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {/* Sales Trend Chart */}
-            <Grid item xs={12} lg={8}>
+            <Grid size={{ xs: 12, lg: 8 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -709,7 +709,7 @@ const EnhancedVendorDashboard = () => {
             </Grid>
 
             {/* Customer Segments */}
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -764,7 +764,7 @@ const EnhancedVendorDashboard = () => {
           {/* KPI Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {kpiData.map((kpi, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -790,7 +790,7 @@ const EnhancedVendorDashboard = () => {
           {/* Inventory and Recent Orders Section */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {/* Inventory Status */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardHeader
                   title="Inventory Status"

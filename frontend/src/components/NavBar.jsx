@@ -25,6 +25,7 @@ import {
   Slide,
   alpha,
   useTheme,
+  Stack
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -61,7 +62,6 @@ const NavBar = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const location = useLocation();
 
   const [searchTerm, setSearchTerm] = useState(initialValue);
@@ -75,6 +75,8 @@ const NavBar = ({
   const { userInfo } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
   const [logoutApiCall] = useLogoutMutation();
+
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -163,7 +165,7 @@ const NavBar = ({
   };
 
   const renderSuggestion = (suggestion, { query }) => {
-    const regex = new RegExp([(`${query}`)])
+    const regex = new RegExp(`(${query})`, "gi");
     const highlightedName = suggestion.name.replace(
       regex,
       (match) => `<span style="color:${theme.palette.primary.main}; font-weight:bold;">${match}</span>`
@@ -195,13 +197,14 @@ const NavBar = ({
   const inputProps = {
     placeholder,
     value: searchTerm,
+    onFocus: () => setIsSearchFocused(true),
+    onBlur: () => setIsSearchFocused(false),
     onChange: (e, { newValue }) => setSearchTerm(newValue),
     onKeyDown: (e) => {
       if (e.key === "Enter") handleSubmit(e);
     },
   };
 
-  // Navigation items based on user role
   const getNavItems = () => {
     if (userInfo) {
       if (userInfo.role === "admin") {
@@ -224,20 +227,20 @@ const NavBar = ({
 
       if (userInfo.role === "vendor") {
         return [
-
           { label: "Inventory", icon: <InventoryIcon />, path: "/vendor/allproductslist" },
           { label: "Orders", icon: <ReceiptIcon />, path: "/vendor/orders" },
-
         ];
       }
 
-      // Customer role
       return [
         { label: "Shop", icon: <StoreIcon />, path: "/shop" },
-        { label: "Cart", icon: <ShoppingCartIcon />, path: "/cart" },
+        { label: "Cart", icon: <ShoppingCartIcon />, path: "/cart", badge: cartItems?.length },
         { label: "Favorites", icon: <FavoriteIcon />, path: "/favorite" },
       ];
     }
+    return [
+      { label: "Shop", icon: <StoreIcon />, path: "/shop" },
+    ];
   };
 
   const getUserMenuItems = () => {
@@ -245,52 +248,39 @@ const NavBar = ({
 
     const baseItems = [
       { label: "Profile", icon: <PersonIcon />, path: "/profile" },
-
     ];
-    if (userInfo.role === "admin") {
-      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" })
-      baseItems.push({
-        label: "Currencies",
-        icon: <Money />,
-        path: "/admin/currencies",
-      });
-    }
-    else {
-      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/orders" })
-    }
-    if (userInfo.role === "admin") {
-      baseItems.push({ label: "Settings", icon: <SettingsIcon />, path: "/admin/settings" });
-    }
-    baseItems.push({ label: "Logout", icon: <LogoutIcon />, action: handleLogout });
 
+    if (userInfo.role === "admin") {
+      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/admin/orderlist" });
+      baseItems.push({ label: "Currencies", icon: <Money />, path: "/admin/currencies" });
+      baseItems.push({ label: "Settings", icon: <SettingsIcon />, path: "/admin/settings" });
+    } else {
+      baseItems.push({ label: "Orders", icon: <ReceiptIcon />, path: "/orders" });
+    }
+
+    baseItems.push({ label: "Logout", icon: <LogoutIcon />, action: handleLogout });
     return baseItems;
   };
 
-  // Drawer content for mobile
   const drawerContent = (
     <Box sx={{ width: { xs: 280, sm: 320 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Drawer Header */}
       <Box sx={{
-        p: 2,
-        bgcolor: 'primary.main',
+        p: 3,
+        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
         color: 'white',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 1 }}>
           {APP_NAME}
         </Typography>
-        <IconButton
-          onClick={() => setDrawerOpen(false)}
-          sx={{ color: 'white' }}
-        >
+        <IconButton onClick={() => setDrawerOpen(false)} sx={{ color: 'white' }}>
           <CloseIcon />
         </IconButton>
       </Box>
 
-      {/* Mobile Search */}
-      <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+      <Box sx={{ p: 2, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -300,25 +290,48 @@ const NavBar = ({
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                bgcolor: theme.palette.background.paper,
+                borderRadius: 3,
+                bgcolor: alpha(theme.palette.primary.main, 0.05),
+                "& fieldset": { border: 'none' }
               },
             }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton type="submit" size="small">
-                    <SearchIcon />
-                  </IconButton>
+                  <IconButton type="submit" size="small"><SearchIcon /></IconButton>
                 </InputAdornment>
               ),
             }}
           />
         </form>
       </Box>
-      {/* User Section */}
-      <Divider />
-      <List>
+
+      <List sx={{ px: 1, py: 2 }}>
+        {getNavItems().map((item, index) => (
+          <ListItem
+            key={index}
+            button
+            component={Link}
+            to={item.path}
+            onClick={() => setDrawerOpen(false)}
+            sx={{
+              borderRadius: 2,
+              mb: 0.5,
+              color: location.pathname === item.path ? 'primary.main' : 'text.primary',
+              bgcolor: location.pathname === item.path ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600 }} />
+            {item.badge > 0 && <Badge badgeContent={item.badge} color="primary" sx={{ mr: 2 }} />}
+          </ListItem>
+        ))}
+      </List>
+
+      <Divider sx={{ my: 1, opacity: 0.5 }} />
+
+      <List sx={{ px: 1 }}>
         {userInfo ? (
           <>
             <ListItem
@@ -326,82 +339,36 @@ const NavBar = ({
               component={Link}
               to="/profile"
               onClick={() => setDrawerOpen(false)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
-              }}
+              sx={{ borderRadius: 2, mb: 0.5 }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <Avatar
-                  {...stringAvatar(userInfo.username)}
-                  sx={{ width: 24, height: 24, fontSize: 12 }}
-                />
+                <Avatar {...stringAvatar(userInfo.username)} sx={{ width: 24, height: 24, fontSize: 12 }} />
               </ListItemIcon>
               <ListItemText
                 primary={userInfo.username}
                 secondary={userInfo.email}
-                primaryTypographyProps={{ fontWeight: 500 }}
-                secondaryTypographyProps={{ fontSize: 12 }}
+                primaryTypographyProps={{ fontWeight: 600 }}
+                secondaryTypographyProps={{ fontSize: 11 }}
               />
             </ListItem>
             <ListItem
               button
               onClick={handleLogout}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
-              }}
+              sx={{ borderRadius: 2, mb: 0.5, color: 'error.main', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Logout"
-                primaryTypographyProps={{ fontWeight: 500, color: 'error.main' }}
-              />
+              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}><LogoutIcon /></ListItemIcon>
+              <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 600 }} />
             </ListItem>
           </>
         ) : (
           <>
-            <ListItem
-              button
-              component={Link}
-              to="/login"
-              onClick={() => setDrawerOpen(false)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
-                <LoginIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Login"
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
+            <ListItem button component={Link} to="/login" onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 2, mb: 0.5 }}>
+              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}><LoginIcon /></ListItemIcon>
+              <ListItemText primary="Login" primaryTypographyProps={{ fontWeight: 600 }} />
             </ListItem>
-            <ListItem
-              button
-              component={Link}
-              to="/register"
-              onClick={() => setDrawerOpen(false)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
-                <AppRegistrationIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Register"
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
+            <ListItem button component={Link} to="/register" onClick={() => setDrawerOpen(false)} sx={{ borderRadius: 2, mb: 0.5 }}>
+              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}><AppRegistrationIcon /></ListItemIcon>
+              <ListItemText primary="Register" primaryTypographyProps={{ fontWeight: 600 }} />
             </ListItem>
           </>
         )}
@@ -413,48 +380,32 @@ const NavBar = ({
     <Slide in direction="down">
       <AppBar
         position="sticky"
+        elevation={0}
         sx={{
-          bgcolor: theme.palette.background.paper,
+          bgcolor: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: "blur(20px)",
           color: theme.palette.text.primary,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-          borderBottom: `1px solid ${alpha('#6366f1', 0.1)}`,
-          py: { xs: 0, md: 0.5 },
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          zIndex: theme.zIndex.appBar + 1
         }}
       >
-        <Toolbar
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: { xs: 1, md: 2 },
-            flexWrap: "nowrap",
-            minHeight: { xs: 56, sm: 64, md: 72 },
-            px: { xs: 1, sm: 2, md: 3 },
-            position: "relative",
-            width: "100%",
-            maxWidth: "1400px",
-            mx: "auto",
-          }}
-        >
-          {/* Mobile Menu Icon */}
-          {location.pathname !== "/admin/login" && isMobile && (
-            <IconButton
-              edge="start"
-              color="primary"
-              aria-label="menu"
-              onClick={() => setDrawerOpen(true)}
-              sx={{
-                mr: 1,
-                width: { xs: 40, sm: 44 },
-                height: { xs: 40, sm: 44 }
-              }}
-            >
-              <MenuIcon fontSize="large" />
-            </IconButton>
-          )}
-
-          {/* Logo/Brand */}
-          <Box sx={{ flex: { xs: 1, md: "0 0 200px" }, minWidth: { xs: "auto", md: "150px" } }}>
+        <Toolbar sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+          minHeight: { xs: 64, md: 80 },
+          px: { xs: 2, md: 4 },
+          maxWidth: "1600px",
+          width: "100%",
+          mx: "auto"
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {isMobile && (
+              <IconButton edge="start" color="primary" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
+                <MenuIcon />
+              </IconButton>
+            )}
             <Typography
               variant="h5"
               component={Link}
@@ -462,404 +413,171 @@ const NavBar = ({
               sx={{
                 color: "primary.main",
                 textDecoration: "none",
-                fontWeight: "800",
-                letterSpacing: 1,
-                fontFamily: "'Poppins', sans-serif",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  color: "secondary.main",
-                  transform: "scale(1.02)"
-                },
-                fontSize: { xs: "1.4rem", sm: "1.6rem", md: "1.8rem" },
+                fontWeight: 900,
+                letterSpacing: -0.5,
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: { xs: "1.2rem", md: "1.6rem" }
               }}
             >
-              {APP_NAME.replace(/\s+/g, '')}
+              {APP_NAME}
             </Typography>
           </Box>
 
-          {userInfo && userInfo.role !== "admin" && (
-            <>
-              {/* Search Bar - Desktop */}
-              {location.pathname !== "/admin/login" && !isMobile && (
-                <Box sx={{
-                  flex: { md: 2 },
-                  display: "flex",
-                  justifyContent: "center",
-                  mx: { xs: 0, md: 2 },
-                  maxWidth: { md: "600px" },
-                  width: { md: "100%" },
-                }}>
-                  <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 500 }}>
-                    <Autosuggest
-                      suggestions={suggestions}
-                      onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-                      onSuggestionsClearRequested={onSuggestionsClearRequested}
-                      onSuggestionSelected={handleSuggestionSelected}
-                      getSuggestionValue={getSuggestionValue}
-                      renderSuggestion={renderSuggestion}
-                      inputProps={inputProps}
-                      theme={{
-                        container: {
-                          position: "relative",
-                          width: "100%",
-                        },
-                        input: {
-                          width: "100%",
-                          padding: "12px 20px",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          border: `2px solid ${theme.palette.divider}`,
-                          backgroundColor: theme.palette.background.paper,
-                          transition: "all 0.3s ease",
-                          outline: "none",
-                          height: { xs: "40px", sm: "44px", md: "48px" },
-                          '&:focus': {
-                            borderColor: theme.palette.primary.main,
-                            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
-                          }
-                        },
-                        suggestionsContainer: {
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          zIndex: 20,
-                          backgroundColor: theme.palette.background.paper,
-                          boxShadow: theme.shadows[4],
-                          borderRadius: "16px",
-                          marginTop: "8px",
-                          overflow: "hidden",
-                          maxHeight: "360px",
-                          overflowY: "auto",
-                        },
-                        suggestionsList: {
-                          listStyle: "none",
-                          margin: 0,
-                          padding: 0,
-                        },
-                        suggestion: {
-                          padding: "12px 20px",
-                          cursor: "pointer",
-                          transition: "background 0.2s ease",
-                          fontSize: "15px",
-                          borderBottom: `1px solid ${theme.palette.divider}`,
-                          '&:last-child': {
-                            borderBottom: 'none'
-                          },
-                          '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                          }
-                        },
-                        suggestionHighlighted: {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                        },
-                      }}
-                    />
-                  </form>
-                </Box>
-              )}
-
-              {/* Mobile Search Icon */}
-              {location.pathname !== "/admin/login" && isMobile && !mobileSearchOpen && (
-                <IconButton
-                  onClick={() => setMobileSearchOpen(true)}
-                  sx={{
-                    color: 'primary.main',
-                    width: { xs: 40, sm: 44 },
-                    height: { xs: 40, sm: 44 }
-                  }}
-                >
-                  <SearchIcon fontSize="large" />
-                </IconButton>
-              )}
-
-              {/* Mobile Search Bar */}
-              {location.pathname !== "/admin/login" && isMobile && mobileSearchOpen && (
-                <Box sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgcolor: 'background.paper',
-                  p: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  zIndex: 100
-                }}>
-                  <form onSubmit={handleSubmit} style={{ width: "100%", display: 'flex' }}>
-                    <TextField
-                      fullWidth
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      autoFocus
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "50px 0 0 50px",
-                          height: 44,
-                        },
-                      }}
-                    />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      sx={{
-                        borderRadius: "0 50px 50px 0",
-                        minWidth: 60,
-                        height: 44
-                      }}
-                    >
-                      <SearchIcon />
-                    </Button>
-                  </form>
-                  <IconButton
-                    onClick={() => setMobileSearchOpen(false)}
-                    sx={{ ml: 1 }}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </Box>
-              )}
-
-            </>
-          )}
-          {/* Navigation & User Actions */}
           {!isMobile && (
-            <Box
-              sx={{
-                flex: { xs: 1, md: "0 0 auto" },
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                gap: { xs: 0.5, sm: 1 },
-                minWidth: "200px",
-              }}
-            >
-              {/* Currency Selector */}
-              <HeaderCurrencySelector />
-
-              {/* Navigation Items */}
-              {userInfo && getNavItems().map((item, index) => (
-                <Tooltip key={index} title={item.label}>
-                  <Button
-                    component={Link}
-                    to={item.path}
-                    color="inherit"
-                    sx={{
-                      fontWeight: 600,
-                      mr: { xs: 0.5, sm: 1 },
-                      display: "flex",
-                      alignItems: "center",
-                      borderRadius: 3,
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        transform: "translateY(-2px)"
-                      },
-                      px: { xs: 1, sm: 2 },
-                      py: { xs: 0.5, sm: 1 },
-                      minWidth: { xs: 40, sm: 60 }
-                    }}
-                    startIcon={item.icon}
-                  >
-                    <Box sx={{ display: { xs: "none", sm: "block" } }}>{item.label}</Box>
-                  </Button>
-                </Tooltip>
-              ))}
-              {/* User Menu */}
-              {userInfo ? (
-                <>
-                  <Tooltip title={userInfo.username}>
-                    <IconButton
-                      onClick={handleAvatarClick}
-                      sx={{
-                        ml: 2,
-                        width: 44,
-                        height: 44,
-                        border: "none",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          transform: "scale(1.05)",
-                          borderColor: theme.palette.primary.main,
-                          boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`
-                        }
-                      }}
-                    >
-                      <Avatar
-                        {...stringAvatar(userInfo.username)}
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                        }}
-                      />
-                    </IconButton>
-                  </Tooltip>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleMenuClose}
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "right",
-                    }}
-                    transformOrigin={{
-                      vertical: "top",
-                      horizontal: "right",
-                    }}
-                    PaperProps={{
-                      sx: {
-                        minWidth: { xs: 200, sm: 280 },
-                        mt: 1.5,
-                        borderRadius: 3,
-                        boxShadow: theme.shadows[8],
-                        border: `1px solid ${theme.palette.divider}`
-                      }
-                    }}
-                  >
-                    {getUserMenuItems().map((item, index) => (
-                      <MenuItem
-                        key={index}
-                        component={item.path ? Link : undefined}
-                        to={item.path}
-                        onClick={item.action || handleMenuClose}
-                        sx={{
-                          py: 1.5,
-                          px: 2,
-                          borderRadius: 2,
-                          mx: 1,
-                          mb: 0.5,
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            bgcolor: alpha(
-                              item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main,
-                              0.1
-                            )
-                          }
-                        }}
-                      >
-                        <ListItemIcon sx={{
-                          minWidth: 36,
-                          color: item.label === "Logout" ? theme.palette.error.main : theme.palette.primary.main
-                        }}>
-                          {item.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.label}
-                          primaryTypographyProps={{
-                            fontWeight: 600,
-                            color: item.label === "Logout" ? theme.palette.error.main : 'inherit'
-                          }}
-                        />
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </>
-              ) : (
-                // Only show login/register buttons if not on admin login page
-                location.pathname !== "/admin/login" && (
-                  <>
-                    <Tooltip title="Login">
-                      <Button
-                        component={Link}
-                        to="/login"
-                        variant="outlined"
-                        sx={{
-                          fontWeight: 600,
-                          ml: { xs: 0.5, sm: 1 },
-                          borderRadius: 3,
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                            transform: "translateY(-2px)"
-                          },
-                          px: { xs: 1, sm: 2 },
-                          py: { xs: 0.5, sm: 1 },
-                          minWidth: { xs: 40, sm: 60 },
-                          borderColor: alpha(theme.palette.primary.main, 0.5),
-                          color: theme.palette.primary.main
-                        }}
-                        startIcon={<LoginIcon />}
-                      >
-                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Login</Box>
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="Register">
-                      <Button
-                        component={Link}
-                        to="/register"
-                        variant="contained"
-                        sx={{
-                          fontWeight: 600,
-                          ml: { xs: 0.5, sm: 1 },
-                          borderRadius: 3,
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: theme.shadows[4]
-                          },
-                          px: { xs: 1, sm: 2 },
-                          py: { xs: 0.5, sm: 1 },
-                          minWidth: { xs: 40, sm: 60 },
-                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
-                        }}
-                        startIcon={<AppRegistrationIcon />}
-                      >
-                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Register</Box>
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="Login">
-                      <Button
-                        component={Link}
-                        to="/seller/login"
-                        variant="outlined"
-                        sx={{
-                          fontWeight: 600,
-                          ml: { xs: 0.5, sm: 1 },
-                          borderRadius: 3,
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                            transform: "translateY(-2px)"
-                          },
-                          px: { xs: 1, sm: 2 },
-                          py: { xs: 0.5, sm: 1 },
-                          minWidth: { xs: 40, sm: 60 },
-                          borderColor: alpha(theme.palette.primary.main, 0.5),
-                          color: theme.palette.primary.main
-                        }}
-                        startIcon={<LoginIcon />}
-                      >
-                        <Box sx={{ display: { xs: "none", sm: "block" } }}>Become a Seller</Box>
-                      </Button>
-                    </Tooltip>
-                  </>
-                )
-              )}
+            <Box sx={{ flex: 1, display: "flex", justifyContent: "center", maxWidth: 600 }}>
+              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+                <Autosuggest
+                  suggestions={suggestions}
+                  onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+                  onSuggestionsClearRequested={onSuggestionsClearRequested}
+                  onSuggestionSelected={handleSuggestionSelected}
+                  getSuggestionValue={getSuggestionValue}
+                  renderSuggestion={renderSuggestion}
+                  inputProps={inputProps}
+                  theme={{
+                    container: { position: "relative", width: "100%" },
+                    input: {
+                      width: "100%",
+                      padding: "10px 20px",
+                      fontSize: "15px",
+                      borderRadius: "12px",
+                      border: `1px solid ${isSearchFocused ? theme.palette.primary.main : alpha(theme.palette.divider, 0.2)}`,
+                      backgroundColor: isSearchFocused ? 'white' : alpha(theme.palette.action.hover, 0.5),
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      outline: "none",
+                      boxShadow: isSearchFocused ? `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}` : 'none'
+                    },
+                    suggestionsContainer: {
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      zIndex: 2000,
+                      backgroundColor: "white",
+                      boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                      borderRadius: "12px",
+                      marginTop: "12px",
+                      overflow: "hidden",
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                    },
+                    suggestionsList: { listStyle: "none", margin: 0, padding: 0 },
+                    suggestion: {
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+                      '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.05) }
+                    }
+                  }}
+                />
+              </form>
             </Box>
           )}
-        </Toolbar>
 
-        {/* Drawer for mobile */}
-        {location.pathname !== "/admin/login" && (
-          <Drawer
-            anchor="left"
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            PaperProps={{
-              sx: {
-                bgcolor: theme.palette.background.paper,
-                width: { xs: 280, sm: 320 },
-                height: '100%',
-                boxShadow: theme.shadows[10]
-              },
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, md: 1.5 } }}>
+            {!isMobile && (
+              <>
+                <HeaderCurrencySelector />
+                {getNavItems().map((item, index) => (
+                  <Tooltip key={index} title={item.label}>
+                    <IconButton
+                      component={Link}
+                      to={item.path}
+                      sx={{
+                        color: location.pathname === item.path ? 'primary.main' : 'text.secondary',
+                        bgcolor: location.pathname === item.path ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05), color: 'primary.main' },
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Badge badgeContent={item.badge} color="primary">{item.icon}</Badge>
+                    </IconButton>
+                  </Tooltip>
+                ))}
+              </>
+            )}
+
+            {userInfo ? (
+              <>
+                <IconButton onClick={handleAvatarClick} sx={{ p: 0.5, border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}` }}>
+                  <Avatar {...stringAvatar(userInfo.username)} sx={{ width: 32, height: 32, fontSize: 13, bgcolor: 'primary.main' }} />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  PaperProps={{
+                    sx: {
+                      minWidth: 240,
+                      mt: 1.5,
+                      borderRadius: 3,
+                      boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      p: 1
+                    }
+                  }}
+                >
+                  {getUserMenuItems().map((item, index) => (
+                    <MenuItem
+                      key={index}
+                      component={item.path ? Link : undefined}
+                      to={item.path}
+                      onClick={item.action || handleMenuClose}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1.2,
+                        mb: 0.5,
+                        '&:hover': { bgcolor: item.label === "Logout" ? alpha(theme.palette.error.main, 0.08) : alpha(theme.palette.primary.main, 0.08) }
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36, color: item.label === "Logout" ? 'error.main' : 'primary.main' }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }} />
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            ) : (
+              !isMobile && (
+                <Stack direction="row" spacing={1}>
+                  <Button component={Link} to="/login" variant="text" sx={{ fontWeight: 700 }}>Login</Button>
+                  <Button component={Link} to="/register" variant="contained" sx={{ borderRadius: 2, px: 3 }}>Join</Button>
+                </Stack>
+              )
+            )}
+
+            {isMobile && !mobileSearchOpen && (
+              <IconButton onClick={() => setMobileSearchOpen(true)} color="primary"><SearchIcon /></IconButton>
+            )}
+          </Box>
+
+          <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { borderTopRightRadius: 20, borderBottomRightRadius: 20 } }}>
             {drawerContent}
           </Drawer>
-        )}
+
+          {isMobile && mobileSearchOpen && (
+            <Slide in direction="down">
+              <Box sx={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                bgcolor: 'background.paper', px: 2, display: 'flex', alignItems: 'center', zIndex: 1100
+              }}>
+                <form onSubmit={handleSubmit} style={{ flex: 1, display: 'flex' }}>
+                  <TextField
+                    fullWidth
+                    autoFocus
+                    placeholder="Type to search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      sx: { borderRadius: '12px 0 0 12px', bgcolor: alpha(theme.palette.action.hover, 0.5) },
+                      startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                    }}
+                  />
+                  <Button type="submit" variant="contained" sx={{ borderRadius: '0 12px 12px 0', px: 3 }}>Go</Button>
+                </form>
+                <IconButton onClick={() => setMobileSearchOpen(false)} sx={{ ml: 1 }}><CloseIcon /></IconButton>
+              </Box>
+            </Slide>
+          )}
+        </Toolbar>
       </AppBar>
     </Slide>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 import VendorAnalyticsDashboard from "../../components/vendor/VendorAnalyticsDashboard";
 import EnhancedVendorDashboard from "../../components/vendor/EnhancedVendorDashboard";
 import VendorDebugTest from "../../components/vendor/VendorDebugTest";

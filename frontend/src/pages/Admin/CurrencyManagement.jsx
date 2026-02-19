@@ -55,7 +55,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ApiIcon from "@mui/icons-material/Api";
 import SearchIcon from "@mui/icons-material/Search";
 import { format } from "date-fns";
-import DocumentTitle from "react-document-title";
+import DocumentTitle from "../../components/DocumentTitle";
 
 const CurrencyManagement = () => {
   const { data: currencies = [], refetch, isLoading } = useGetAllCurrenciesQuery();
@@ -314,7 +314,7 @@ const CurrencyManagement = () => {
             {/* Header Section */}
             <Paper elevation={0} sx={{ p: 4, borderRadius: 4, border: '1px solid #e2e8f0', bgcolor: '#fff', mb: 3 }}>
               <Grid container spacing={3} alignItems="center">
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'primary.main', color: '#fff', display: 'flex' }}>
                       <CurrencyExchangeIcon fontSize="large" />
@@ -329,7 +329,7 @@ const CurrencyManagement = () => {
                     </Box>
                   </Stack>
                 </Grid>
-                <Grid item xs={12} md={6} sx={{ textAlign: { md: 'right' } }}>
+                <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { md: 'right' } }}>
                   <Stack direction="row" spacing={2} justifyContent={{ xs: 'flex-start', md: 'flex-end' }}>
                     <Button
                       variant="outlined"
@@ -356,25 +356,25 @@ const CurrencyManagement = () => {
 
               {/* Stats Cards */}
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Box sx={{ p: 3, borderRadius: 3, bgcolor: '#f1f5f9', border: '1px solid #e2e8f0' }}>
                     <Typography color="text.secondary" variant="body2" fontWeight={600} gutterBottom>Total</Typography>
                     <Typography variant="h4" fontWeight={800}>{currencies.length}</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Box sx={{ p: 3, borderRadius: 3, bgcolor: '#ecfdf5', border: '1px solid #d1fae5' }}>
                     <Typography color="success.main" variant="body2" fontWeight={600} gutterBottom>Active</Typography>
                     <Typography variant="h4" fontWeight={800} color="success.dark">{currencies.filter(c => c.isEnabled).length}</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Box sx={{ p: 3, borderRadius: 3, bgcolor: '#eff6ff', border: '1px solid #dbeafe' }}>
                     <Typography color="primary.main" variant="body2" fontWeight={600} gutterBottom>Base</Typography>
                     <Typography variant="h4" fontWeight={800} color="primary.dark">{currencies.find(c => c.isDefault)?.code || '---'}</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Box sx={{ p: 3, borderRadius: 3, bgcolor: '#fff7ed', border: '1px solid #ffedd5' }}>
                     <Typography color="warning.main" variant="body2" fontWeight={600} gutterBottom>Next Sync</Typography>
                     <Typography variant="subtitle1" fontWeight={700}>{nextUpdate ? format(nextUpdate, 'HH:mm') : 'Manual'}</Typography>
@@ -433,7 +433,7 @@ const CurrencyManagement = () => {
                 {activeTab === 1 && (
                   <Fade in>
                     <Grid container spacing={4} sx={{ maxWidth: 800 }}>
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Typography variant="h6" fontWeight={700} gutterBottom>ExchangeRateAPI Integration</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                           Configure your standard V6 API key to pull real-time rates automatically.
@@ -453,7 +453,7 @@ const CurrencyManagement = () => {
                           label={<Typography variant="body2" fontWeight={600}>Enable Automated Fetching</Typography>}
                         />
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Button
                           variant="contained"
                           onClick={handleSaveApiConfig}
@@ -474,7 +474,7 @@ const CurrencyManagement = () => {
                         System background workers handle synchronization every 24 hours.
                       </Alert>
                       <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
                             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Last Update</Typography>
                             <Typography variant="h6" fontWeight={700}>
@@ -482,7 +482,7 @@ const CurrencyManagement = () => {
                             </Typography>
                           </Paper>
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
                             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Next Scheduled</Typography>
                             <Typography variant="h6" fontWeight={700} color="success.main">
@@ -507,7 +507,7 @@ const CurrencyManagement = () => {
           </DialogTitle>
           <DialogContent sx={{ p: 3 }}>
             <Grid container spacing={3} sx={{ mt: 0.5 }}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   label="Currency Code"
                   name="code"
@@ -519,7 +519,7 @@ const CurrencyManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   label="Symbol"
                   name="symbol"
@@ -530,7 +530,7 @@ const CurrencyManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Full Name"
                   name="name"
@@ -541,7 +541,7 @@ const CurrencyManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   label="Base Rate"
                   name="rate"
@@ -553,10 +553,10 @@ const CurrencyManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField label="Region" name="region" fullWidth value={formData.region} onChange={handleFormChange} />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Stack direction="row" spacing={4}>
                   <FormControlLabel
                     control={<Switch checked={formData.isEnabled} onChange={handleFormChange} name="isEnabled" color="success" />}
